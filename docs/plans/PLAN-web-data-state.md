@@ -1,7 +1,7 @@
 # Plan: web-data-state
 
 - Created: 2026-10-31
-- Status: **approved** (2026-10-31)
+- Status: **implemented** (2026-10-31)
 - Spec: [SPEC-web-data-state.md](../specs/SPEC-web-data-state.md)
 
 ## Overview
@@ -125,9 +125,9 @@ T6 solo depende de T1 y de que los widgets tengan `status` (T4 y T5): va despué
 
 ### Checkpoint final
 
-- [ ] SC1-SC7 comprobados; CI en verde.
-- [ ] Pedir permiso antes de push, abrir el PR y hacer merge.
-- [ ] Después del despliegue: en Render, modo avión en el móvil y recargar; marcar spec, plan y capability map como **implemented**.
+- [x] SC1-SC7 comprobados; CI en verde.
+- [x] Pedir permiso antes de push, abrir el PR y hacer merge.
+- [x] Después del despliegue: en Render, modo avión en el móvil (sin recargar, ver SC3); marcar spec, plan y capability map como **implemented**.
 
 ## Riesgos y mitigaciones
 
@@ -160,3 +160,4 @@ Unas 8 h en total. Fase 1 ~3 h 45 min, fase 2 ~2 h 30 min y fase 3 ~1 h 45 min.
 - 2026-10-31: T7 hecha. Sin restos en el código de producción: ni `refreshFailed`, ni `QUERY_RETRY_COUNT`, ni «No se pudo actualizar», e `isError` solo se lee en `useDataStatus` (el detalle mira `error` solo para «no encontrada»). Arreglo aprobado por el usuario: los handlers de MSW salen de `createHandlers({ updatedAt })`; el worker de `dev:mock` fecha cada respuesta en el momento (segundos enteros, como el API) para que las estaciones no salgan en gris, y los tests siguen con la fecha fija de los fixtures. 474 tests; `pnpm --filter web build` en verde. Todos los pasos de `check:task` pasan menos `floor-guard`, que sale con 1 por 18 aserciones reescritas (4 en T2, 8 en T4, 2 en T5 y 4 en T6), todas por cambios de comportamiento o de texto buscados y explicadas en sus commits; por eso las casillas «`check:task` en verde» de los checkpoints quedan sin marcar. Quedan la revisión manual en `dev:mock`, los SC en Render y el permiso para el push y el PR.
 - 2026-10-31: en la prueba manual, recargar en «Offline» no abre la app: sin service worker el navegador no tiene la página. SC3 se reescribe (recargar con el API caído) y la app sin conexión pasa al módulo `web-offline-shell`.
 - 2026-10-31: corregido un fallo visto en la revisión manual en `dev:mock` (bloquear la petición de cercanas y recargar): salía «No se pudieron cargar las estaciones cercanas» en lugar de la lista guardada en gris. Causa: la lista guardada entraba como `placeholderData`, que TanStack solo muestra mientras la consulta está pendiente; al fallar, `data` queda vacío y el estado pasa a `error`. El test de T3 usaba una petición que nunca respondía y no lo cubría. Arreglo: si la consulta falla sin datos, `useNearbyList` vuelve a leer la lista guardada del modo (`readNearbyStations`, exportada desde `entities/station`) y el estado queda en `stale`. No se usa `initialData`: se guardaría en la clave de cada centro nuevo como dato real, y con menos de 30 s de antigüedad no se pediría la lista del centro nuevo. 476 tests; `floor-guard` sigue con los 18 avisos conocidos.
+- 2026-10-31: revisión de código: sin hallazgos obligatorios; la caché analiza el mismo texto una sola vez (commit `perf`). En `main` con el PR #92 y desplegada en Render (web 0.6.0); en el móvil, modo avión muestra «Sin conexión» y el mapa en gris, y al volver se refresca solo. Spec, plan y capability map pasan a **implemented**.

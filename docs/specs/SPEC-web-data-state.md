@@ -1,7 +1,7 @@
 # Spec: web-data-state
 
 - Created: 2026-10-31
-- Status: **approved** (2026-10-31)
+- Status: **implemented** (2026-10-31)
 - Plan: [PLAN-web-data-state.md](../plans/PLAN-web-data-state.md)
 
 Módulo `web-data-state` del [Capability Map](CAPABILITY-MAP.md), el segundo del rediseño de la UI. Es la fase 2 («Estado de datos») del documento «Mad Transit — Especificación de UI» (revisión 32), que es privado. Da a cada petición de estaciones un único estado del que se derivan los avisos y los colores, guarda la última respuesta en `localStorage` y reintenta con espera creciente.
@@ -142,3 +142,4 @@ Ninguna.
 - 2026-10-31: borrador a partir del documento de diseño (revisión 32), con las decisiones 1 a 4 del usuario.
 - 2026-10-31: aprobada por el usuario.
 - 2026-10-31: recargar sin conexión no abre la app (no hay service worker), así que la caché no llega a leerse. SC3 pasa a medirse recargando con el API caído; abrir la app sin conexión queda para `web-offline-shell`.
+- 2026-10-31: implementada; en `main` con el PR #92 y desplegada como web 0.6.0.
