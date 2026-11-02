@@ -1,6 +1,9 @@
+import { useSelectedStation } from '@/features/select-station';
 import { SidePanel } from '@/shared/ui';
 import { AppHeader } from '@/widgets/app-header';
+import { StationCard } from '@/widgets/station-card';
 import { StationsMap } from '@/widgets/stations-map';
+import { useListFocusReturn } from '../model/useListFocusReturn';
 import { useMapLocation } from '../model/useMapLocation';
 import { DesktopPanel } from './DesktopPanel';
 
@@ -11,12 +14,15 @@ const CARD_COVERED_MAP = { bottom: 0, right: STATION_CARD_CLEARANCE_PX };
 
 export function DesktopMapPage() {
   const location = useMapLocation();
+  const { number } = useSelectedStation();
+  // The card unmounts on close, so the focus goes back to the row it was opened from.
+  const panelRef = useListFocusReturn(number);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <AppHeader />
       <main className="flex min-h-0 flex-1">
-        <SidePanel label="Estaciones" className="p-4">
+        <SidePanel ref={panelRef} label="Estaciones" className="p-4">
           <DesktopPanel location={location} />
         </SidePanel>
         <div className="relative min-w-0 flex-1">
@@ -27,6 +33,7 @@ export function DesktopMapPage() {
             focusPadding={CARD_COVERED_MAP}
             className="h-full w-full"
           />
+          <StationCard center={location.center} />
         </div>
       </main>
     </div>

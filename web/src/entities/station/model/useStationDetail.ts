@@ -1,12 +1,8 @@
-import {
-  type DataStatus,
-  isSameStationNumber,
-  type Station,
-  StationNotFoundError,
-  useAllStations,
-  useDataStatus,
-  useStation,
-} from '@/entities/station';
+import { StationNotFoundError } from '../api/StationNotFoundError';
+import { useAllStations, useStation } from '../api/stationQueries';
+import { isSameStationNumber } from './stationNumber';
+import type { DataStatus, Station } from './types';
+import { useDataStatus } from './useDataStatus';
 
 export type StationDetailState =
   | { status: 'not-found' }

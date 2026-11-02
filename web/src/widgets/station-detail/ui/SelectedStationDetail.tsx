@@ -1,6 +1,5 @@
 import { useId } from 'react';
-import type { Coordinates } from '@/entities/station';
-import { useStationDetail } from '../model/useStationDetail';
+import { type Coordinates, useStationDetail } from '@/entities/station';
 import { BackButton } from './BackButton';
 import { DetailBody } from './DetailBody';
 import { DetailTitle } from './DetailTitle';

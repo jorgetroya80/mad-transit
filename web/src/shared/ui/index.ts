@@ -20,4 +20,4 @@ export {
 export { RelativeTime } from './relative-time';
 export { SidePanel } from './side-panel';
 export { StatusBanner } from './status-banner';
-export { StateMessage } from './state-message';
+export { MessageAction, StateMessage } from './state-message';

@@ -139,6 +139,37 @@ describe('DesktopMapPage', () => {
     expect(lastMapProps().focusPadding).toEqual({ bottom: 0, right: 352 });
   });
 
+  it('opens the station card over the map, leaving the focus on the row', async () => {
+    await renderPage();
+    const row = await nearbyRow('1b');
+
+    await userEvent.click(row);
+
+    const card = await screen.findByRole('region', { name: 'Puerta del Sol B' });
+    const map = screen.getByRole('region', { name: 'Mapa de estaciones' });
+    expect(map.parentElement).toContainElement(card);
+    expect(panel()).not.toContainElement(card);
+    expect(row).toHaveFocus();
+  });
+
+  it.each([
+    {
+      how: '«Cerrar»',
+      close: () => userEvent.click(screen.getByRole('button', { name: 'Cerrar' })),
+    },
+    { how: 'Escape', close: () => userEvent.keyboard('{Escape}') },
+  ])('closes the card with $how and focuses its row again', async ({ close }) => {
+    const { router } = await renderPage();
+    await userEvent.click(await nearbyRow('1b'));
+    screen.getByRole('button', { name: 'Cerrar' }).focus();
+
+    await close();
+
+    expect(router.state.location.search.station).toBeUndefined();
+    expect(screen.queryByRole('region', { name: 'Puerta del Sol B' })).not.toBeInTheDocument();
+    expect(await nearbyRow('1b')).toHaveFocus();
+  });
+
   it('names the map after the stations', async () => {
     await renderPage();
 
