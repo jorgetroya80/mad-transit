@@ -8,5 +8,9 @@ export function StationMeta({ number, center }: StationMetaProps) {
   const distanceMeters = useStationDistance(center, need, number);
   const distance = distanceMeters === undefined ? [] : [formatDistance(distanceMeters)];
 
-  return <p className="text-sm text-fg-muted">{[`Estación ${number}`, ...distance].join(' · ')}</p>;
+  return (
+    <p className="text-sm font-semibold text-fg-muted">
+      {[`Estación ${number}`, ...distance].join(' · ')}
+    </p>
+  );
 }

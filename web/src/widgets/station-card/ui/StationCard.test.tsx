@@ -72,8 +72,36 @@ describe('StationCard', () => {
     expect(region).toHaveTextContent('12 bicis');
     expect(region).toHaveTextContent('bicis disponibles');
     expect(region).toHaveTextContent('12 anclajes libres');
-    expect(within(region).getByRole('button', { name: 'Favorita' })).toBeInTheDocument();
+    expect(within(region).getByRole('button', { name: 'Añadir a favoritas' })).toBeInTheDocument();
     expect(within(region).getByRole('button', { name: 'Cerrar' })).toBeInTheDocument();
+  });
+
+  it('toggles the favorite with an icon button', async () => {
+    await renderCard();
+    const region = await card('Puerta del Sol A');
+
+    await userEvent.click(within(region).getByRole('button', { name: 'Añadir a favoritas' }));
+
+    expect(within(region).getByRole('button', { name: 'Quitar de favoritas' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(region).queryByRole('button', { name: 'Favorita' })).not.toBeInTheDocument();
+  });
+
+  it('shows each availability centered in its own box with its caption', async () => {
+    await renderCard();
+    const region = await card('Puerta del Sol A');
+
+    const captions = ['bicis disponibles', 'anclajes libres'].map((caption) =>
+      within(region).getByText(caption, { ignore: '.sr-only' }),
+    );
+    for (const caption of captions) {
+      const box = caption.closest('div');
+      expect(box).toHaveClass('rounded-control', 'bg-chip', 'items-center');
+      expect(caption).toHaveClass('text-center');
+    }
+    expect(captions[0]?.closest('div')?.parentElement).toHaveClass('grid', 'grid-cols-2');
   });
 
   it('shows only the number when the station has no distance', async () => {
@@ -114,7 +142,7 @@ describe('StationCard', () => {
   it('closes with Escape while the focus is inside', async () => {
     const { router } = await renderCard();
     within(await card('Puerta del Sol A'))
-      .getByRole('button', { name: 'Favorita' })
+      .getByRole('button', { name: 'Añadir a favoritas' })
       .focus();
 
     await userEvent.keyboard('{Escape}');
