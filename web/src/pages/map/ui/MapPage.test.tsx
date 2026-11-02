@@ -14,7 +14,7 @@ type CapturedMapProps = {
   onSelectPoint?: (id: string) => void;
   focus?: LngLat;
   userLocation?: LngLat;
-  focusPadding?: { bottom: number };
+  focusPadding?: { bottom: number; right?: number };
 };
 
 const mapRenders = vi.hoisted(() => [] as CapturedMapProps[]);
@@ -486,11 +486,11 @@ describe('MapPage', () => {
       stubMatchMedia(true);
     });
 
-    it('centers the selected station in the whole map, the panel covers none of it', async () => {
+    it('centers the selected station clear of the card, the panel covers none of it', async () => {
       await renderPage('/?station=1a');
 
       expect(await rowIn('Cerca de ti', '1a')).toBeInTheDocument();
-      expect(lastMapProps().focusPadding).toEqual({ bottom: 0 });
+      expect(lastMapProps().focusPadding).toEqual({ bottom: 0, right: 352 });
     });
   });
 });

@@ -401,6 +401,16 @@ describe('BaseMap points', () => {
     expect(map.easeTo).toHaveBeenCalledTimes(2);
   });
 
+  it('centers the focus clear of the right padding too, when given', () => {
+    render(<BaseMap focus={{ lng: -3.7, lat: 40.4 }} focusPadding={{ bottom: 0, right: 352 }} />);
+    const map = loadedMap();
+
+    expect(map.easeTo).toHaveBeenCalledExactlyOnceWith({
+      center: [-3.7, 40.4],
+      padding: { bottom: 0, right: 352 },
+    });
+  });
+
   it('does not move the map on a padding change without a focus', () => {
     const { rerender } = render(<BaseMap focusPadding={{ bottom: 400 }} />);
     const map = loadedMap();

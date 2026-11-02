@@ -1,18 +1,42 @@
 import { act, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type * as SharedUi from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { stubMatchMedia } from '../../../../test/matchMedia';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 
-type CapturedMapProps = { label?: string; className?: string };
+type CapturedMapProps = {
+  label?: string;
+  className?: string;
+  onSelectPoint?: (id: string) => void;
+  focusPadding?: { bottom: number; right?: number };
+};
 
-// jsdom has no WebGL: the map is only its named container.
+const mapRenders = vi.hoisted(() => [] as CapturedMapProps[]);
+
+// jsdom has no WebGL: the map is only its named container and records the props it receives.
 vi.mock('@/shared/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof SharedUi>()),
-  BaseMap: ({ label, className }: CapturedMapProps) => (
-    <section aria-label={label} className={className} />
-  ),
+  BaseMap: (props: CapturedMapProps) => {
+    mapRenders.push(props);
+    return <section aria-label={props.label} className={props.className} />;
+  },
 }));
+
+function lastMapProps(): CapturedMapProps {
+  const props = mapRenders.at(-1);
+  if (!props) throw new Error('BaseMap was not rendered');
+  return props;
+}
+
+async function nearbyRow(number: string) {
+  const nearby = await within(panel()).findByRole('region', { name: 'Cerca de ti' });
+  return within(nearby).findByRole('button', { name: new RegExp(`^Estación ${number},`) });
+}
+
+function currentRows() {
+  return Array.from(document.querySelectorAll<HTMLElement>('[aria-current="true"]'));
+}
 
 const USER = { lat: 40.4169, lng: -3.7033 };
 // The fixtures' data is 5 min old here, still confirmed.
@@ -40,6 +64,7 @@ describe('DesktopMapPage', () => {
   let media: ReturnType<typeof stubMatchMedia>;
 
   beforeEach(() => {
+    mapRenders.length = 0;
     media = stubMatchMedia(true);
     stubGrantedLocation();
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -87,6 +112,31 @@ describe('DesktopMapPage', () => {
     expect(
       screen.queryByRole('heading', { level: 2, name: '1a · Puerta del Sol A' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('marks the row chosen in the list', async () => {
+    await renderPage();
+
+    await userEvent.click(await nearbyRow('1b'));
+
+    expect(await nearbyRow('1b')).toHaveAttribute('aria-current', 'true');
+    expect(currentRows()).toEqual([await nearbyRow('1b')]);
+  });
+
+  it('marks the same row when the station is chosen on the map', async () => {
+    await renderPage();
+    await nearbyRow('1b');
+
+    await act(async () => lastMapProps().onSelectPoint?.('1b'));
+
+    expect(currentRows()).toEqual([await nearbyRow('1b')]);
+  });
+
+  it('centers the map clear of the station card on its right', async () => {
+    await renderPage('/?station=1a');
+    await nearbyRow('1a');
+
+    expect(lastMapProps().focusPadding).toEqual({ bottom: 0, right: 352 });
   });
 
   it('names the map after the stations', async () => {

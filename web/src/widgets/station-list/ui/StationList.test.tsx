@@ -422,6 +422,21 @@ describe('StationList', () => {
     expect(router.state.location.href).toBe('/?station=1b');
   });
 
+  it('marks the rows of the selected station in every section, whatever the case of ?station', async () => {
+    saveFavorites(['1a', '3']);
+
+    await renderList({}, ['/?station=1A']);
+
+    const favorites = await screen.findByRole('region', { name: 'Favoritas' });
+    const favoriteRow = await within(favorites).findByRole('button', { name: /^Estación 1a,/ });
+    const nearbyRow = await within(await nearbyRegion()).findByRole('button', {
+      name: /^Estación 1a,/,
+    });
+    expect(favoriteRow).toHaveAttribute('aria-current', 'true');
+    expect(nearbyRow).toHaveAttribute('aria-current', 'true');
+    expect(document.querySelectorAll('[aria-current]')).toHaveLength(2);
+  });
+
   it('asks for and shows free docks with need=docks', async () => {
     const requests = recordNearbyRequests();
 

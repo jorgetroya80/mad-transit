@@ -5,6 +5,7 @@ export { useAllStations, useNearbyStations, useStation } from './api/stationQuer
 export { readNearbyStations } from './api/stationsCache';
 export { availabilityFor, availabilityLabel } from './model/availability';
 export { parseUpdatedAt } from './model/parseUpdatedAt';
+export { isSameStationNumber } from './model/stationNumber';
 export type { AvailabilityLevel, DataStatus, Need, Station } from './model/types';
 export type { DataStatusResult } from './model/useDataStatus';
 export { useDataStatus } from './model/useDataStatus';

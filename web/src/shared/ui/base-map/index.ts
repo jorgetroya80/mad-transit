@@ -1,2 +1,2 @@
 export { LazyBaseMap as BaseMap } from './LazyBaseMap';
-export type { MapPoint, MapPointTone } from './points';
+export type { FocusPadding, MapPoint, MapPointTone } from './points';

@@ -77,6 +77,31 @@ describe('StationRow', () => {
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 
+  it('marks a selected row as the current one with the primary border and soft background', () => {
+    render(<StationRow station={station} need="bikes" status="ok" selected />);
+
+    const row = screen.getByRole('button');
+    expect(row).toHaveAttribute('aria-current', 'true');
+    expect(row).toHaveClass('bg-primary-soft', 'ring-2', 'ring-inset', 'ring-primary');
+  });
+
+  it('is not current unless selected, and does not hover with the color of the number chip', () => {
+    render(<StationRow station={station} need="bikes" status="ok" />);
+
+    const row = screen.getByRole('button');
+    expect(row).not.toHaveAttribute('aria-current');
+    expect(row).toHaveClass('hover:bg-canvas');
+    expect(row).not.toHaveClass('hover:bg-chip');
+  });
+
+  it('has no axe violations when selected', async () => {
+    const { container } = render(
+      <StationRow station={station} need="bikes" status="ok" selected />,
+    );
+
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+
   it('says "Fuera de servicio" for a station out of service', () => {
     render(<StationRow station={{ ...station, status: 'NO_SERVICE' }} need="bikes" status="ok" />);
 

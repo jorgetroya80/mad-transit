@@ -23,7 +23,7 @@ export function StationList({
   isLocationDenied = false,
 }: StationListProps) {
   const [need] = useNeed();
-  const { select } = useSelectedStation();
+  const { number: selectedNumber, select } = useSelectedStation();
   const nearby = useNearbyList(center, need);
 
   return (
@@ -39,13 +39,18 @@ export function StationList({
       {nearby.status === 'offline' && nearby.stations ? (
         <StatusBanner variant="offline">Sin conexión</StatusBanner>
       ) : null}
-      <FavoriteStations need={need} onSelect={select} />
+      <FavoriteStations need={need} selectedNumber={selectedNumber} onSelect={select} />
       <StationSection
         section="nearby"
         heading={isApproximateLocation ? 'Cerca de la Puerta del Sol' : 'Cerca de ti'}
         caption={needCaption(need)}
       >
-        <NearbyStations list={nearby} need={need} onSelect={select} />
+        <NearbyStations
+          list={nearby}
+          need={need}
+          selectedNumber={selectedNumber}
+          onSelect={select}
+        />
       </StationSection>
     </div>
   );

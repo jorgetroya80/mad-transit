@@ -17,7 +17,16 @@ type StationRowProps = Omit<ComponentProps<'button'>, 'children' | 'aria-label'>
   station: RowStation;
   need: Need;
   status: DataStatus;
+  // The station open in the URL.
+  selected?: boolean;
 };
+
+// Hover skips `bg-chip`, which would hide the number chip. The ring is inset, so selecting a row
+// does not change its size.
+const ROW_STATE = {
+  selected: 'bg-primary-soft ring-2 ring-inset ring-primary',
+  idle: 'hover:bg-canvas',
+} as const;
 
 function nameRow(station: RowStation, availability: string): string {
   const meters = station.distanceMeters;
@@ -25,7 +34,14 @@ function nameRow(station: RowStation, availability: string): string {
   return [`Estación ${station.number}`, station.name, ...walk, availability].join(', ');
 }
 
-export function StationRow({ station, need, status, className = '', ...props }: StationRowProps) {
+export function StationRow({
+  station,
+  need,
+  status,
+  selected = false,
+  className = '',
+  ...props
+}: StationRowProps) {
   const { level, count } = availabilityFor(station, need, status);
   const meters = station.distanceMeters;
 
@@ -34,7 +50,8 @@ export function StationRow({ station, need, status, className = '', ...props }: 
       type="button"
       {...props}
       aria-label={nameRow(station, availabilityText(level, count, need))}
-      className={`flex min-h-11 w-full items-center gap-3 px-3 py-2 text-left hover:bg-chip focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary ${className}`}
+      aria-current={selected || undefined}
+      className={`flex min-h-11 w-full items-center gap-3 px-3 py-2 text-left ${ROW_STATE[selected ? 'selected' : 'idle']} focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary ${className}`}
     >
       <span className="inline-flex h-8 min-w-10 shrink-0 items-center justify-center rounded-chip bg-chip px-1.5 text-sm font-semibold text-fg tabular-nums">
         {station.number}

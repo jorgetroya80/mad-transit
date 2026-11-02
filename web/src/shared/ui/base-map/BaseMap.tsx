@@ -2,7 +2,7 @@ import { setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useRef } from 'react';
-import type { LngLat, MapPoint } from './points';
+import type { FocusPadding, LngLat, MapPoint } from './points';
 import { useEaseTo, useMapLibre, usePointsData, useUserLocationData } from './useMapLibre';
 
 // MapLibre derives the worker URL from its own import.meta.url, which neither Vite's dev
@@ -16,9 +16,7 @@ export type BaseMapProps = {
   selectedId?: string;
   onSelectPoint?: (id: string) => void;
   focus?: LngLat;
-  // Pixels at the bottom of the map hidden by something on top of it: the focus is centered
-  // in the area above them.
-  focusPadding?: { bottom: number };
+  focusPadding?: FocusPadding;
   userLocation?: LngLat;
 };
 
@@ -40,7 +38,7 @@ export function BaseMap({
   const map = useMapLibre(containerRef, onSelectPoint);
   usePointsData(map, points, selectedId);
   useUserLocationData(map, userLocation);
-  useEaseTo(map, focus, focusPadding?.bottom);
+  useEaseTo(map, focus, focusPadding);
 
   return <section ref={containerRef} aria-label={label} className={className} />;
 }

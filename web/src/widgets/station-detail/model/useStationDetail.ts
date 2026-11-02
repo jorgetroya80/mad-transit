@@ -1,5 +1,6 @@
 import {
   type DataStatus,
+  isSameStationNumber,
   type Station,
   StationNotFoundError,
   useAllStations,
@@ -17,10 +18,8 @@ export type StationDetailState =
       retry: () => void;
     };
 
-// `?station` may differ in case from the API's number (`1A` vs `1a`).
 function findStation(stations: readonly Station[] | undefined, number: string) {
-  const wanted = number.toLowerCase();
-  return stations?.find((station) => station.number.toLowerCase() === wanted);
+  return stations?.find((station) => isSameStationNumber(station.number, number));
 }
 
 // Not found wins over any data: a station the API no longer has should not stay on screen.

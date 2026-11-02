@@ -4,8 +4,10 @@ import { StationsMap } from '@/widgets/stations-map';
 import { useMapLocation } from '../model/useMapLocation';
 import { DesktopPanel } from './DesktopPanel';
 
-// The side panel sits beside the map, so nothing covers the bottom of it.
-const NO_COVERED_MAP = { bottom: 0 };
+// The station card (320 px wide, 16 px from each side) covers the right of the map; the side
+// panel sits beside it and covers nothing.
+const STATION_CARD_CLEARANCE_PX = 352;
+const CARD_COVERED_MAP = { bottom: 0, right: STATION_CARD_CLEARANCE_PX };
 
 export function DesktopMapPage() {
   const location = useMapLocation();
@@ -22,7 +24,7 @@ export function DesktopMapPage() {
             label="Mapa de estaciones"
             center={location.mapCenter}
             userLocation={location.userLocation}
-            focusPadding={NO_COVERED_MAP}
+            focusPadding={CARD_COVERED_MAP}
             className="h-full w-full"
           />
         </div>

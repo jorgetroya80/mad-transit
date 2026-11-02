@@ -1,4 +1,4 @@
-export { BaseMap, type MapPoint, type MapPointTone } from './base-map';
+export { BaseMap, type FocusPadding, type MapPoint, type MapPointTone } from './base-map';
 export { BottomSheet, useBottomSheetOverlap } from './bottom-sheet';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
