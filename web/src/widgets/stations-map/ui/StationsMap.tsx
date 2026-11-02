@@ -8,7 +8,7 @@ import {
 } from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
-import { BaseMap, type FocusPadding } from '@/shared/ui';
+import { BaseMap, type FocusPadding, type MapControlsOptions } from '@/shared/ui';
 import { toMapPoints } from '../lib/toMapPoints';
 
 type StationsMapProps = {
@@ -20,7 +20,7 @@ type StationsMapProps = {
   focusSelected?: boolean;
   // Called on every tapped point, also the station already selected, which does not change the URL.
   onSelect?: (number: string) => void;
-  onRecenter?: () => void;
+  controls?: MapControlsOptions;
   className?: string;
 };
 
@@ -39,7 +39,7 @@ export function StationsMap({
   focusPadding,
   focusSelected = true,
   onSelect,
-  onRecenter,
+  controls,
   className,
 }: StationsMapProps) {
   const query = useAllStations();
@@ -66,7 +66,7 @@ export function StationsMap({
       focus={selected && focusSelected ? { lng: selected.lon, lat: selected.lat } : center}
       focusPadding={focusPadding}
       userLocation={userLocation}
-      onRecenter={onRecenter}
+      controls={controls}
     />
   );
 }

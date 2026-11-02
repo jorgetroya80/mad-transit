@@ -28,9 +28,9 @@ function LocationNotice({
   center,
   isApproximateLocation,
   isLocationDenied = false,
-  ...layout
+  ...layoutProps
 }: StationListProps) {
-  if (layout.layout !== 'desktop') {
+  if (layoutProps.layout !== 'desktop') {
     return (
       <ApproximateLocationNotice
         isApproximateLocation={isApproximateLocation}
@@ -43,8 +43,8 @@ function LocationNotice({
     <DesktopLocationNotice
       isApproximateLocation={isApproximateLocation}
       isLocationDenied={isLocationDenied}
-      onLocate={layout.onLocate}
-      isLocating={layout.isLocating ?? false}
+      onLocate={layoutProps.onLocate}
+      isLocating={layoutProps.isLocating ?? false}
     />
   );
 }

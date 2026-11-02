@@ -3,14 +3,15 @@ import { useState } from 'react';
 export type UserFocus = {
   // False while the user asked for their location with this station open: the map follows them.
   focusSelected: boolean;
-  focusUser: () => void;
   focusSelection: () => void;
+  // The given `locate`, with the map following the answer instead of the station.
+  locate: () => void;
 };
 
 // "Mi ubicación" with a station open moves the map to the user and keeps the detail. Opening,
 // closing or changing the station gives the focus back to the selection, and so does tapping it
 // again on the map.
-export function useUserFocus(number: string | undefined): UserFocus {
+export function useUserFocus(number: string | undefined, locate: () => void): UserFocus {
   const [focus, setFocus] = useState({ number, onUser: false });
   // Adjusted during render: this render still sees the old state, hence the check below.
   if (focus.number !== number) setFocus({ number, onUser: false });
@@ -18,7 +19,10 @@ export function useUserFocus(number: string | undefined): UserFocus {
 
   return {
     focusSelected: !onUser,
-    focusUser: () => setFocus({ number, onUser: true }),
     focusSelection: () => setFocus({ number, onUser: false }),
+    locate: () => {
+      setFocus({ number, onUser: true });
+      locate();
+    },
   };
 }

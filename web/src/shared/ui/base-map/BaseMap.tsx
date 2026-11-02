@@ -2,7 +2,7 @@ import { setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useRef } from 'react';
-import { MapControls } from './MapControls';
+import { MapControls, type MapControlsOptions } from './MapControls';
 import type { FocusPadding, LngLat, MapPoint } from './points';
 import { useEaseTo, useMapLibre, usePointsData, useUserLocationData } from './useMapLibre';
 
@@ -19,8 +19,8 @@ export type BaseMapProps = {
   focus?: LngLat;
   focusPadding?: FocusPadding;
   userLocation?: LngLat;
-  // Shows the zoom and recenter controls; without it the map has none.
-  onRecenter?: () => void;
+  // Shows the zoom controls, and recentering if it has `onRecenter`; without it the map has none.
+  controls?: MapControlsOptions;
 };
 
 // Module-level so a map without points keeps the same array and does not reset its data.
@@ -36,7 +36,7 @@ export function BaseMap({
   focus,
   focusPadding,
   userLocation,
-  onRecenter,
+  controls,
 }: BaseMapProps) {
   const containerRef = useRef<HTMLElement>(null);
   const map = useMapLibre(containerRef, onSelectPoint);
@@ -47,13 +47,13 @@ export function BaseMap({
   // MapLibre adds its canvas next to the controls and leaves them alone. `isolate` keeps the
   // controls' z-index inside the map, so anything laid over the map, like a card, stays on top.
   return (
-    <section ref={containerRef} aria-label={label} className={`isolate ${className ?? ''}`}>
-      {map && onRecenter && (
-        <MapControls
-          onZoomIn={() => map.zoomIn()}
-          onZoomOut={() => map.zoomOut()}
-          onRecenter={onRecenter}
-        />
+    <section
+      ref={containerRef}
+      aria-label={label}
+      className={['isolate', className].filter(Boolean).join(' ')}
+    >
+      {map && controls && (
+        <MapControls onZoomIn={() => map.zoomIn()} onZoomOut={() => map.zoomOut()} {...controls} />
       )}
     </section>
   );

@@ -14,11 +14,7 @@ export function MobileMapPage() {
   const [panelExpanded, setPanelExpanded] = usePanelExpanded(number);
   const panelRef = useListFocusReturn(number);
   const focusPadding = useMapFocusPadding(panelExpanded);
-  const { focusSelected, focusUser, focusSelection } = useUserFocus(number);
-  const locate = () => {
-    focusUser();
-    location.locate();
-  };
+  const { focusSelected, focusSelection, locate } = useUserFocus(number, location.locate);
 
   return (
     <AppLayout

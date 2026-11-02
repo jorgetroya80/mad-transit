@@ -1,4 +1,4 @@
-import { act, screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FAVORITES_STORAGE_KEY } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
@@ -9,23 +9,25 @@ import { renderWithRouter } from '../../../../test/renderWithRouter';
 type CapturedMapProps = {
   label?: string;
   className?: string;
+  selectedId?: string;
   onSelectPoint?: (id: string) => void;
+  focus?: { lng: number; lat: number };
   focusPadding?: { bottom: number; right?: number };
-  onRecenter?: () => void;
+  controls?: { onRecenter?: () => void; isRecentering?: boolean };
 };
 
 const mapRenders = vi.hoisted(() => [] as CapturedMapProps[]);
 
 // jsdom has no WebGL: the map is only its named container, with one button standing for its
-// controls, and records the props it receives.
+// recenter control, and records the props it receives.
 vi.mock('@/shared/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof SharedUi>()),
   BaseMap: (props: CapturedMapProps) => {
     mapRenders.push(props);
     return (
       <section aria-label={props.label} className={props.className}>
-        {props.onRecenter ? (
-          <button type="button" onClick={props.onRecenter}>
+        {props.controls?.onRecenter ? (
+          <button type="button" onClick={props.controls.onRecenter}>
             Centrar en mi posición
           </button>
         ) : null}
@@ -50,6 +52,8 @@ function currentRows() {
 }
 
 const USER = { lat: 40.4169, lng: -3.7033 };
+// Station 1a in the fixtures.
+const PUERTA_DEL_SOL_A = { lat: 40.4170224, lng: -3.7024255 };
 // The fixtures' data is 5 min old here, still confirmed.
 const NOW = new Date('2026-10-13T10:20:00Z');
 
@@ -63,7 +67,18 @@ function stubGrantedLocation() {
   });
 }
 
+const PERMISSION_DENIED = 1;
 const POSITION_UNAVAILABLE = 2;
+
+function stubDeniedLocation() {
+  const getCurrentPosition = vi.fn<Geolocation['getCurrentPosition']>((_, onError) =>
+    onError?.({ code: PERMISSION_DENIED, PERMISSION_DENIED } as GeolocationPositionError),
+  );
+  Object.defineProperty(navigator, 'geolocation', {
+    value: { getCurrentPosition },
+    configurable: true,
+  });
+}
 
 // The first request fails as if the position were unavailable; the next ones find the user.
 function stubLocationAfterRetry() {
@@ -269,10 +284,69 @@ describe('DesktopMapPage', () => {
     await renderPage();
     await within(panel()).findByRole('region', { name: 'Cerca de la Puerta del Sol' });
 
-    await act(async () => lastMapProps().onRecenter?.());
+    await act(async () => lastMapProps().controls?.onRecenter?.());
 
     expect(getCurrentPosition).toHaveBeenCalledTimes(2);
     expect(await within(panel()).findByRole('region', { name: 'Cerca de ti' })).toBeVisible();
+  });
+
+  it('centers the map on the user with «Centrar en mi posición» and keeps the card open', async () => {
+    await renderPage('/?station=1a');
+    const card = await screen.findByRole('region', { name: 'Puerta del Sol A' });
+    await waitFor(() =>
+      expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: PUERTA_DEL_SOL_A }),
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Centrar en mi posición' }));
+
+    await waitFor(() => expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: USER }));
+    expect(card).toBeVisible();
+  });
+
+  it('centers the map on the user with «Usar mi ubicación» and keeps the card open', async () => {
+    stubLocationAfterRetry();
+    await renderPage('/?station=1a');
+    const card = await screen.findByRole('region', { name: 'Puerta del Sol A' });
+    await within(panel()).findByRole('region', { name: 'Cerca de la Puerta del Sol' });
+
+    await userEvent.click(within(panel()).getByRole('button', { name: 'Usar mi ubicación' }));
+
+    await waitFor(() => expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: USER }));
+    expect(card).toBeVisible();
+  });
+
+  it('focuses the open station again when its point is tapped after recentering', async () => {
+    await renderPage('/?station=1a');
+    await screen.findByRole('region', { name: 'Puerta del Sol A' });
+    await userEvent.click(screen.getByRole('button', { name: 'Centrar en mi posición' }));
+    await waitFor(() => expect(lastMapProps().focus).toEqual(USER));
+
+    await act(async () => lastMapProps().onSelectPoint?.('1a'));
+
+    expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: PUERTA_DEL_SOL_A });
+  });
+
+  it('marks the recenter control busy while locating', async () => {
+    stubLocationPendingAfterRetry();
+    await renderPage();
+    await within(panel()).findByRole('region', { name: 'Cerca de la Puerta del Sol' });
+    expect(lastMapProps().controls).toMatchObject({ isRecentering: false });
+
+    await userEvent.click(within(panel()).getByRole('button', { name: 'Usar mi ubicación' }));
+
+    expect(lastMapProps().controls).toMatchObject({ isRecentering: true });
+  });
+
+  it('keeps the zoom controls but drops recentering when the location is denied', async () => {
+    stubDeniedLocation();
+    await renderPage();
+    await within(panel()).findByRole('region', { name: 'Cerca de la Puerta del Sol' });
+
+    expect(lastMapProps().controls).toBeDefined();
+    expect(lastMapProps().controls?.onRecenter).toBeUndefined();
+    expect(
+      screen.queryByRole('button', { name: 'Centrar en mi posición' }),
+    ).not.toBeInTheDocument();
   });
 
   it('names the map after the stations', async () => {

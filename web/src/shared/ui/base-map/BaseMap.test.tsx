@@ -446,7 +446,7 @@ describe('BaseMap controls', () => {
     vi.unstubAllGlobals();
   });
 
-  it('has no controls without a recenter action', () => {
+  it('has no controls unless asked for', () => {
     render(<BaseMap />);
     loadedMap();
 
@@ -454,7 +454,7 @@ describe('BaseMap controls', () => {
   });
 
   it('shows the controls inside the map once it loads', () => {
-    render(<BaseMap onRecenter={vi.fn<() => void>()} />);
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
     expect(screen.queryByRole('button', { name: 'Acercar' })).not.toBeInTheDocument();
 
     loadedMap();
@@ -465,7 +465,7 @@ describe('BaseMap controls', () => {
   });
 
   it('zooms the map in and out', async () => {
-    render(<BaseMap onRecenter={vi.fn<() => void>()} />);
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
     const map = loadedMap();
 
     await userEvent.click(screen.getByRole('button', { name: 'Acercar' }));
@@ -478,7 +478,7 @@ describe('BaseMap controls', () => {
 
   it('recenters with the given action', async () => {
     const onRecenter = vi.fn<() => void>();
-    render(<BaseMap onRecenter={onRecenter} />);
+    render(<BaseMap controls={{ onRecenter }} />);
     const map = loadedMap();
 
     await userEvent.click(screen.getByRole('button', { name: 'Centrar en mi posición' }));
@@ -486,5 +486,26 @@ describe('BaseMap controls', () => {
     expect(onRecenter).toHaveBeenCalledOnce();
     expect(map.zoomIn).not.toHaveBeenCalled();
     expect(map.zoomOut).not.toHaveBeenCalled();
+  });
+
+  it('shows the zoom controls without «Centrar en mi posición» when there is no recenter action', () => {
+    render(<BaseMap controls={{}} />);
+    loadedMap();
+
+    expect(screen.getByRole('button', { name: 'Acercar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Alejar' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Centrar en mi posición' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('marks «Centrar en mi posición» busy while recentering', () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>(), isRecentering: true }} />);
+    loadedMap();
+
+    expect(screen.getByRole('button', { name: 'Centrar en mi posición' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
   });
 });
