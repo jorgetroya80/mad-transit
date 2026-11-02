@@ -1,1 +1,15 @@
-export { BikeIcon, ClearIcon, DockIcon, InfoIcon, OfflineIcon, WarningIcon } from './icons';
+export {
+  BikeIcon,
+  ChevronIcon,
+  ClearIcon,
+  CloseIcon,
+  DockIcon,
+  InfoIcon,
+  LocationIcon,
+  MinusIcon,
+  OfflineIcon,
+  PlusIcon,
+  RefreshIcon,
+  StarIcon,
+  WarningIcon,
+} from './icons';

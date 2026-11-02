@@ -41,7 +41,7 @@ T1 UpdatedIndicator + iconos
 
 ### Fase 1: Esqueleto
 
-- [ ] **T1: `UpdatedIndicator` e iconos** (S, ~1 h)
+- [x] **T1: `UpdatedIndicator` e iconos** (S, ~1 h)
   - Descripción: iconos nuevos en `shared/ui/icons` (ubicación, estrella, flecha, más, menos, cerrar, actualizar). `UpdatedIndicator({ status, updatedAt, onRetry })` en `shared/ui/data-freshness`: punto `aria-hidden` del color del estado y texto siempre presente («Actualizado hace N s», «Datos de hace N min», «Sin datos del servicio», «Desconectado»), con botón «Actualizar» en `ok` y «Reintentar» en el resto, con `aria-busy` mientras pide. En `loading` muestra «Cargando…» sin botón.
   - Aceptación:
     - Los cuatro estados y `loading` con su texto y su botón (SC3).
@@ -162,3 +162,4 @@ Unas 9 h en total. Fase 1 ~3 h 30 min, fase 2 ~4 h 30 min y fase 3 ~45 min.
 
 - 2026-11-02: borrador a partir de la spec aprobada.
 - 2026-11-02: aprobado por el usuario.
+- 2026-11-02: T1 hecha. `CloseIcon` es un alias de `ClearIcon` (la misma x); `StarIcon` se rellena con `fill-current` sin cambios. `UpdatedIndicator` declara su propia unión de estados porque `shared` no importa `entities`; punto con `availability-good`, `-low`, `-empty-line` y `-off`, como en la spec; `aria-busy` solo si `onRetry` devuelve una promesa, hasta que se resuelve o falla. Sin hora conocida dice «Actualizado» o «Datos sin confirmar», como `StaleNotice`. 17 tests nuevos (590 en web) y `check:task` en verde.

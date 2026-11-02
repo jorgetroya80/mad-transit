@@ -1,8 +1,36 @@
 import { render } from '@testing-library/react';
-import { BikeIcon, ClearIcon, DockIcon, InfoIcon, OfflineIcon, WarningIcon } from '.';
+import {
+  BikeIcon,
+  ChevronIcon,
+  ClearIcon,
+  DockIcon,
+  InfoIcon,
+  LocationIcon,
+  MinusIcon,
+  OfflineIcon,
+  PlusIcon,
+  RefreshIcon,
+  StarIcon,
+  WarningIcon,
+} from '.';
+
+const DECORATIVE_ICONS = [
+  BikeIcon,
+  DockIcon,
+  ClearIcon,
+  WarningIcon,
+  OfflineIcon,
+  InfoIcon,
+  LocationIcon,
+  StarIcon,
+  ChevronIcon,
+  PlusIcon,
+  MinusIcon,
+  RefreshIcon,
+];
 
 describe('icons', () => {
-  it.each([BikeIcon, DockIcon, ClearIcon, WarningIcon, OfflineIcon, InfoIcon])(
+  it.each(DECORATIVE_ICONS)(
     '%o is hidden from assistive technology and drawn with a 2 px stroke',
     (Icon) => {
       const { container } = render(<Icon className="size-5" />);
