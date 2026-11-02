@@ -22,6 +22,15 @@ describe('StateMessage', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
+  it('frames an error like the status banners: tinted, thin border all round and an icon', () => {
+    render(<StateMessage variant="error" title="No se pudieron cargar los datos" />);
+
+    const message = screen.getByRole('alert');
+    expect(message).toHaveClass('border', 'bg-notice-error', 'text-notice-error-foreground');
+    expect(message).not.toHaveClass('border-l-4');
+    expect(message.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+  });
+
   it('announces loading as a busy status', () => {
     render(<StateMessage variant="loading" title="Cargando estaciones" />);
 
