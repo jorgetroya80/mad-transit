@@ -11,6 +11,7 @@ setWorkerUrl(workerUrl);
 
 export type BaseMapProps = {
   className?: string;
+  label?: string;
   points?: readonly MapPoint[];
   selectedId?: string;
   onSelectPoint?: (id: string) => void;
@@ -27,6 +28,7 @@ const NO_POINTS: readonly MapPoint[] = [];
 // Points are not keyboard-accessible by design: lists and search reach every point.
 export function BaseMap({
   className,
+  label = 'Mapa de Madrid',
   points = NO_POINTS,
   selectedId,
   onSelectPoint,
@@ -40,5 +42,5 @@ export function BaseMap({
   useUserLocationData(map, userLocation);
   useEaseTo(map, focus, focusPadding?.bottom);
 
-  return <section ref={containerRef} aria-label="Mapa de Madrid" className={className} />;
+  return <section ref={containerRef} aria-label={label} className={className} />;
 }

@@ -16,7 +16,8 @@ type StationsQuery = {
 export type DataStatusResult = {
   status: DataStatus;
   updatedAt: Date | undefined;
-  retry: () => void;
+  // Returns the refetch promise, so a caller can show the request as busy until it settles.
+  retry: () => unknown;
 };
 
 // Placeholder data has no arrival time (0): its age is unknown rather than 1970.
@@ -48,6 +49,6 @@ export function useDataStatus({
       online,
     }),
     updatedAt,
-    retry: () => void refetch(),
+    retry: () => refetch(),
   };
 }

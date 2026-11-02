@@ -8,8 +8,8 @@ import { RelativeTime } from '../relative-time';
 type FreshnessStatus = 'loading' | 'ok' | 'stale' | 'error' | 'offline';
 type LoadedStatus = Exclude<FreshnessStatus, 'loading'>;
 
-// A returned promise keeps the button busy until it settles.
-type Retry = () => void | Promise<unknown>;
+// A returned promise keeps the button busy until it settles; anything else is fire and forget.
+type Retry = () => unknown;
 
 type UpdatedIndicatorProps = {
   status: FreshnessStatus;

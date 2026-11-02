@@ -51,7 +51,7 @@ T1 UpdatedIndicator + iconos
   - Archivos: `shared/ui/icons/*`, `shared/ui/data-freshness/{UpdatedIndicator.tsx,UpdatedIndicator.test.tsx,index.ts}`, `shared/ui/index.ts`.
   - Dependencias: ninguna.
 
-- [ ] **T2: Composición de escritorio** (M, ~1 h 30 min)
+- [x] **T2: Composición de escritorio** (M, ~1 h 30 min)
   - Descripción: `MapPage` elige con `useMediaQuery(MD_MEDIA_QUERY)` entre la composición de hoy y `DesktopMapPage`. `widgets/app-header`: `h1` «Mad Transit», «BiciMAD en tiempo real» y `UpdatedIndicator` con el estado de `useAllStations` (`useDataStatus`). `SidePanel` pasa a 420 px. En escritorio el panel muestra siempre buscador → selector en tarjetas → `StationList` (sin detalle en el panel ni `LocateButton` suelto) y el mapa lleva `aria-label="Mapa de estaciones"`.
   - Aceptación:
     - Desde `md`: cabecera, panel de 420 px y mapa sin solaparse (SC1).
@@ -163,3 +163,4 @@ Unas 9 h en total. Fase 1 ~3 h 30 min, fase 2 ~4 h 30 min y fase 3 ~45 min.
 - 2026-11-02: borrador a partir de la spec aprobada.
 - 2026-11-02: aprobado por el usuario.
 - 2026-11-02: T1 hecha. `CloseIcon` es un alias de `ClearIcon` (la misma x); `StarIcon` se rellena con `fill-current` sin cambios. `UpdatedIndicator` declara su propia unión de estados porque `shared` no importa `entities`; punto con `availability-good`, `-low`, `-empty-line` y `-off`, como en la spec; `aria-busy` solo si `onRetry` devuelve una promesa, hasta que se resuelve o falla. Sin hora conocida dice «Actualizado» o «Datos sin confirmar», como `StaleNotice`. 17 tests nuevos (590 en web) y `check:task` en verde.
+- 2026-11-02: T2 hecha. `MapPage` elige entre `MobileMapPage` (la de hoy, renombrada) y `DesktopMapPage`, que monta su propio esqueleto (cabecera `banner` a todo el ancho y `main` con panel y mapa) en vez de usar `AppLayout`, así solo hay un `h1`; la rama de `md` de `AppLayout` queda sin uso en producción y se puede quitar más adelante. `useDataStatus().retry` devuelve la promesa de `refetch` para el `aria-busy` del indicador. `BaseMap` y `StationsMap` aceptan `label` («Mapa de estaciones» en escritorio; el móvil sigue con «Mapa de Madrid»). `MapPanel` y `useMapFocusPadding` dejan la rama de `md`, que ya no se usa. En `MapPage.test.tsx` el caso de escritorio del panel pasa a `DesktopMapPage.test.tsx` y la aserción del detalle con `?station` en `md` se reescribe a la fila de la lista (el detalle ya no está en el panel; la tarjeta llega en T4): el floor guard avisa de esa aserción. 11 tests más (601 en web); `check:task` en verde salvo ese aviso.

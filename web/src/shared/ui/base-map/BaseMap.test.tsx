@@ -212,6 +212,12 @@ describe('BaseMap', () => {
     expect(map.remove).toHaveBeenCalledOnce();
   });
 
+  it('names the container with the given label', () => {
+    const { getByRole } = render(<BaseMap label="Mapa de estaciones" />);
+
+    expect(getByRole('region', { name: 'Mapa de estaciones' })).toBeInTheDocument();
+  });
+
   it('applies the given class name to the container', () => {
     const { getByRole } = render(<BaseMap className="h-full" />);
 

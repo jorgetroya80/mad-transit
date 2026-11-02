@@ -8,6 +8,7 @@ import { toMapPoints } from '../lib/toMapPoints';
 type StationsMapProps = {
   center: Coordinates | undefined;
   userLocation: Coordinates | undefined;
+  label?: string;
   focusPadding?: { bottom: number };
   // False keeps the selected station marked but centers the map on `center` instead.
   focusSelected?: boolean;
@@ -30,6 +31,7 @@ function findStation(stations: readonly Station[], number: string | undefined) {
 export function StationsMap({
   center,
   userLocation,
+  label,
   focusPadding,
   focusSelected = true,
   onSelect,
@@ -49,6 +51,7 @@ export function StationsMap({
   return (
     <BaseMap
       className={className}
+      label={label}
       points={points}
       selectedId={selected?.number}
       onSelectPoint={(id) => {
