@@ -60,17 +60,18 @@ describe('FavoriteButton', () => {
   });
 
   describe('as an icon', () => {
-    it('names the action it takes and toggles between adding and removing', async () => {
+    it('keeps the name «Favorita» and tells the action in its tooltip', async () => {
       render(<FavoriteButton number="538" variant="icon" />);
 
-      const button = screen.getByRole('button', { name: 'Añadir a favoritas' });
+      const button = screen.getByRole('button', { name: 'Favorita' });
       expect(button).toHaveAttribute('aria-pressed', 'false');
       expect(button).toHaveAttribute('title', 'Añadir a favoritas');
 
       await userEvent.click(button);
 
-      expect(button).toHaveAccessibleName('Quitar de favoritas');
+      expect(button).toHaveAccessibleName('Favorita');
       expect(button).toHaveAttribute('aria-pressed', 'true');
+      expect(button).toHaveAttribute('title', 'Quitar de favoritas');
       expect(localStorage.getItem(FAVORITES_STORAGE_KEY)).toBe('["538"]');
     });
 

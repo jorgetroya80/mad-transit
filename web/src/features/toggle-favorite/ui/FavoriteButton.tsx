@@ -20,6 +20,8 @@ type VariantProps = Omit<FavoriteButtonProps, 'variant'>;
 
 // A toggle button keeps the same name in both states (WAI-ARIA APG): aria-pressed tells
 // whether it is on, so the label does not change to "Quitar…".
+const NAME = 'Favorita';
+
 function TextFavoriteButton({ number, className = '', ...props }: VariantProps) {
   const { isFavorite, toggle } = useFavorites();
   const pressed = isFavorite(number);
@@ -35,24 +37,23 @@ function TextFavoriteButton({ number, className = '', ...props }: VariantProps) 
       <span aria-hidden="true" className="text-lg text-primary">
         {pressed ? '★' : '☆'}
       </span>
-      Favorita
+      {NAME}
     </button>
   );
 }
 
-// The design names the action, so the icon has a visible tooltip with the same words.
+// Same fixed name as the text variant; the design's action words go in the tooltip only.
 function IconFavoriteButton({ number, className = '', ...props }: VariantProps) {
   const { isFavorite, toggle } = useFavorites();
   const pressed = isFavorite(number);
-  const label = pressed ? 'Quitar de favoritas' : 'Añadir a favoritas';
 
   return (
     <button
       type="button"
       {...props}
       aria-pressed={pressed}
-      aria-label={label}
-      title={label}
+      aria-label={NAME}
+      title={pressed ? 'Quitar de favoritas' : 'Añadir a favoritas'}
       onClick={() => toggle(number)}
       className={`inline-flex size-11 shrink-0 items-center justify-center rounded-control text-primary hover:bg-chip ${FOCUS_RING} ${className}`}
     >

@@ -72,7 +72,7 @@ describe('StationCard', () => {
     expect(region).toHaveTextContent('12 bicis');
     expect(region).toHaveTextContent('bicis disponibles');
     expect(region).toHaveTextContent('12 anclajes libres');
-    expect(within(region).getByRole('button', { name: 'Añadir a favoritas' })).toBeInTheDocument();
+    expect(within(region).getByRole('button', { name: 'Favorita' })).toBeInTheDocument();
     expect(within(region).getByRole('button', { name: 'Cerrar' })).toBeInTheDocument();
   });
 
@@ -80,7 +80,7 @@ describe('StationCard', () => {
     await renderCard();
     const region = await card('Puerta del Sol A');
     const close = within(region).getByRole('button', { name: 'Cerrar' });
-    const star = within(region).getByRole('button', { name: 'Añadir a favoritas' });
+    const star = within(region).getByRole('button', { name: 'Favorita' });
 
     expect(close).toHaveClass('row-start-1', 'col-start-2');
     expect(star).toHaveClass('row-start-2', 'col-start-2', 'self-center');
@@ -98,13 +98,12 @@ describe('StationCard', () => {
     await renderCard();
     const region = await card('Puerta del Sol A');
 
-    await userEvent.click(within(region).getByRole('button', { name: 'Añadir a favoritas' }));
+    await userEvent.click(within(region).getByRole('button', { name: 'Favorita' }));
 
-    expect(within(region).getByRole('button', { name: 'Quitar de favoritas' })).toHaveAttribute(
+    expect(within(region).getByRole('button', { name: 'Favorita' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
-    expect(within(region).queryByRole('button', { name: 'Favorita' })).not.toBeInTheDocument();
   });
 
   it('shows each availability centered in its own box with its caption', async () => {
@@ -160,7 +159,7 @@ describe('StationCard', () => {
   it('closes with Escape while the focus is inside', async () => {
     const { router } = await renderCard();
     within(await card('Puerta del Sol A'))
-      .getByRole('button', { name: 'Añadir a favoritas' })
+      .getByRole('button', { name: 'Favorita' })
       .focus();
 
     await userEvent.keyboard('{Escape}');
