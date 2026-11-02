@@ -127,6 +127,16 @@ T2 a T6 solo dependen de T1 y no comparten archivos; van en serie para tener un 
   - Archivos: `shared/ui/base-map/{points.ts,points.test.ts,useMapLibre.ts}` y su test, `shared/config/{constants.ts,index.ts,index.test.ts}`, este plan.
   - Dependencias: T2-T6.
 
+- [ ] **T8: Punto y cifra en una sola capa** (M, ~1 h 30 min)
+  - Descripción: en la revisión de T7, la cifra de un punto se dibujaba encima del círculo de otro cercano, porque todas las cifras van en una capa por encima de todos los círculos (`text-allow-overlap` e `text-ignore-placement`). Cada punto pasa a ser una sola capa `symbol`: un icono circular SDF (`map.addImage` con `sdf: true`) teñido con `icon-color` por tono, el anillo del seleccionado con `icon-halo-color` y `icon-halo-width`, y la cifra como `text-field` de la misma capa. `symbol-sort-key` deja el seleccionado encima. Los colores siguen saliendo de `MapColors`; el borde discontinuo de `empty` sigue como borde sólido de 2 px (halo).
+  - Aceptación:
+    - Dos puntos solapados: el de encima tapa entero al de debajo, cifra incluida (orden por `symbol-sort-key` en una sola capa).
+    - Tamaños de T7 (40 px y 48 px el seleccionado) y colores por tono sin hex fuera de `index.css`.
+    - Clic en un punto sigue seleccionando la estación.
+  - Verificación: `pnpm --filter web exec vitest run src/shared/ui/base-map`; `pnpm check:task`; `dev:mock` con las estaciones 1a y 1b.
+  - Archivos: `shared/ui/base-map/{points.ts,points.test.ts,mapLayers.ts,mapLayers.test.ts}` y lo que cree el icono SDF.
+  - Dependencias: T7.
+
 ### Checkpoint final
 
 - [ ] SC1-SC7 comprobados; CI en verde.
@@ -148,7 +158,7 @@ T2, T4, T5 y T6 dependen solo de T1 y no comparten archivos, así que podrían i
 
 ## Estimación
 
-Unas 6 h 45 min en total. Fase 1 ~2 h 45 min, fase 2 ~3 h y fase 3 ~1 h.
+Unas 8 h 15 min en total. Fase 1 ~2 h 45 min, fase 2 ~3 h y fase 3 ~2 h 30 min.
 
 ## Changelog
 
@@ -162,3 +172,4 @@ Unas 6 h 45 min en total. Fase 1 ~2 h 45 min, fase 2 ~3 h y fase 3 ~1 h.
 - 2026-11-02: T5 hecha. La etiqueta pasa de «Buscar estación por número» a «Buscar estación» y la ayuda «Busca por número de estación.» es su descripción; las dos salen del `itemLabel` de la fuente, así que el autobús dirá «Buscar parada». El botón «Borrar búsqueda» solo aparece con texto, vacía y devuelve el foco; se oculta la «×» nativa de `type="search"` para que no haya dos. Escape en el campo lo vacía; en un resultado sigue volviendo al campo sin borrar, como hoy, así que el test que lo comprueba no cambia. `useNumberSearch` expone `clearQuery` y `useResultsKeyboard` recibe `onClear`. `matchByNumber` y sus tests no cambian. 6 tests nuevos (537 en total) y `check:task` en verde salvo los avisos de aserciones reescritas.
 - 2026-11-02: T6 hecha. `StatusBanner` sustituye a `PanelNotice` (borrado; no queda ninguna referencia). `info` reutiliza los tokens `primary-soft`, `primary-soft-border` y `primary` (icono), como el aviso de ubicación del lienzo; no hay tokens `notice-info` ni hace falta crearlos. `info` usa `InfoIcon` hasta que `web-redesign-desktop` traiga el icono de ubicación y sus textos. `offline` usa fondo y texto `notice-offline`, sin línea lateral y con el icono en `currentColor`. `action` es `{ label, onClick }` y se pinta como botón con el anillo de foco en `currentColor`, para que se vea también sobre el fondo oscuro. «Sin conexión» pasa a `role="alert"`, así que el test de la lista que pedía ninguna alerta ahora pide que la única sea «Sin conexión». 8 tests nuevos (545 en total) y `check:task` en verde salvo los avisos de aserciones reescritas.
 - 2026-11-02: T7 hecha. Puntos de radio 20 y 24 y número de 14 px (antes 12, para que se lea dentro del círculo de 40 px). `MAP_MIN_ZOOM` 12 y `MAP_MAX_ZOOM` 18 en `shared/config`, pasados como `minZoom` y `maxZoom` al crear el mapa. Los radios se comprueban con un test nuevo y el anterior (seleccionado mayor que el resto) no cambia; un test nuevo fija que el seleccionado se dibuja encima. No se ha comprobado a la vista: falta revisar SC5 en `dev:mock` con el zoom inicial (15) y con el 12. Cierre: en el código de producción no queda `PanelNotice` ni «Bicis» / «Anclajes» como etiquetas del selector, y «Sin servicio» solo queda en el campo «Estado» del detalle; `pnpm --filter web build` en verde. 548 tests en total (486 tras T1). El floor guard da 35 avisos, todos aserciones reescritas por cambios de texto o de estructura buscados en T2, T4, T5 y T6, y explicadas en el commit de cada tarea.
+- 2026-11-02: se añade T8 tras la revisión visual de T7: la cifra de un punto se pintaba encima del círculo de otro cercano (estaciones 1a y 1b). El usuario elige juntar punto y cifra en una sola capa.
