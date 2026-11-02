@@ -5,10 +5,14 @@ type StatusBannerVariant = 'info' | 'stale' | 'offline';
 
 type StatusBannerAction = { label: string; onClick: () => void };
 
+type BannerIcon = typeof InfoIcon;
+
 type StatusBannerProps = {
   variant: StatusBannerVariant;
   children: ReactNode;
   action?: StatusBannerAction;
+  // Replaces the variant's icon when the notice is about something more specific.
+  icon?: BannerIcon;
 };
 
 // `status` is announced politely when it appears; losing the connection interrupts (`alert`).
@@ -34,7 +38,7 @@ const VARIANTS = {
   },
 } as const satisfies Record<
   StatusBannerVariant,
-  { role: 'status' | 'alert'; Icon: typeof InfoIcon; className: string; iconClassName: string }
+  { role: 'status' | 'alert'; Icon: BannerIcon; className: string; iconClassName: string }
 >;
 
 function ActionButton({ label, onClick }: StatusBannerAction) {
@@ -49,8 +53,9 @@ function ActionButton({ label, onClick }: StatusBannerAction) {
   );
 }
 
-export function StatusBanner({ variant, children, action }: StatusBannerProps) {
-  const { role, Icon, className, iconClassName } = VARIANTS[variant];
+export function StatusBanner({ variant, children, action, icon }: StatusBannerProps) {
+  const { role, Icon: variantIcon, className, iconClassName } = VARIANTS[variant];
+  const Icon = icon ?? variantIcon;
   return (
     <div role={role} className={`flex items-center gap-2 rounded-card p-3 text-sm ${className}`}>
       <Icon className={`size-5 shrink-0 ${iconClassName}`} />

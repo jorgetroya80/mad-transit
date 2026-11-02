@@ -16,6 +16,8 @@ export function DesktopPanel({ location }: DesktopPanelProps) {
         center={location.center}
         isApproximateLocation={location.isApproximateLocation}
         isLocationDenied={location.isLocationDenied}
+        layout="desktop"
+        onLocate={location.locate}
       />
       <footer className="mt-auto">
         <DataAttribution />

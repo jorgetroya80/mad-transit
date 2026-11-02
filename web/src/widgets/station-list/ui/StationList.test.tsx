@@ -11,6 +11,7 @@ import {
 } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env, FAVORITES_STORAGE_KEY, NEARBY_STORAGE_KEYS, POLL_INTERVAL_MS } from '@/shared/config';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { findStaleNotice } from '../../../../test/staleNotice';
 import { StationList } from './StationList';
@@ -171,6 +172,67 @@ describe('StationList', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/Sin ubicación/)).not.toBeInTheDocument();
     expect(await nearbyRegion('Cerca de la Puerta del Sol')).toBeInTheDocument();
+  });
+
+  describe('on desktop', () => {
+    const NO_LOCATION =
+      'Mostrando estaciones cerca de la Puerta del Sol porque no tenemos tu ubicación.';
+
+    function renderDesktopList(props: Partial<ListProps> = {}, onLocate = () => {}) {
+      return renderWithRouter(
+        <StationList {...LOCATED} {...props} layout="desktop" onLocate={onLocate} />,
+      );
+    }
+
+    it('says it is using the current location, under «Cerca de ti» sorted by distance', async () => {
+      await renderDesktopList();
+
+      expect(screen.getByText('Usando tu ubicación actual.')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
+      expect(await nearbyRegion('Cerca de ti')).toHaveAccessibleDescription(
+        'Ordenadas por distancia',
+      );
+    });
+
+    it('offers to use the location when it has none, and asks for it', async () => {
+      const onLocate = vi.fn<() => void>();
+      await renderDesktopList({ isApproximateLocation: true }, onLocate);
+
+      expect(screen.getByText(NO_LOCATION)).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Usar mi ubicación' }));
+
+      expect(onLocate).toHaveBeenCalledOnce();
+      expect(await nearbyRegion('Cerca de la Puerta del Sol')).toHaveAccessibleDescription(
+        'Ordenadas por distancia',
+      );
+    });
+
+    it('says the permission was not given, without offering to ask again', async () => {
+      await renderDesktopList({ isApproximateLocation: true, isLocationDenied: true });
+
+      expect(
+        screen.getByText(
+          'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
+      expect(await nearbyRegion('Cerca de la Puerta del Sol')).toBeInTheDocument();
+    });
+
+    it('says nothing about the location while it is still pending', async () => {
+      await renderDesktopList({ center: undefined });
+
+      expect(screen.queryByText('Usando tu ubicación actual.')).not.toBeInTheDocument();
+      expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
+    });
+
+    it('has no axe violations with the location notice and its action', async () => {
+      const { container } = await renderDesktopList({ isApproximateLocation: true });
+      await nearbyRegion('Cerca de la Puerta del Sol');
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
   });
 
   it('shows loading without asking for nearby stations while the location is pending', async () => {

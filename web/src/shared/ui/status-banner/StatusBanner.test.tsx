@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expectNoAxeViolations } from '../../../../test/axe';
-import { InfoIcon, OfflineIcon, WarningIcon } from '../icons';
+import { InfoIcon, LocationIcon, OfflineIcon, WarningIcon } from '../icons';
 import { StatusBanner } from './StatusBanner';
 
 function iconMarkup(Icon: typeof InfoIcon) {
@@ -31,6 +31,20 @@ describe('StatusBanner', () => {
       expect(icon?.innerHTML).toBe(expectedIcon);
     },
   );
+
+  it('shows the icon it is given instead of its variant one', () => {
+    const expectedIcon = iconMarkup(LocationIcon);
+
+    render(
+      <StatusBanner variant="info" icon={LocationIcon}>
+        Usando tu ubicación actual.
+      </StatusBanner>,
+    );
+
+    const icon = screen.getByRole('status').querySelector('svg');
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+    expect(icon?.innerHTML).toBe(expectedIcon);
+  });
 
   it('frames the stale banner like the info one, with a thin border all round', () => {
     render(<StatusBanner variant="stale">Sin confirmar</StatusBanner>);

@@ -52,6 +52,17 @@ function stubGrantedLocation() {
   });
 }
 
+const POSITION_UNAVAILABLE = 2;
+
+// The first request fails as if the position were unavailable; the next ones find the user.
+function stubLocationAfterRetry() {
+  stubGrantedLocation();
+  vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementationOnce((_, onError) =>
+    onError?.({ code: POSITION_UNAVAILABLE } as GeolocationPositionError),
+  );
+  return navigator.geolocation.getCurrentPosition;
+}
+
 function renderPage(initialEntry = '/') {
   return renderWithRouter(undefined, { initialEntries: [initialEntry] });
 }
@@ -168,6 +179,26 @@ describe('DesktopMapPage', () => {
     expect(router.state.location.search.station).toBeUndefined();
     expect(screen.queryByRole('region', { name: 'Puerta del Sol B' })).not.toBeInTheDocument();
     expect(await nearbyRow('1b')).toHaveFocus();
+  });
+
+  it('tells the list is around the user, sorted by distance', async () => {
+    await renderPage();
+
+    const nearby = await within(panel()).findByRole('region', { name: 'Cerca de ti' });
+    expect(nearby).toHaveAccessibleDescription('Ordenadas por distancia');
+    expect(within(panel()).getByText('Usando tu ubicación actual.')).toBeInTheDocument();
+  });
+
+  it('asks for the position again from the location notice', async () => {
+    const getCurrentPosition = stubLocationAfterRetry();
+    await renderPage();
+    await within(panel()).findByRole('region', { name: 'Cerca de la Puerta del Sol' });
+
+    await userEvent.click(within(panel()).getByRole('button', { name: 'Usar mi ubicación' }));
+
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
+    expect(await within(panel()).findByRole('region', { name: 'Cerca de ti' })).toBeVisible();
+    expect(within(panel()).getByText('Usando tu ubicación actual.')).toBeInTheDocument();
   });
 
   it('names the map after the stations', async () => {
