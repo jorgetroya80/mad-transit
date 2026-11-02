@@ -31,6 +31,10 @@ export type PointPainter = Pick<
 
 type Ring = { radius: number; strokeWidth: number };
 
+export function labelFont({ fontFamily }: PointStyle): string {
+  return `${LABEL_WEIGHT} ${LABEL_SIZE_PX}px ${fontFamily}`;
+}
+
 function ringOf({ tone, selected }: PointImageSpec): Ring {
   if (selected)
     return { radius: SELECTED_POINT_RADIUS_PX, strokeWidth: SELECTED_POINT_STROKE_WIDTH_PX };
@@ -63,7 +67,7 @@ export function paintPoint(painter: PointPainter, spec: PointImageSpec, style: P
   painter.strokeStyle = strokeColorOf(spec, style.colors);
   painter.stroke();
 
-  painter.font = `${LABEL_WEIGHT} ${LABEL_SIZE_PX}px ${style.fontFamily}`;
+  painter.font = labelFont(style);
   painter.textAlign = 'center';
   painter.textBaseline = 'middle';
   painter.fillStyle = toneColors.text;

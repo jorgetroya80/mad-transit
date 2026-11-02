@@ -1,6 +1,6 @@
 import type { GeoJSONSource, Map } from 'maplibre-gl';
 import { readMapColors, readMapFontFamily } from './mapColors';
-import { createPointImage, type PointStyle } from './pointImage';
+import { createPointImage, labelFont, type PointStyle } from './pointImage';
 import {
   parsePointImageId,
   POINT_LAYER_ID,
@@ -23,21 +23,37 @@ type ImageMissingListener = (event: { id: string }) => void;
 export type PointImageHost = {
   hasImage(id: string): boolean;
   addImage(id: string, image: ImageData, options: { pixelRatio: number }): void;
+  updateImage(id: string, image: ImageData): void;
   on(type: typeof IMAGE_MISSING_EVENT, listener: ImageMissingListener): unknown;
   off(type: typeof IMAGE_MISSING_EVENT, listener: ImageMissingListener): unknown;
 };
 
-// Paints each point image the first time the layer asks for it; returns how to stop.
+// Paints each point image the first time the layer asks for it; returns how to stop. Images painted
+// before the app font loaded are painted again once it has, so no number keeps the fallback font.
 export function paintMissingPointImages(map: PointImageHost, style: PointStyle) {
   const pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
+  const painted = new Set<string>();
+  let isStopped = false;
   const onImageMissing: ImageMissingListener = ({ id }) => {
     const spec = parsePointImageId(id);
     if (!spec || map.hasImage(id)) return;
     const image = createPointImage(spec, style, pixelRatio);
-    if (image) map.addImage(id, image, { pixelRatio });
+    if (!image) return;
+    map.addImage(id, image, { pixelRatio });
+    painted.add(id);
   };
+  const repaintInFont = () => {
+    if (isStopped) return;
+    for (const id of painted) {
+      const spec = parsePointImageId(id);
+      const image = spec && createPointImage(spec, style, pixelRatio);
+      if (image) map.updateImage(id, image);
+    }
+  };
+  void document.fonts?.load(labelFont(style)).then(repaintInFont, () => {});
   map.on(IMAGE_MISSING_EVENT, onImageMissing);
   return () => {
+    isStopped = true;
     map.off(IMAGE_MISSING_EVENT, onImageMissing);
   };
 }
