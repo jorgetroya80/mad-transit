@@ -39,7 +39,7 @@ T2 a T6 solo dependen de T1 y no comparten archivos; van en serie para tener un 
 
 ### Fase 1: Base y estación
 
-- [ ] **T1: `axe-core` e iconos** (S, ~45 min)
+- [x] **T1: `axe-core` e iconos** (S, ~45 min)
   - Descripción: instalar `axe-core@4.14.0` exacta en `devDependencies`. `web/test/axe.ts` exporta `expectNoAxeViolations(container)`, que llama a `axe.run` y falla con el id, la ayuda y los nodos de cada infracción. `shared/ui/icons/` con los iconos de este módulo, exportados desde `shared/ui`.
   - Aceptación:
     - Un test del *helper* pasa con un botón con nombre y falla con un botón vacío.
@@ -155,3 +155,4 @@ Unas 6 h 45 min en total. Fase 1 ~2 h 45 min, fase 2 ~3 h y fase 3 ~1 h.
 - 2026-11-02: borrador a partir de la spec aprobada.
 - 2026-11-02: T7 añade los límites de zoom 12 y 18, a petición del usuario.
 - 2026-11-02: aprobado por el usuario.
+- 2026-11-02: T1 hecha. `axe-core` 4.14.0 exacta en `devDependencies`. `expectNoAxeViolations` lanza un error con el id, la ayuda y el selector de cada nodo, y solo desactiva `color-contrast`; los tests lo importan con ruta relativa, como `renderWithRouter`. Los seis iconos comparten `IconFrame` (viewBox 24, `currentColor`, trazo 2, `aria-hidden`) en `shared/ui/icons/icons.tsx` y se exportan desde `shared/ui`. 8 tests nuevos (486 en total) y `check:task` en verde.
