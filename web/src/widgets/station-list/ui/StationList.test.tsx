@@ -123,9 +123,9 @@ describe('StationList', () => {
     await within(region).findAllByRole('button', { name: /^Estación/ });
 
     expect(rowNames(region)).toEqual([
-      'Estación 1a, Puerta del Sol A, a 12 m, 12 bicis',
-      'Estación 1b, Puerta del Sol B, a 18 m, 2 bicis',
-      'Estación 2, Miguel Moya, a 420 m, Sin servicio',
+      'Estación 1a, Puerta del Sol A, 12 metros, 1 minuto a pie, 12 bicis',
+      'Estación 1b, Puerta del Sol B, 18 metros, 1 minuto a pie, 2 bicis',
+      'Estación 2, Miguel Moya, 420 metros, 6 minutos a pie, Sin servicio',
     ]);
     expect(within(region).getByRole('heading', { level: 2 })).toHaveTextContent('Cerca de ti');
     expect(screen.queryByText(/Sin ubicación/)).not.toBeInTheDocument();
@@ -250,7 +250,7 @@ describe('StationList', () => {
 
     expect(
       await screen.findByRole('button', {
-        name: 'Estación 1a, Puerta del Sol A, a 12 m, 12 bicis, sin confirmar',
+        name: 'Estación 1a, Puerta del Sol A, 12 metros, 1 minuto a pie, 12 bicis, sin confirmar',
       }),
     ).toBeInTheDocument();
   });
@@ -432,9 +432,9 @@ describe('StationList', () => {
 
     expect(requests.map((url) => url.searchParams.get('need'))).toEqual(['docks']);
     expect(rowNames(region)).toEqual([
-      'Estación 1a, Puerta del Sol A, a 12 m, 12 anclajes libres',
-      'Estación 1b, Puerta del Sol B, a 18 m, 22 anclajes libres',
-      'Estación 2, Miguel Moya, a 420 m, Sin servicio',
+      'Estación 1a, Puerta del Sol A, 12 metros, 1 minuto a pie, 12 anclajes libres',
+      'Estación 1b, Puerta del Sol B, 18 metros, 1 minuto a pie, 22 anclajes libres',
+      'Estación 2, Miguel Moya, 420 metros, 6 minutos a pie, Sin servicio',
     ]);
   });
 });

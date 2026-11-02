@@ -1,6 +1,7 @@
 import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import { StationRow } from './StationRow';
 
 const station = {
@@ -17,7 +18,9 @@ describe('StationRow', () => {
     render(<StationRow station={station} need="bikes" status="ok" />);
 
     expect(
-      screen.getByRole('button', { name: 'Estación 1a, Puerta del Sol A, a 120 m, 12 bicis' }),
+      screen.getByRole('button', {
+        name: 'Estación 1a, Puerta del Sol A, 120 metros, 2 minutos a pie, 12 bicis',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -43,6 +46,22 @@ describe('StationRow', () => {
     expect(screen.queryByText('12 bicis, Disponible')).toBeNull();
   });
 
+  it('shows the distance and the walking time on one line', () => {
+    render(<StationRow station={station} need="bikes" status="ok" />);
+
+    expect(screen.getByText('120 m · 2 min a pie')).toBeInTheDocument();
+  });
+
+  it('shows a long name whole, wrapping instead of truncating it', () => {
+    const name = 'Glorieta de Embajadores esquina con la Ronda de Valencia';
+
+    render(<StationRow station={{ ...station, name }} need="bikes" status="ok" />);
+
+    const nameText = screen.getByText(name);
+    expect(nameText).not.toHaveClass('truncate');
+    expect(nameText.className).not.toMatch(/line-clamp/);
+  });
+
   it('omits the distance when the station has none', () => {
     const { distanceMeters: _omitted, ...withoutDistance } = station;
 
@@ -50,6 +69,12 @@ describe('StationRow', () => {
 
     const row = screen.getByRole('button', { name: 'Estación 1a, Puerta del Sol A, 12 bicis' });
     expect(row).not.toHaveTextContent(' m');
+  });
+
+  it('has no axe violations', async () => {
+    const { container } = render(<StationRow station={station} need="bikes" status="ok" />);
+
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 
   it('says "Sin servicio" for a station out of service', () => {
@@ -85,7 +110,7 @@ describe('StationRow', () => {
 
     expect(
       screen.getByRole('button', {
-        name: 'Estación 1a, Puerta del Sol A, a 120 m, 12 bicis, sin confirmar',
+        name: 'Estación 1a, Puerta del Sol A, 120 metros, 2 minutos a pie, 12 bicis, sin confirmar',
       }),
     ).toBeInTheDocument();
   });

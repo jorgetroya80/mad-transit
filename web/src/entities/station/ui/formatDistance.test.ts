@@ -1,4 +1,4 @@
-import { formatDistance } from './formatDistance';
+import { formatDistance, formatSpokenDistance } from './formatDistance';
 
 describe('formatDistance', () => {
   it.each([
@@ -12,5 +12,16 @@ describe('formatDistance', () => {
     [12_345, '12,3 km'],
   ])('formats %d m as "%s"', (meters, expected) => {
     expect(formatDistance(meters)).toBe(expected);
+  });
+});
+
+describe('formatSpokenDistance', () => {
+  it.each([
+    [1, '1 metro'],
+    [57, '57 metros'],
+    [999.6, '1 kilómetro'],
+    [1234, '1,2 kilómetros'],
+  ])('says %d m as "%s"', (meters, expected) => {
+    expect(formatSpokenDistance(meters)).toBe(expected);
   });
 });
