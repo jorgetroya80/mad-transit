@@ -22,7 +22,10 @@ export function ApproximateLocationNotice({
   );
 }
 
-type DesktopLocationNoticeProps = LocationNoticeProps & { onLocate: () => void };
+type DesktopLocationNoticeProps = LocationNoticeProps & {
+  onLocate: () => void;
+  isLocating: boolean;
+};
 
 // Always on screen, so the user knows what the list is around. A denied permission is not
 // asked again: the browser would not show its prompt.
@@ -30,6 +33,7 @@ export function DesktopLocationNotice({
   isApproximateLocation,
   isLocationDenied,
   onLocate,
+  isLocating,
 }: DesktopLocationNoticeProps) {
   if (!isApproximateLocation) {
     return (
@@ -49,7 +53,11 @@ export function DesktopLocationNotice({
     <StatusBanner
       variant="info"
       icon={LocationIcon}
-      action={{ label: 'Usar mi ubicación', onClick: onLocate }}
+      action={{
+        label: isLocating ? 'Localizando…' : 'Usar mi ubicación',
+        onClick: onLocate,
+        isPending: isLocating,
+      }}
     >
       Mostrando estaciones cerca de la Puerta del Sol porque no tenemos tu ubicación.
     </StatusBanner>

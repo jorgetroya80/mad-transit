@@ -18,6 +18,7 @@ export function DesktopPanel({ location }: DesktopPanelProps) {
         isLocationDenied={location.isLocationDenied}
         layout="desktop"
         onLocate={location.locate}
+        isLocating={location.status === 'pending'}
       />
       <footer className="mt-auto flex flex-col gap-3">
         <AvailabilityLegend />

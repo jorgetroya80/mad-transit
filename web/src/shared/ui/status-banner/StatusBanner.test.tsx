@@ -74,6 +74,35 @@ describe('StatusBanner', () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
+  it('keeps a pending action focusable but busy, and ignores its clicks', async () => {
+    const onClick = vi.fn<() => void>();
+    render(
+      <StatusBanner variant="info" action={{ label: 'Localizando…', onClick, isPending: true }}>
+        Sin ubicación
+      </StatusBanner>,
+    );
+    const button = screen.getByRole('button', { name: 'Localizando…' });
+
+    await userEvent.click(button);
+
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toBeEnabled();
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('marks an idle action neither busy nor disabled', () => {
+    render(
+      <StatusBanner variant="info" action={{ label: 'Usar mi ubicación', onClick: () => {} }}>
+        Sin ubicación
+      </StatusBanner>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Usar mi ubicación' });
+    expect(button).not.toHaveAttribute('aria-busy');
+    expect(button).not.toHaveAttribute('aria-disabled');
+  });
+
   it.each(['info', 'stale', 'offline'] as const)('has no axe violations as %s', async (variant) => {
     const { container } = render(
       <StatusBanner variant={variant} action={{ label: 'Reintentar', onClick: () => {} }}>

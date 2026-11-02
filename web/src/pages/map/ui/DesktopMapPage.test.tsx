@@ -1,5 +1,6 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { FAVORITES_STORAGE_KEY } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { stubMatchMedia } from '../../../../test/matchMedia';
@@ -15,12 +16,21 @@ type CapturedMapProps = {
 
 const mapRenders = vi.hoisted(() => [] as CapturedMapProps[]);
 
-// jsdom has no WebGL: the map is only its named container and records the props it receives.
+// jsdom has no WebGL: the map is only its named container, with one button standing for its
+// controls, and records the props it receives.
 vi.mock('@/shared/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof SharedUi>()),
   BaseMap: (props: CapturedMapProps) => {
     mapRenders.push(props);
-    return <section aria-label={props.label} className={props.className} />;
+    return (
+      <section aria-label={props.label} className={props.className}>
+        {props.onRecenter ? (
+          <button type="button" onClick={props.onRecenter}>
+            Centrar en mi posición
+          </button>
+        ) : null}
+      </section>
+    );
   },
 }));
 
@@ -62,6 +72,29 @@ function stubLocationAfterRetry() {
     onError?.({ code: POSITION_UNAVAILABLE } as GeolocationPositionError),
   );
   return navigator.geolocation.getCurrentPosition;
+}
+
+// The first request fails as if the position were unavailable; the next one never answers.
+function stubLocationPendingAfterRetry() {
+  const getCurrentPosition = vi.fn<Geolocation['getCurrentPosition']>();
+  getCurrentPosition.mockImplementationOnce((_, onError) =>
+    onError?.({ code: POSITION_UNAVAILABLE } as GeolocationPositionError),
+  );
+  Object.defineProperty(navigator, 'geolocation', {
+    value: { getCurrentPosition },
+    configurable: true,
+  });
+}
+
+// Tabs from the start of the page through every stop, until the focus leaves the page.
+async function tabStops(): Promise<Element[]> {
+  const stops: Element[] = [];
+  for (;;) {
+    await userEvent.tab();
+    const focused = document.activeElement;
+    if (!focused || focused === document.body || stops.includes(focused)) return stops;
+    stops.push(focused);
+  }
 }
 
 function renderPage(initialEntry = '/') {
@@ -215,6 +248,22 @@ describe('DesktopMapPage', () => {
     expect(within(panel()).getByText('Usando tu ubicación actual.')).toBeInTheDocument();
   });
 
+  it('says it is locating while the notice asks for the position', async () => {
+    stubLocationPendingAfterRetry();
+    await renderPage();
+    await within(panel()).findByRole('region', { name: 'Cerca de la Puerta del Sol' });
+
+    await userEvent.click(within(panel()).getByRole('button', { name: 'Usar mi ubicación' }));
+
+    expect(within(panel()).getByRole('button', { name: 'Localizando…' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    expect(
+      within(panel()).getByRole('region', { name: 'Cerca de la Puerta del Sol' }),
+    ).toBeVisible();
+  });
+
   it('recenters the map on the user by asking for the position again', async () => {
     const getCurrentPosition = stubLocationAfterRetry();
     await renderPage();
@@ -243,9 +292,35 @@ describe('DesktopMapPage', () => {
     expect(screen.getByRole('button', { name: 'Estaciones' })).toBeInTheDocument();
   });
 
+  it('tabs through search, mode, location notice, favorites, list, map and card in order', async () => {
+    stubLocationAfterRetry();
+    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(['1b']));
+    await renderPage('/?station=1a');
+    const nearby = await within(panel()).findByRole('region', {
+      name: 'Cerca de la Puerta del Sol',
+    });
+    const card = await screen.findByRole('region', { name: 'Puerta del Sol A' });
+    const expectedOrder = [
+      within(panel()).getByRole('searchbox'),
+      within(panel()).getByRole('button', { name: 'Sacar bici' }),
+      within(panel()).getByRole('button', { name: 'Usar mi ubicación' }),
+      within(panel()).getByRole('button', { name: 'Favoritas · 1' }),
+      (await within(nearby).findAllByRole('button', { name: /^Estación/ }))[0],
+      screen.getByRole('button', { name: 'Centrar en mi posición' }),
+      within(card).getByRole('button', { name: 'Cerrar' }),
+    ];
+
+    const stops = await tabStops();
+
+    const positions = expectedOrder.map((element) => stops.indexOf(element as Element));
+    expect(positions).not.toContain(-1);
+    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+  });
+
   it('has no axe violations', async () => {
     const { container } = await renderPage('/?station=1a');
     await within(panel()).findByRole('region', { name: 'Cerca de ti' });
+    await screen.findByRole('region', { name: 'Puerta del Sol A' });
 
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });

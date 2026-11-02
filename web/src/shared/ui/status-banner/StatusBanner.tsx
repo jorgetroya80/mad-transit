@@ -3,7 +3,8 @@ import { InfoIcon, OfflineIcon, WarningIcon } from '../icons';
 
 type StatusBannerVariant = 'info' | 'stale' | 'offline';
 
-type StatusBannerAction = { label: string; onClick: () => void };
+// A pending action says so in its label and stays focusable, like `LocateButton`.
+type StatusBannerAction = { label: string; onClick: () => void; isPending?: boolean };
 
 type BannerIcon = typeof InfoIcon;
 
@@ -41,12 +42,14 @@ const VARIANTS = {
   { role: 'status' | 'alert'; Icon: BannerIcon; className: string; iconClassName: string }
 >;
 
-function ActionButton({ label, onClick }: StatusBannerAction) {
+function ActionButton({ label, onClick, isPending = false }: StatusBannerAction) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="ml-auto min-h-11 shrink-0 rounded-control px-3 font-semibold underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+      aria-busy={isPending || undefined}
+      aria-disabled={isPending || undefined}
+      onClick={isPending ? undefined : onClick}
+      className="ml-auto min-h-11 shrink-0 rounded-control px-3 font-semibold underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current aria-disabled:cursor-wait"
     >
       {label}
     </button>

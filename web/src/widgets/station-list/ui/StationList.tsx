@@ -11,7 +11,9 @@ import { StationSection } from './StationSection';
 
 // On desktop the location notice is always there and can ask for the position, and the
 // mode cards already say what the numbers count, so the heading says how the list is sorted.
-type LayoutProps = { layout?: 'mobile' } | { layout: 'desktop'; onLocate: () => void };
+type LayoutProps =
+  | { layout?: 'mobile' }
+  | { layout: 'desktop'; onLocate: () => void; isLocating?: boolean };
 
 type StationListProps = {
   // Undefined while the location is still being resolved: the nearby list waits for it.
@@ -42,6 +44,7 @@ function LocationNotice({
       isApproximateLocation={isApproximateLocation}
       isLocationDenied={isLocationDenied}
       onLocate={layout.onLocate}
+      isLocating={layout.isLocating ?? false}
     />
   );
 }

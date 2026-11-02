@@ -213,6 +213,26 @@ describe('StationList', () => {
       );
     });
 
+    it('says it is locating while it asks for the position again', async () => {
+      const onLocate = vi.fn<() => void>();
+      await renderWithRouter(
+        <StationList
+          center={SOL}
+          isApproximateLocation
+          layout="desktop"
+          onLocate={onLocate}
+          isLocating
+        />,
+      );
+
+      const button = screen.getByRole('button', { name: 'Localizando…' });
+      expect(button).toHaveAttribute('aria-busy', 'true');
+      expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
+      await userEvent.click(button);
+
+      expect(onLocate).not.toHaveBeenCalled();
+    });
+
     it('says the permission was not given, without offering to ask again', async () => {
       await renderDesktopList({ isApproximateLocation: true, isLocationDenied: true });
 
