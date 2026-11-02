@@ -23,7 +23,7 @@ const VARIANTS = {
   stale: {
     role: 'status',
     Icon: WarningIcon,
-    className: 'border-l-4 border-notice-stale-line bg-notice-stale text-notice-stale-foreground',
+    className: 'border border-notice-stale-line bg-notice-stale text-notice-stale-foreground',
     iconClassName: 'text-notice-stale-icon',
   },
   offline: {

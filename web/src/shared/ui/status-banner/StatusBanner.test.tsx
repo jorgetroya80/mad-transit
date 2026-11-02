@@ -32,6 +32,14 @@ describe('StatusBanner', () => {
     },
   );
 
+  it('frames the stale banner like the info one, with a thin border all round', () => {
+    render(<StatusBanner variant="stale">Sin confirmar</StatusBanner>);
+
+    const banner = screen.getByRole('status');
+    expect(banner).toHaveClass('border', 'border-notice-stale-line');
+    expect(banner).not.toHaveClass('border-l-4');
+  });
+
   it('renders no button without an action', () => {
     render(<StatusBanner variant="info">Sin ubicación</StatusBanner>);
 
