@@ -12,9 +12,9 @@ describe('availabilityText', () => {
     expect(availabilityText('good', count, need)).toBe(expected);
   });
 
-  it('says "Sin servicio" when the station is off, whatever the count', () => {
-    expect(availabilityText('off', 7, 'bikes')).toBe('Sin servicio');
-    expect(availabilityText('off', 0, 'docks')).toBe('Sin servicio');
+  it('says "Fuera de servicio" when the station is off, whatever the count', () => {
+    expect(availabilityText('off', 7, 'bikes')).toBe('Fuera de servicio');
+    expect(availabilityText('off', 0, 'docks')).toBe('Fuera de servicio');
   });
 
   it.each([

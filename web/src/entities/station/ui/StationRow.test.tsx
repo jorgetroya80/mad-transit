@@ -77,10 +77,10 @@ describe('StationRow', () => {
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 
-  it('says "Sin servicio" for a station out of service', () => {
+  it('says "Fuera de servicio" for a station out of service', () => {
     render(<StationRow station={{ ...station, status: 'NO_SERVICE' }} need="bikes" status="ok" />);
 
-    expect(screen.getByRole('button', { name: /, Sin servicio$/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /, Fuera de servicio$/ })).toBeInTheDocument();
   });
 
   it('forwards onClick, ref and data attributes to the native button', async () => {

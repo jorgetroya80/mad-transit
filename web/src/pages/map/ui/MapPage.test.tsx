@@ -158,12 +158,27 @@ describe('MapPage', () => {
 
         const region = panel();
         expect(within(region).getByRole('searchbox')).toBeInTheDocument();
-        expect(within(region).getByRole('button', { name: 'Anclajes' })).toBeInTheDocument();
+        expect(within(region).getByRole('button', { name: 'Dejar bici' })).toBeInTheDocument();
         expect(within(region).getByRole('button', { name: 'Mi ubicación' })).toBeInTheDocument();
         expect(
           await within(region).findByRole('region', { name: 'Cerca de ti' }),
         ).toBeInTheDocument();
         expect(within(region).getByRole('link', { name: 'EMT de Madrid' })).toBeInTheDocument();
+      },
+    );
+
+    it.each([
+      { isWide: true, description: 'Anclajes libres' },
+      { isWide: false, description: '' },
+    ])(
+      'shows the mode as cards only from md (from md: $isWide)',
+      async ({ isWide, description }) => {
+        stubMatchMedia(isWide);
+        await renderPage();
+
+        expect(screen.getByRole('button', { name: 'Dejar bici' })).toHaveAccessibleDescription(
+          description,
+        );
       },
     );
   });
@@ -247,14 +262,14 @@ describe('MapPage', () => {
       expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: PUERTA_DEL_SOL_A });
     });
 
-    it('asks for free docks with "Anclajes" without going back to loading (SC3)', async () => {
+    it('asks for free docks with "Dejar bici" without going back to loading (SC3)', async () => {
       const requests = recordNearbyRequests();
       const docks = holdDocksResponse();
       const user = userEvent.setup();
       const { router } = await renderPage();
       await rowIn('Cerca de ti', '1a');
 
-      await user.click(screen.getByRole('button', { name: 'Anclajes' }));
+      await user.click(screen.getByRole('button', { name: 'Dejar bici' }));
 
       expect(router.state.location.href).toBe('/?need=docks');
       await waitFor(() => expect(requests.at(-1)?.searchParams.get('need')).toBe('docks'));
@@ -270,7 +285,10 @@ describe('MapPage', () => {
       await renderPage('/?need=xyz');
 
       expect(await rowIn('Cerca de ti', '1a')).toHaveAccessibleName(/12 bicis$/);
-      expect(screen.getByRole('button', { name: 'Bicis' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: 'Sacar bici' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
       expect(requests.map((url) => url.searchParams.get('need'))).toEqual(['bikes']);
     });
 
