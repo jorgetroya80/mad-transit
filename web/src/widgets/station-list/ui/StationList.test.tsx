@@ -10,7 +10,13 @@ import {
   stationsFixture,
 } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
-import { env, FAVORITES_STORAGE_KEY, NEARBY_STORAGE_KEYS, POLL_INTERVAL_MS } from '@/shared/config';
+import {
+  env,
+  FAVORITES_OPEN_STORAGE_KEY,
+  FAVORITES_STORAGE_KEY,
+  NEARBY_STORAGE_KEYS,
+  POLL_INTERVAL_MS,
+} from '@/shared/config';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { findStaleNotice } from '../../../../test/staleNotice';
@@ -225,6 +231,47 @@ describe('StationList', () => {
 
       expect(screen.queryByText('Usando tu ubicación actual.')).not.toBeInTheDocument();
       expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
+    });
+
+    it('folds the favorites under «Favoritas · N» and remembers it (SC5)', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      saveFavorites(['3', '1b']);
+      const { unmount } = await renderDesktopList();
+      const header = await screen.findByRole('button', { name: 'Favoritas · 2' });
+      const favorites = screen.getByRole('region', { name: 'Favoritas · 2' });
+      await within(favorites).findAllByRole('button', { name: /^Estación/ });
+
+      expect(header).toHaveAttribute('aria-expanded', 'true');
+      expect(favorites.closest('[data-station-list="favorites"]')).not.toBeNull();
+      await user.click(header);
+
+      expect(header).toHaveAttribute('aria-expanded', 'false');
+      expect(within(favorites).queryByRole('button', { name: /^Estación/ })).toBeNull();
+      expect(localStorage.getItem(FAVORITES_OPEN_STORAGE_KEY)).toBe('false');
+      unmount();
+
+      await renderDesktopList();
+
+      expect(await screen.findByRole('button', { name: 'Favoritas · 2' })).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      );
+    });
+
+    it('has no favorites header without favorites', async () => {
+      await renderDesktopList();
+      await nearbyRegion();
+
+      expect(screen.queryByRole('button', { name: /^Favoritas/ })).not.toBeInTheDocument();
+    });
+
+    it('has no axe violations with the favorites folded', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      saveFavorites(['1b']);
+      const { container } = await renderDesktopList();
+      await user.click(await screen.findByRole('button', { name: 'Favoritas · 1' }));
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });
 
     it('has no axe violations with the location notice and its action', async () => {

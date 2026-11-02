@@ -1,5 +1,6 @@
 export { BaseMap, type FocusPadding, type MapPoint, type MapPointTone } from './base-map';
 export { BottomSheet, useBottomSheetOverlap } from './bottom-sheet';
+export { CollapsibleSection } from './collapsible-section';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
 export {

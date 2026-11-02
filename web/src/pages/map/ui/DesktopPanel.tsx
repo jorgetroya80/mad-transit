@@ -1,6 +1,6 @@
 import { NeedToggle } from '@/features/filter-by-need';
 import { DataAttribution } from '@/shared/ui';
-import { StationList } from '@/widgets/station-list';
+import { AvailabilityLegend, StationList } from '@/widgets/station-list';
 import { TransitSearch } from '@/widgets/transit-search';
 import type { MapLocation } from '../model/useMapLocation';
 
@@ -19,7 +19,8 @@ export function DesktopPanel({ location }: DesktopPanelProps) {
         layout="desktop"
         onLocate={location.locate}
       />
-      <footer className="mt-auto">
+      <footer className="mt-auto flex flex-col gap-3">
+        <AvailabilityLegend />
         <DataAttribution />
       </footer>
     </div>

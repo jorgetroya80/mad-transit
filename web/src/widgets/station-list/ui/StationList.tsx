@@ -59,7 +59,12 @@ export function StationList(props: StationListProps) {
       {nearby.status === 'offline' && nearby.stations ? (
         <StatusBanner variant="offline">Sin conexión</StatusBanner>
       ) : null}
-      <FavoriteStations need={need} selectedNumber={selectedNumber} onSelect={select} />
+      <FavoriteStations
+        need={need}
+        selectedNumber={selectedNumber}
+        onSelect={select}
+        isCollapsible={layout === 'desktop'}
+      />
       <StationSection
         section="nearby"
         heading={isApproximateLocation ? 'Cerca de la Puerta del Sol' : 'Cerca de ti'}

@@ -113,6 +113,19 @@ describe('DesktopMapPage', () => {
     expect(within(region).queryByRole('button', { name: 'Mi ubicación' })).not.toBeInTheDocument();
   });
 
+  it('ends the panel with the availability legend, before the attribution', async () => {
+    await renderPage();
+
+    const legend = within(panel()).getByRole('list', { name: 'Leyenda' });
+    const attribution = within(panel()).getByRole('link', { name: 'EMT de Madrid' });
+    expect(legend.compareDocumentPosition(attribution)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(
+      (await within(panel()).findByRole('region', { name: 'Cerca de ti' })).compareDocumentPosition(
+        legend,
+      ),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('keeps the list in the panel with a station selected, without its detail', async () => {
     await renderPage('/?station=1a');
 
