@@ -41,7 +41,7 @@ export function StationRow({ station, need, status, className = '', ...props }: 
       <span className="w-10 shrink-0 font-semibold text-fg tabular-nums">{station.number}</span>
       <span className="min-w-0 flex-1 truncate text-fg">{station.name}</span>
       {distance ? <span className="shrink-0 text-sm text-fg-muted">{distance}</span> : null}
-      <AvailabilityBadge level={level} count={count} need={need} />
+      <AvailabilityBadge level={level} count={count} need={need} decorative />
     </button>
   );
 }

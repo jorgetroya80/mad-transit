@@ -124,3 +124,4 @@ Ninguna.
 - 2026-11-02: el usuario aprueba `axe-core` 4.14.0 en lugar de `vitest-axe` (supuesto 8).
 - 2026-11-02: aprobada por el usuario.
 - 2026-11-02: el mapa limita el zoom entre 12 y 18 (supuesto 6), a petición del usuario, para que los puntos de 40 px no se amontonen al alejar.
+- 2026-11-02: nuevo token `--color-availability-off-label` (`#4b5563`, el gris de `off`) para la etiqueta de `off` del supuesto 1, que no lo tenía; elegido por el usuario.

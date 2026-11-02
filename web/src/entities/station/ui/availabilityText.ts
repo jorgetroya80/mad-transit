@@ -8,9 +8,13 @@ const NOUNS = {
 const OFF_TEXT = 'Sin servicio';
 const UNCONFIRMED_SUFFIX = ', sin confirmar';
 
+export function availabilityCountText(count: number, need: Need): string {
+  const noun = count === 1 ? NOUNS[need].one : NOUNS[need].other;
+  return `${count} ${noun}`;
+}
+
 export function availabilityText(level: AvailabilityLevel, count: number, need: Need): string {
   if (level === 'off') return OFF_TEXT;
-  const noun = count === 1 ? NOUNS[need].one : NOUNS[need].other;
   const suffix = level === 'unconfirmed' ? UNCONFIRMED_SUFFIX : '';
-  return `${count} ${noun}${suffix}`;
+  return `${availabilityCountText(count, need)}${suffix}`;
 }

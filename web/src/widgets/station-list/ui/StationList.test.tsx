@@ -12,6 +12,7 @@ import {
 import { server } from '@/shared/api/mocks/node';
 import { env, FAVORITES_STORAGE_KEY, NEARBY_STORAGE_KEYS, POLL_INTERVAL_MS } from '@/shared/config';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
+import { findStaleNotice } from '../../../../test/staleNotice';
 import { StationList } from './StationList';
 
 const STATIONS_URL = `${env.apiBaseUrl}/v1/bicimad/stations`;
@@ -216,7 +217,7 @@ describe('StationList', () => {
     failNearby();
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
 
-    expect(await screen.findByText(/^Sin confirmar/, {}, AFTER_RETRY)).toBeInTheDocument();
+    expect(await findStaleNotice(AFTER_RETRY)).toBeInTheDocument();
     expect(screen.queryByText('No se pudo actualizar')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
     expect(screen.getByText(/Actualizado/)).toBeInTheDocument();
@@ -231,9 +232,7 @@ describe('StationList', () => {
 
     await renderList();
 
-    expect(await screen.findByText(/Sin confirmar/)).toHaveTextContent(
-      'Sin confirmar: datos de hace 35 minutos',
-    );
+    expect(await findStaleNotice()).toHaveTextContent('Sin confirmar: datos de hace 35 minutos');
   });
 
   it('warns without a time about stale data that just arrived with an invalid updatedAt', async () => {
@@ -241,7 +240,7 @@ describe('StationList', () => {
 
     await renderList();
 
-    expect(await screen.findByText(/Sin confirmar/)).toHaveTextContent(/^Sin confirmar$/);
+    expect(await findStaleNotice()).toHaveTextContent(/^Sin confirmar$/);
   });
 
   it('greys out the counts of unconfirmed data', async () => {
@@ -284,7 +283,7 @@ describe('StationList', () => {
     // The fixtures are 5 min old at NOW: the next clock tick passes the limit.
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
 
-    expect(await screen.findByText(/^Sin confirmar/)).toBeInTheDocument();
+    expect(await findStaleNotice()).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
   });
 
@@ -358,7 +357,7 @@ describe('StationList', () => {
 
     await renderList();
 
-    expect(await screen.findByText(/^Sin confirmar/, {}, AFTER_RETRY)).toBeInTheDocument();
+    expect(await findStaleNotice(AFTER_RETRY)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });

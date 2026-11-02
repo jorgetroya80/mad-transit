@@ -1,48 +1,69 @@
 import { render, screen } from '@testing-library/react';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import { AvailabilityBadge } from './AvailabilityBadge';
+
+const PILL_SIZE = ['h-7.5', 'w-10', 'md:h-8', 'md:w-11'];
 
 describe('AvailabilityBadge', () => {
   it.each([
-    { level: 'good', count: 12, need: 'bikes', text: '12 bicis' },
-    { level: 'low', count: 1, need: 'bikes', text: '1 bici' },
-    { level: 'empty', count: 0, need: 'docks', text: '0 anclajes libres' },
-    { level: 'low', count: 4, need: 'docks', text: '4 anclajes libres' },
+    { level: 'good', count: 12, need: 'bikes', number: '12', label: 'Disponible' },
+    { level: 'good', count: 9, need: 'docks', number: '9', label: 'Disponible' },
+    { level: 'low', count: 2, need: 'bikes', number: '2', label: 'Pocas' },
+    { level: 'low', count: 1, need: 'docks', number: '1', label: 'Pocos' },
+    { level: 'empty', count: 0, need: 'bikes', number: '0', label: 'Sin bicis' },
+    { level: 'empty', count: 0, need: 'docks', number: '0', label: 'Sin hueco' },
+    { level: 'off', count: 7, need: 'bikes', number: '–', label: 'Fuera de servicio' },
+    { level: 'off', count: 7, need: 'docks', number: '–', label: 'Fuera de servicio' },
+    { level: 'unconfirmed', count: 3, need: 'bikes', number: '3', label: 'Sin confirmar' },
+    { level: 'unconfirmed', count: 3, need: 'docks', number: '3', label: 'Sin confirmar' },
   ] as const)(
-    'shows $level $count $need as "$text" and the number',
-    ({ level, count, need, text }) => {
+    'shows $level $need as "$number" in the pill and "$label" below it',
+    ({ level, count, need, number, label }) => {
       render(<AvailabilityBadge level={level} count={count} need={need} />);
 
-      const badge = screen.getByText(text).parentElement;
-      expect(badge).toHaveClass(`bg-availability-${level}`);
-      expect(badge).toHaveTextContent(String(count));
+      const pill = screen.getByText(number);
+      expect(pill).toHaveClass(`bg-availability-${level}`, ...PILL_SIZE);
+      expect(screen.getByText(label, { ignore: '.sr-only' })).toHaveClass(
+        `text-availability-${level}-label`,
+      );
     },
   );
 
-  it('draws the empty badge with a dashed border and keeps the screen-reader text', () => {
+  it.each([
+    { level: 'low', count: 1, need: 'bikes', text: '1 bici, Pocas' },
+    { level: 'empty', count: 0, need: 'docks', text: '0 anclajes libres, Sin hueco' },
+    { level: 'unconfirmed', count: 3, need: 'bikes', text: '3 bicis, Sin confirmar' },
+    { level: 'off', count: 7, need: 'bikes', text: 'Fuera de servicio' },
+  ] as const)('tells screen readers "$text"', ({ level, count, need, text }) => {
+    render(<AvailabilityBadge level={level} count={count} need={need} />);
+
+    expect(screen.getByText(text, { selector: '.sr-only' })).toBeInTheDocument();
+  });
+
+  it('draws the empty pill with a dashed border', () => {
     render(<AvailabilityBadge level="empty" count={0} need="bikes" />);
 
-    const badge = screen.getByText('0 bicis').parentElement;
-    expect(badge).toHaveClass('border-2', 'border-dashed', 'border-availability-empty-line');
-    expect(screen.getByText('0 bicis')).toHaveClass('sr-only');
-    expect(badge).toHaveTextContent('0');
-  });
-
-  it('says "Sin servicio" instead of the count when the station is off', () => {
-    render(<AvailabilityBadge level="off" count={7} need="bikes" />);
-
-    const badge = screen.getByText('Sin servicio').parentElement;
-    expect(badge).toHaveClass('bg-availability-off');
-    expect(badge).not.toHaveTextContent('7');
-  });
-
-  it('shows the count of unconfirmed data in grey and says it is not confirmed', () => {
-    render(<AvailabilityBadge level="unconfirmed" count={3} need="bikes" />);
-
-    const badge = screen.getByText('3 bicis, sin confirmar').parentElement;
-    expect(badge).toHaveClass(
-      'bg-availability-unconfirmed',
-      'text-availability-unconfirmed-foreground',
+    expect(screen.getByText('0')).toHaveClass(
+      'border-2',
+      'border-dashed',
+      'border-availability-empty-line',
     );
-    expect(badge).toHaveTextContent('3');
+  });
+
+  it('hides the whole badge from assistive technology when decorative', () => {
+    const { container } = render(
+      <AvailabilityBadge level="low" count={2} need="bikes" decorative />,
+    );
+
+    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+    expect(container.querySelector('.sr-only')).toBeNull();
+  });
+
+  it.each([false, true])('has no axe violations (decorative: %s)', async (decorative) => {
+    const { container } = render(
+      <AvailabilityBadge level="good" count={12} need="bikes" decorative={decorative} />,
+    );
+
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 });

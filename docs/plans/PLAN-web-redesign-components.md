@@ -48,7 +48,7 @@ T2 a T6 solo dependen de T1 y no comparten archivos; van en serie para tener un 
   - Archivos: `web/package.json`, `pnpm-lock.yaml`, `web/test/{axe.ts,axe.test.ts}`, `web/src/shared/ui/icons/*`, `web/src/shared/ui/index.ts`.
   - Dependencias: ninguna.
 
-- [ ] **T2: Insignia con etiqueta** (M, ~1 h)
+- [x] **T2: Insignia con etiqueta** (M, ~1 h)
   - Descripción: `availabilityStatusText(level, need)` con los textos del lienzo (`good` «Disponible»; `low` «Pocas» / «Pocos»; `empty` «Sin bicis» / «Sin hueco»; `off` «Fuera de servicio»; `unconfirmed` «Sin confirmar»). `AvailabilityBadge` pasa a píldora de 40 × 30 px y 44 × 32 px desde `md`, con la etiqueta debajo en `text-availability-*-label`. Prop `decorative`: dentro de la fila, todo `aria-hidden`; en el detalle, conserva su texto para lectores de pantalla.
   - Aceptación:
     - Los cinco niveles en los dos modos muestran cifra y etiqueta (SC1).
@@ -156,3 +156,4 @@ Unas 6 h 45 min en total. Fase 1 ~2 h 45 min, fase 2 ~3 h y fase 3 ~1 h.
 - 2026-11-02: T7 añade los límites de zoom 12 y 18, a petición del usuario.
 - 2026-11-02: aprobado por el usuario.
 - 2026-11-02: T1 hecha. `axe-core` 4.14.0 exacta en `devDependencies`. `expectNoAxeViolations` lanza un error con el id, la ayuda y el selector de cada nodo, y solo desactiva `color-contrast`; los tests lo importan con ruta relativa, como `renderWithRouter`. Los seis iconos comparten `IconFrame` (viewBox 24, `currentColor`, trazo 2, `aria-hidden`) en `shared/ui/icons/icons.tsx` y se exportan desde `shared/ui`. 8 tests nuevos (486 en total) y `check:task` en verde.
+- 2026-11-02: T2 hecha. Faltaba el token de la etiqueta de `off`; el usuario elige `--color-availability-off-label: #4b5563`, el mismo gris de la píldora. La insignia es una píldora de tamaño fijo (`h-7.5 w-10`, `md:h-8 md:w-11`) sin relleno por nivel; `empty` conserva el borde discontinuo. Sin `decorative`, el lector oye «<cifra>, <etiqueta>» («3 bicis, Pocas») y `off` solo «Fuera de servicio»; `StationRow` ya la pasa `decorative` sin cambiar su nombre accesible. `availabilityCountText` sale de `availabilityText` para no repetir el plural. Los tests del detalle y de la lista buscan el aviso «Sin confirmar» con `findStaleNotice` (`web/test/staleNotice.ts`), que ignora lo oculto con `aria-hidden`, porque la insignia también lo dice. 26 tests nuevos (512 en total) y `check:task` en verde.

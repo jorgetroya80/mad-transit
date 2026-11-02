@@ -36,6 +36,13 @@ describe('StationRow', () => {
     expect(row).toHaveTextContent('120 m');
   });
 
+  it('leaves the availability badge to the row name, hidden from assistive technology', () => {
+    render(<StationRow station={station} need="bikes" status="ok" />);
+
+    expect(screen.getByText('Disponible').parentElement).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByText('12 bicis, Disponible')).toBeNull();
+  });
+
   it('omits the distance when the station has none', () => {
     const { distanceMeters: _omitted, ...withoutDistance } = station;
 
