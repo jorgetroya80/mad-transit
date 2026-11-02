@@ -1,7 +1,7 @@
 # Spec: web-redesign-components
 
 - Created: 2026-11-02
-- Status: **approved** (2026-11-02)
+- Status: **implemented** (2026-11-02)
 - Plan: [PLAN-web-redesign-components.md](../plans/PLAN-web-redesign-components.md)
 
 Módulo `web-redesign-components` del [Capability Map](CAPABILITY-MAP.md), el tercero del rediseño de la UI. Cubre la parte de la fase 3 («Componentes atómicos») del documento «Mad Transit — Especificación de UI» (revisión 32) y del lienzo «Mad Transit · rediseño», que son privados, que ya tiene un componente en el repo: cada pieza se evoluciona en su sitio, sin componentes paralelos. Las piezas nuevas (cabecera, indicador de actualización, tarjeta de estación, leyenda, controles del mapa, favoritas plegables) llegan con `web-redesign-desktop`, donde se colocan.
@@ -125,3 +125,4 @@ Ninguna.
 - 2026-11-02: aprobada por el usuario.
 - 2026-11-02: el mapa limita el zoom entre 12 y 18 (supuesto 6), a petición del usuario, para que los puntos de 40 px no se amontonen al alejar.
 - 2026-11-02: nuevo token `--color-availability-off-label` (`#4b5563`, el gris de `off`) para la etiqueta de `off` del supuesto 1, que no lo tenía; elegido por el usuario.
+- 2026-11-02: implementada; en `main` con el PR #95 y desplegada como web 0.7.0.
