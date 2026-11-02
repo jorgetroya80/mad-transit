@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import type { SearchSource } from '../model/types';
 import { SearchByNumber } from './SearchByNumber';
 
@@ -55,6 +56,10 @@ function status() {
   return screen.getByRole('status');
 }
 
+function clearButton() {
+  return screen.queryByRole('button', { name: 'Borrar búsqueda' });
+}
+
 describe('SearchByNumber', () => {
   describe('with one source', () => {
     it('shows no service selector and labels the box with the item label', () => {
@@ -62,9 +67,15 @@ describe('SearchByNumber', () => {
 
       expect(screen.queryByRole('group')).not.toBeInTheDocument();
       expect(screen.queryByRole('radio')).not.toBeInTheDocument();
-      expect(screen.getByRole('searchbox', { name: 'Buscar estación por número' })).toBeVisible();
+      expect(screen.getByRole('searchbox', { name: 'Buscar estación' })).toBeVisible();
       expect(searchBox()).toHaveAttribute('autocomplete', 'off');
       expect(searchBox()).toHaveAttribute('inputmode', 'text');
+    });
+
+    it('describes the box with how to search', () => {
+      render(<SearchByNumber sources={[bicimadSource()]} />);
+
+      expect(searchBox()).toHaveAccessibleDescription('Busca por número de estación.');
     });
 
     it('starts with no results and no message', () => {
@@ -148,6 +159,30 @@ describe('SearchByNumber', () => {
       expect(searchBox()).toHaveFocus();
       expect(searchBox()).toHaveValue('1');
       expect(resultNumbers()).toEqual(['1a', '1b', '10']);
+    });
+
+    it('clears the box with Escape in the box', async () => {
+      render(<SearchByNumber sources={[bicimadSource()]} />);
+      await userEvent.type(searchBox(), '1');
+
+      await userEvent.keyboard('{Escape}');
+
+      expect(searchBox()).toHaveFocus();
+      expect(searchBox()).toHaveValue('');
+      expect(screen.queryByRole('list')).not.toBeInTheDocument();
+    });
+
+    it('lets Escape through when the box is already empty', async () => {
+      const prevented: boolean[] = [];
+      const recordEscape = (event: KeyboardEvent) => prevented.push(event.defaultPrevented);
+      document.addEventListener('keydown', recordEscape);
+      render(<SearchByNumber sources={[bicimadSource()]} />);
+      await userEvent.click(searchBox());
+
+      await userEvent.keyboard('{Escape}');
+      document.removeEventListener('keydown', recordEscape);
+
+      expect(prevented).toEqual([false]);
     });
 
     it('chooses the focused result with Enter and clears the box', async () => {
@@ -236,6 +271,41 @@ describe('SearchByNumber', () => {
     });
   });
 
+  describe('clear button', () => {
+    it('appears only when the box has text', async () => {
+      render(<SearchByNumber sources={[bicimadSource()]} />);
+      expect(clearButton()).not.toBeInTheDocument();
+
+      await userEvent.type(searchBox(), '1');
+
+      expect(clearButton()).toBeVisible();
+    });
+
+    it('clears the box and puts the focus back in it', async () => {
+      render(<SearchByNumber sources={[bicimadSource()]} />);
+      await userEvent.type(searchBox(), '1');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Borrar búsqueda' }));
+
+      expect(searchBox()).toHaveValue('');
+      expect(searchBox()).toHaveFocus();
+      expect(screen.queryByRole('list')).not.toBeInTheDocument();
+      expect(clearButton()).not.toBeInTheDocument();
+    });
+  });
+
+  describe('accessibility', () => {
+    it.each([
+      { state: 'without results', query: '' },
+      { state: 'with results', query: '1' },
+    ])('has no axe violations $state', async ({ query }) => {
+      const { container } = render(<SearchByNumber sources={[bicimadSource()]} />);
+      if (query) await userEvent.type(searchBox(), query);
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+  });
+
   describe('states', () => {
     it('announces loading with the plural item label', async () => {
       render(<SearchByNumber sources={[bicimadSource({ items: [], status: 'loading' })]} />);
@@ -278,7 +348,7 @@ describe('SearchByNumber', () => {
       expect(screen.getByRole('group', { name: 'Servicio' })).toBeVisible();
       expect(screen.getByRole('radio', { name: 'BiciMAD' })).toBeChecked();
       expect(screen.getByRole('radio', { name: 'Autobús' })).not.toBeChecked();
-      expect(searchBox()).toHaveAccessibleName('Buscar estación por número');
+      expect(searchBox()).toHaveAccessibleName('Buscar estación');
     });
 
     it('searches only in the chosen source and keeps the text when switching', async () => {
@@ -290,7 +360,7 @@ describe('SearchByNumber', () => {
 
       await userEvent.click(screen.getByRole('radio', { name: 'Autobús' }));
 
-      expect(searchBox()).toHaveAccessibleName('Buscar parada por número');
+      expect(searchBox()).toHaveAccessibleName('Buscar parada');
       expect(searchBox()).toHaveValue('1');
       expect(resultNumbers()).toEqual(['12', '1234']);
       expect(status()).toHaveTextContent('2 paradas');

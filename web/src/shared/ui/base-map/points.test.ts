@@ -1,9 +1,10 @@
 import type { MapColors } from './mapColors';
 import {
-  POINT_CIRCLE_LAYER_ID,
-  POINT_LABEL_LAYER_ID,
+  parsePointImageId,
+  POINT_LAYER_ID,
   POINTS_SOURCE_ID,
-  pointLayers,
+  pointImageId,
+  pointLayer,
   toFeatureCollection,
   toUserLocationCollection,
   USER_LOCATION_LAYER_ID,
@@ -28,8 +29,6 @@ const colors: MapColors = {
   pointSelectedStroke: '#selected-stroke',
   emptyStroke: '#empty-stroke',
 };
-
-const isEmptyTone = ['==', ['get', 'tone'], 'empty'];
 
 describe('toFeatureCollection', () => {
   it('turns each point into a GeoJSON point with [lng, lat] coordinates', () => {
@@ -74,96 +73,64 @@ describe('toUserLocationCollection', () => {
   });
 });
 
-describe('pointLayers', () => {
-  it('draws circles and labels from the points source, labels on top', () => {
-    const [circle, label] = pointLayers(colors);
+describe('pointLayer', () => {
+  it('draws every point as one image from the points source, with no separate text', () => {
+    const layer = pointLayer();
 
-    expect(circle).toMatchObject({ id: POINT_CIRCLE_LAYER_ID, type: 'circle' });
-    expect(circle.source).toBe(POINTS_SOURCE_ID);
-    expect(label).toMatchObject({ id: POINT_LABEL_LAYER_ID, type: 'symbol' });
-    expect(label.source).toBe(POINTS_SOURCE_ID);
+    expect(layer).toMatchObject({ id: POINT_LAYER_ID, type: 'symbol', source: POINTS_SOURCE_ID });
+    expect(layer.layout?.['text-field']).toBeUndefined();
   });
 
-  it('fills each circle with the color of its tone', () => {
-    const [circle] = pointLayers(colors);
-
-    expect(circle.paint?.['circle-color']).toEqual([
-      'match',
+  it('names the image of each point after its tone, selection and label', () => {
+    expect(pointLayer().layout?.['icon-image']).toEqual([
+      'concat',
+      'point:',
       ['get', 'tone'],
-      'good',
-      '#good',
-      'low',
-      '#low',
-      'empty',
-      '#empty',
-      'unconfirmed',
-      '#unconfirmed',
-      '#off',
+      ':',
+      ['case', ['get', 'selected'], '1', '0'],
+      ':',
+      ['get', 'label'],
     ]);
   });
 
-  it('writes the label with a font of the liberty style, in the text color of its tone', () => {
-    const [, label] = pointLayers(colors);
+  it('shows every point, even when points overlap', () => {
+    const { layout } = pointLayer();
 
-    expect(label.layout?.['text-field']).toEqual(['get', 'label']);
-    expect(label.layout?.['text-font']).toEqual(['Noto Sans Bold']);
-    expect(label.paint?.['text-color']).toEqual([
-      'match',
-      ['get', 'tone'],
-      'good',
-      '#good-text',
-      'low',
-      '#low-text',
-      'empty',
-      '#empty-text',
-      'unconfirmed',
-      '#unconfirmed-text',
-      '#off-text',
-    ]);
+    expect(layout?.['icon-allow-overlap']).toBe(true);
+    expect(layout?.['icon-ignore-placement']).toBe(true);
   });
 
-  it('makes the selected point bigger, with a thicker border', () => {
-    const [circle] = pointLayers(colors);
-    const radius = circle.paint?.['circle-radius'];
-    const strokeWidth = circle.paint?.['circle-stroke-width'];
+  it('draws the selected point above the rest', () => {
+    expect(pointLayer().layout?.['symbol-sort-key']).toEqual(['case', ['get', 'selected'], 1, 0]);
+  });
+});
 
-    expect(radius).toEqual(['case', ['get', 'selected'], expect.any(Number), expect.any(Number)]);
-    expect(strokeWidth).toEqual([
-      'case',
-      ['get', 'selected'],
-      expect.any(Number),
-      isEmptyTone,
-      expect.any(Number),
-      expect.any(Number),
-    ]);
-    const [, , selectedRadius, radiusOtherwise] = radius as [string, unknown, number, number];
-    expect(selectedRadius).toBeGreaterThan(radiusOtherwise);
-    const [, , selectedWidth, , , widthOtherwise] = strokeWidth as unknown[];
-    expect(selectedWidth).toBeGreaterThan(widthOtherwise as number);
+describe('pointImageId', () => {
+  it.each([
+    { tone: 'good', selected: false, label: '7', id: 'point:good:0:7' },
+    { tone: 'low', selected: true, label: '25A', id: 'point:low:1:25A' },
+    { tone: 'off', selected: false, label: '–', id: 'point:off:0:–' },
+  ] as const)('names $label as "$id" and reads it back', (spec) => {
+    const { id, ...image } = spec;
+
+    expect(pointImageId(image)).toBe(id);
+    expect(parsePointImageId(id)).toEqual(image);
   });
 
-  it('borders the empty tone with a 2 px line, between the selected and the other widths', () => {
-    const [circle] = pointLayers(colors);
-    const strokeWidth = circle.paint?.['circle-stroke-width'] as unknown[];
-    const [, , selectedWidth, , emptyWidth, widthOtherwise] = strokeWidth;
-
-    expect(emptyWidth).toBe(2);
-    expect(selectedWidth).toBeGreaterThan(emptyWidth as number);
-    expect(emptyWidth).toBeGreaterThan(widthOtherwise as number);
+  it('keeps a label that contains the separator', () => {
+    expect(parsePointImageId('point:good:0:1:2')).toEqual({
+      tone: 'good',
+      selected: false,
+      label: '1:2',
+    });
   });
 
-  it('strokes the selected point, then the empty tone, then the rest with their theme colors', () => {
-    const [circle] = pointLayers(colors);
-
-    expect(circle.paint?.['circle-stroke-color']).toEqual([
-      'case',
-      ['get', 'selected'],
-      '#selected-stroke',
-      isEmptyTone,
-      '#empty-stroke',
-      '#stroke',
-    ]);
-  });
+  it.each(['road-shield', 'point:blue:0:7', 'point:good:0'])(
+    'ignores "%s", which is not a point image',
+    (id) => {
+      expect(parsePointImageId(id)).toBeUndefined();
+    },
+  );
 });
 
 describe('userLocationLayer', () => {

@@ -7,6 +7,7 @@ import { staleStationsFixture, stationsFixture } from '@/shared/api/mocks/fixtur
 import { server } from '@/shared/api/mocks/node';
 import { env, POLL_INTERVAL_MS, STATIONS_STORAGE_KEY } from '@/shared/config';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
+import { findStaleNotice } from '../../../../test/staleNotice';
 import { StationDetail } from './StationDetail';
 
 const STATIONS_URL = `${env.apiBaseUrl}/v1/bicimad/stations`;
@@ -200,9 +201,7 @@ describe('StationDetail', () => {
 
     await renderDetail();
 
-    expect(await screen.findByText(/Sin confirmar/)).toHaveTextContent(
-      'Sin confirmar: datos de hace 35 minutos',
-    );
+    expect(await findStaleNotice()).toHaveTextContent('Sin confirmar: datos de hace 35 minutos');
   });
 
   it('greys out the counts when the data is not confirmed', async () => {
@@ -211,8 +210,8 @@ describe('StationDetail', () => {
     await renderDetail();
     await openedTitle();
 
-    expect(field('Bicis')).toHaveTextContent('12 bicis, sin confirmar');
-    expect(field('Anclajes libres')).toHaveTextContent('12 anclajes libres, sin confirmar');
+    expect(field('Bicis')).toHaveTextContent('12 bicis, Sin confirmar');
+    expect(field('Anclajes libres')).toHaveTextContent('12 anclajes libres, Sin confirmar');
   });
 
   it('dates the station by its arrival when updatedAt is invalid', async () => {
@@ -247,7 +246,7 @@ describe('StationDetail', () => {
     failStation();
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
 
-    expect(await screen.findByText(/^Sin confirmar/, {}, AFTER_RETRY)).toBeInTheDocument();
+    expect(await findStaleNotice(AFTER_RETRY)).toBeInTheDocument();
     expect(screen.queryByText('No se pudo actualizar')).not.toBeInTheDocument();
     expect(field('Bicis')).toHaveTextContent('12 bicis');
   });
@@ -284,7 +283,7 @@ describe('StationDetail', () => {
     await renderDetail();
 
     expect(await openedTitle()).toBeInTheDocument();
-    expect(await screen.findByText(/^Sin confirmar/)).toBeInTheDocument();
+    expect(await findStaleNotice()).toBeInTheDocument();
     expect(field('Bicis')).toHaveTextContent('12 bicis');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });

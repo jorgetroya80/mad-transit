@@ -13,11 +13,12 @@ export function useNumberSearch(sources: SearchSources) {
   const source = sources.find((candidate) => candidate.id === selectedId) ?? first;
   const results = matchByNumber(source.items, query, SEARCH_MAX_RESULTS);
   // Clearing the box after choosing leaves it ready for the next search.
+  const clearQuery = () => setQuery('');
   const choose = (item: SearchItem) => {
-    setQuery('');
+    clearQuery();
     source.onSelect(item.number);
   };
 
   // Only the source changes: the same query is searched again in the new one.
-  return { source, query, results, choose, setQuery, selectSource: setSelectedId };
+  return { source, query, results, choose, setQuery, clearQuery, selectSource: setSelectedId };
 }

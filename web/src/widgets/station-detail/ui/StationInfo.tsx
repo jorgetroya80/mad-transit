@@ -1,7 +1,7 @@
 import type { Coordinates, DataStatus, Station } from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
 import { FavoriteButton } from '@/features/toggle-favorite';
-import { PanelNotice, StaleNotice, UpdatedAt } from '@/shared/ui';
+import { StaleNotice, StatusBanner, UpdatedAt } from '@/shared/ui';
 import { useStationDistance } from '../model/useStationDistance';
 import { StationFields } from './StationFields';
 
@@ -19,7 +19,7 @@ export function StationInfo({ station, status, updatedAt, center }: StationInfoP
   return (
     <>
       {status === 'stale' ? <StaleNotice updatedAt={updatedAt} /> : null}
-      {status === 'offline' ? <PanelNotice>Sin conexión</PanelNotice> : null}
+      {status === 'offline' ? <StatusBanner variant="offline">Sin conexión</StatusBanner> : null}
       <StationFields station={station} status={status} distanceMeters={distanceMeters} />
       <FavoriteButton number={station.number} className="self-start" />
       {updatedAt ? <UpdatedAt date={updatedAt} /> : null}

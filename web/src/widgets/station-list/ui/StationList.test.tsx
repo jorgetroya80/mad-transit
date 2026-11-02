@@ -12,6 +12,7 @@ import {
 import { server } from '@/shared/api/mocks/node';
 import { env, FAVORITES_STORAGE_KEY, NEARBY_STORAGE_KEYS, POLL_INTERVAL_MS } from '@/shared/config';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
+import { findStaleNotice } from '../../../../test/staleNotice';
 import { StationList } from './StationList';
 
 const STATIONS_URL = `${env.apiBaseUrl}/v1/bicimad/stations`;
@@ -122,9 +123,9 @@ describe('StationList', () => {
     await within(region).findAllByRole('button', { name: /^Estación/ });
 
     expect(rowNames(region)).toEqual([
-      'Estación 1a, Puerta del Sol A, a 12 m, 12 bicis',
-      'Estación 1b, Puerta del Sol B, a 18 m, 2 bicis',
-      'Estación 2, Miguel Moya, a 420 m, Sin servicio',
+      'Estación 1a, Puerta del Sol A, 12 metros, 1 minuto a pie, 12 bicis',
+      'Estación 1b, Puerta del Sol B, 18 metros, 1 minuto a pie, 2 bicis',
+      'Estación 2, Miguel Moya, 420 metros, 6 minutos a pie, Fuera de servicio',
     ]);
     expect(within(region).getByRole('heading', { level: 2 })).toHaveTextContent('Cerca de ti');
     expect(screen.queryByText(/Sin ubicación/)).not.toBeInTheDocument();
@@ -216,7 +217,7 @@ describe('StationList', () => {
     failNearby();
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
 
-    expect(await screen.findByText(/^Sin confirmar/, {}, AFTER_RETRY)).toBeInTheDocument();
+    expect(await findStaleNotice(AFTER_RETRY)).toBeInTheDocument();
     expect(screen.queryByText('No se pudo actualizar')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
     expect(screen.getByText(/Actualizado/)).toBeInTheDocument();
@@ -231,9 +232,7 @@ describe('StationList', () => {
 
     await renderList();
 
-    expect(await screen.findByText(/Sin confirmar/)).toHaveTextContent(
-      'Sin confirmar: datos de hace 35 minutos',
-    );
+    expect(await findStaleNotice()).toHaveTextContent('Sin confirmar: datos de hace 35 minutos');
   });
 
   it('warns without a time about stale data that just arrived with an invalid updatedAt', async () => {
@@ -241,7 +240,7 @@ describe('StationList', () => {
 
     await renderList();
 
-    expect(await screen.findByText(/Sin confirmar/)).toHaveTextContent(/^Sin confirmar$/);
+    expect(await findStaleNotice()).toHaveTextContent(/^Sin confirmar$/);
   });
 
   it('greys out the counts of unconfirmed data', async () => {
@@ -251,7 +250,7 @@ describe('StationList', () => {
 
     expect(
       await screen.findByRole('button', {
-        name: 'Estación 1a, Puerta del Sol A, a 12 m, 12 bicis, sin confirmar',
+        name: 'Estación 1a, Puerta del Sol A, 12 metros, 1 minuto a pie, 12 bicis, sin confirmar',
       }),
     ).toBeInTheDocument();
   });
@@ -284,7 +283,7 @@ describe('StationList', () => {
     // The fixtures are 5 min old at NOW: the next clock tick passes the limit.
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
 
-    expect(await screen.findByText(/^Sin confirmar/)).toBeInTheDocument();
+    expect(await findStaleNotice()).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
   });
 
@@ -298,7 +297,7 @@ describe('StationList', () => {
 
     expect(await screen.findByText('Sin conexión')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/^Sin conexión$/);
   });
 
   it('asks again and drops the notice when the connection returns', async () => {
@@ -358,7 +357,7 @@ describe('StationList', () => {
 
     await renderList();
 
-    expect(await screen.findByText(/^Sin confirmar/, {}, AFTER_RETRY)).toBeInTheDocument();
+    expect(await findStaleNotice(AFTER_RETRY)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
@@ -433,9 +432,9 @@ describe('StationList', () => {
 
     expect(requests.map((url) => url.searchParams.get('need'))).toEqual(['docks']);
     expect(rowNames(region)).toEqual([
-      'Estación 1a, Puerta del Sol A, a 12 m, 12 anclajes libres',
-      'Estación 1b, Puerta del Sol B, a 18 m, 22 anclajes libres',
-      'Estación 2, Miguel Moya, a 420 m, Sin servicio',
+      'Estación 1a, Puerta del Sol A, 12 metros, 1 minuto a pie, 12 anclajes libres',
+      'Estación 1b, Puerta del Sol B, 18 metros, 1 minuto a pie, 22 anclajes libres',
+      'Estación 2, Miguel Moya, 420 metros, 6 minutos a pie, Fuera de servicio',
     ]);
   });
 });

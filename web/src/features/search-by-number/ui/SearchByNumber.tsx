@@ -13,11 +13,8 @@ type SearchByNumberProps = {
 export function SearchByNumber({ sources }: SearchByNumberProps) {
   const search = useNumberSearch(sources);
   const { source, query, results } = search;
-  const { inputRef, listRef, onInputKeyDown, onResultKeyDown } = useResultsKeyboard({
-    results,
-    query,
-    onChoose: search.choose,
-  });
+  const { inputRef, listRef, onInputKeyDown, onResultKeyDown, clearAndFocusInput } =
+    useResultsKeyboard({ results, query, onChoose: search.choose, onClear: search.clearQuery });
 
   return (
     <div className="flex flex-col gap-2">
@@ -30,6 +27,7 @@ export function SearchByNumber({ sources }: SearchByNumberProps) {
         query={query}
         onQueryChange={search.setQuery}
         onKeyDown={onInputKeyDown}
+        onClear={clearAndFocusInput}
       />
       {results.length > 0 ? (
         <ResultList

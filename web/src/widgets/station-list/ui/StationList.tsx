@@ -1,7 +1,7 @@
 import type { Coordinates } from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
-import { PanelNotice, StaleNotice } from '@/shared/ui';
+import { StaleNotice, StatusBanner } from '@/shared/ui';
 import { needCaption } from '../lib/needCaption';
 import { useNearbyList } from '../model/useNearbyList';
 import { FavoriteStations } from './FavoriteStations';
@@ -29,15 +29,15 @@ export function StationList({
   return (
     <div className="flex flex-col gap-4">
       {isApproximateLocation ? (
-        <PanelNotice>
+        <StatusBanner variant="info">
           {isLocationDenied
             ? 'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol'
             : 'Sin ubicación: mostrando estaciones cerca de la Puerta del Sol'}
-        </PanelNotice>
+        </StatusBanner>
       ) : null}
       {nearby.status === 'stale' ? <StaleNotice updatedAt={nearby.updatedAt} /> : null}
       {nearby.status === 'offline' && nearby.stations ? (
-        <PanelNotice>Sin conexión</PanelNotice>
+        <StatusBanner variant="offline">Sin conexión</StatusBanner>
       ) : null}
       <FavoriteStations need={need} onSelect={select} />
       <StationSection

@@ -1,4 +1,4 @@
-import { availabilityText } from './availabilityText';
+import { availabilityCountText, availabilityText } from './availabilityText';
 
 describe('availabilityText', () => {
   it.each([
@@ -12,9 +12,9 @@ describe('availabilityText', () => {
     expect(availabilityText('good', count, need)).toBe(expected);
   });
 
-  it('says "Sin servicio" when the station is off, whatever the count', () => {
-    expect(availabilityText('off', 7, 'bikes')).toBe('Sin servicio');
-    expect(availabilityText('off', 0, 'docks')).toBe('Sin servicio');
+  it('says "Fuera de servicio" when the station is off, whatever the count', () => {
+    expect(availabilityText('off', 7, 'bikes')).toBe('Fuera de servicio');
+    expect(availabilityText('off', 0, 'docks')).toBe('Fuera de servicio');
   });
 
   it.each([
@@ -23,5 +23,16 @@ describe('availabilityText', () => {
     [0, 'bikes', '0 bicis, sin confirmar'],
   ] as const)('says unconfirmed %i %s as "%s"', (count, need, expected) => {
     expect(availabilityText('unconfirmed', count, need)).toBe(expected);
+  });
+});
+
+describe('availabilityCountText', () => {
+  it.each([
+    [1, 'bikes', '1 bici'],
+    [3, 'bikes', '3 bicis'],
+    [1, 'docks', '1 anclaje libre'],
+    [0, 'docks', '0 anclajes libres'],
+  ] as const)('says %i %s as "%s"', (count, need, expected) => {
+    expect(availabilityCountText(count, need)).toBe(expected);
   });
 });
