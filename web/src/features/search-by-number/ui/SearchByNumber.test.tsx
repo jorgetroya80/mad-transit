@@ -172,6 +172,19 @@ describe('SearchByNumber', () => {
       expect(screen.queryByRole('list')).not.toBeInTheDocument();
     });
 
+    it('lets Escape through when the box is already empty', async () => {
+      const prevented: boolean[] = [];
+      const recordEscape = (event: KeyboardEvent) => prevented.push(event.defaultPrevented);
+      document.addEventListener('keydown', recordEscape);
+      render(<SearchByNumber sources={[bicimadSource()]} />);
+      await userEvent.click(searchBox());
+
+      await userEvent.keyboard('{Escape}');
+      document.removeEventListener('keydown', recordEscape);
+
+      expect(prevented).toEqual([false]);
+    });
+
     it('chooses the focused result with Enter and clears the box', async () => {
       const source = bicimadSource();
       render(<SearchByNumber sources={[source]} />);

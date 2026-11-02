@@ -16,7 +16,7 @@ const INPUT = -1;
 /**
  * Arrow keys move the real focus between the search box and the result buttons. Choosing does
  * not move it: the source decides (the page focuses the detail it opens). Escape on a result goes
- * back to the box; Escape in the box clears it.
+ * back to the box; Escape in the box clears it, and lets the key through when there is nothing to clear.
  */
 export function useResultsKeyboard({ results, query, onChoose, onClear }: ResultsKeyboardOptions) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +35,7 @@ export function useResultsKeyboard({ results, query, onChoose, onClear }: Result
     } else if (event.key === 'Enter' && first && isExactMatch(first, query)) {
       event.preventDefault();
       onChoose(first);
-    } else if (event.key === 'Escape') {
+    } else if (event.key === 'Escape' && query !== '') {
       event.preventDefault();
       onClear();
     }
