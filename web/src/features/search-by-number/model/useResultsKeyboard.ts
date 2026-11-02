@@ -7,6 +7,7 @@ type ResultsKeyboardOptions = {
   results: readonly SearchItem[];
   query: string;
   onChoose: (item: SearchItem) => void;
+  onClear: () => void;
 };
 
 // Target index for the search box: ArrowUp on the first result also lands there.
@@ -14,9 +15,10 @@ const INPUT = -1;
 
 /**
  * Arrow keys move the real focus between the search box and the result buttons. Choosing does
- * not move it: the source decides (the page focuses the detail it opens).
+ * not move it: the source decides (the page focuses the detail it opens). Escape on a result goes
+ * back to the box; Escape in the box clears it.
  */
-export function useResultsKeyboard({ results, query, onChoose }: ResultsKeyboardOptions) {
+export function useResultsKeyboard({ results, query, onChoose, onClear }: ResultsKeyboardOptions) {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -33,7 +35,15 @@ export function useResultsKeyboard({ results, query, onChoose }: ResultsKeyboard
     } else if (event.key === 'Enter' && first && isExactMatch(first, query)) {
       event.preventDefault();
       onChoose(first);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      onClear();
     }
+  };
+
+  const clearAndFocusInput = () => {
+    onClear();
+    focusInput();
   };
 
   const onResultKeyDown = (event: KeyboardEvent, index: number) => {
@@ -49,5 +59,5 @@ export function useResultsKeyboard({ results, query, onChoose }: ResultsKeyboard
     else focusResult(target);
   };
 
-  return { inputRef, listRef, onInputKeyDown, onResultKeyDown };
+  return { inputRef, listRef, onInputKeyDown, onResultKeyDown, clearAndFocusInput };
 }

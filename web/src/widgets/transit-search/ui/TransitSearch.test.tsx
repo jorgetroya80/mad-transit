@@ -37,7 +37,7 @@ function serveStations(stations: Station[]) {
 }
 
 function searchBox() {
-  return screen.getByRole('searchbox', { name: 'Buscar estación por número' });
+  return screen.getByRole('searchbox', { name: 'Buscar estación' });
 }
 
 function resultNumbers() {
