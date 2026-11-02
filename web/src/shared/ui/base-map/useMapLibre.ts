@@ -70,14 +70,16 @@ export function useMapLibre(
       attributionControl: false,
     });
     const stopPlacingAttribution = placeAttribution(map);
+    let stopPaintingPoints = () => {};
     map.on('load', () => {
-      addPointLayers(map);
+      stopPaintingPoints = addPointLayers(map);
       listenToPointClicks(map, (id) => onSelectPointRef.current?.(id));
       setLoadedMap(map);
     });
 
     return () => {
       stopPlacingAttribution();
+      stopPaintingPoints();
       map.remove();
     };
   }, [containerRef]);

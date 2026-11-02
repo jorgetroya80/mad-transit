@@ -10,8 +10,7 @@ import {
 } from '@/shared/config';
 import { BaseMap } from './BaseMap';
 import {
-  POINT_CIRCLE_LAYER_ID,
-  POINT_LABEL_LAYER_ID,
+  POINT_LAYER_ID,
   POINTS_SOURCE_ID,
   toFeatureCollection,
   toUserLocationCollection,
@@ -38,6 +37,7 @@ const maplibre = vi.hoisted(() => {
     readonly addControl = vi.fn<(control: unknown, position?: string) => void>();
     readonly removeControl = vi.fn<(control: unknown) => void>();
     readonly remove = vi.fn<() => void>();
+    readonly off = vi.fn<(type: string, handler: Handler) => void>();
     readonly addLayer = vi.fn<(layer: { id: string; source?: unknown }) => void>();
     readonly easeTo = vi.fn<(options: unknown) => void>();
     readonly sources = new Map<string, MockSource>();
@@ -264,19 +264,28 @@ describe('BaseMap points', () => {
       USER_LOCATION_SOURCE_ID,
     ]);
     expect(map.addLayer.mock.calls.map(([layer]) => layer.id)).toEqual([
-      POINT_CIRCLE_LAYER_ID,
-      POINT_LABEL_LAYER_ID,
+      POINT_LAYER_ID,
       USER_LOCATION_LAYER_ID,
     ]);
   });
 
-  it('paints the layers with the theme colors', () => {
+  it('paints the user location with the theme color', () => {
     render(<BaseMap points={points} />);
     const map = loadedMap();
 
     const layers = map.addLayer.mock.calls.map(([layer]) => JSON.stringify(layer));
-    expect(layers[0]).toContain('#15803d');
-    expect(layers[2]).toContain('#2563eb');
+    expect(layers[1]).toContain('#2563eb');
+  });
+
+  it('paints the point images on demand until the map is removed', () => {
+    const { unmount } = render(<BaseMap points={points} />);
+    const map = loadedMap();
+    const [painter] = map.subscriptions.filter(({ type }) => type === 'styleimagemissing');
+    expect(painter).toBeDefined();
+
+    unmount();
+
+    expect(map.off).toHaveBeenCalledWith('styleimagemissing', painter?.handler);
   });
 
   it('applies the points passed before the style loaded', () => {
@@ -318,7 +327,7 @@ describe('BaseMap points', () => {
     const map = loadedMap();
     rerender(<BaseMap points={points} onSelectPoint={latest} />);
 
-    map.fire('click', POINT_CIRCLE_LAYER_ID, { features: [{ properties: { id: '2' } }] });
+    map.fire('click', POINT_LAYER_ID, { features: [{ properties: { id: '2' } }] });
 
     expect(latest).toHaveBeenCalledExactlyOnceWith('2');
     expect(first).not.toHaveBeenCalled();
@@ -329,7 +338,7 @@ describe('BaseMap points', () => {
     render(<BaseMap points={points} onSelectPoint={onSelectPoint} />);
     const map = loadedMap();
 
-    map.fire('click', POINT_CIRCLE_LAYER_ID, { features: [] });
+    map.fire('click', POINT_LAYER_ID, { features: [] });
 
     expect(onSelectPoint).not.toHaveBeenCalled();
   });
@@ -338,10 +347,10 @@ describe('BaseMap points', () => {
     render(<BaseMap points={points} />);
     const map = loadedMap();
 
-    map.fire('mouseenter', POINT_CIRCLE_LAYER_ID);
+    map.fire('mouseenter', POINT_LAYER_ID);
     expect(map.canvas.style.cursor).toBe('pointer');
 
-    map.fire('mouseleave', POINT_CIRCLE_LAYER_ID);
+    map.fire('mouseleave', POINT_LAYER_ID);
     expect(map.canvas.style.cursor).toBe('');
   });
 

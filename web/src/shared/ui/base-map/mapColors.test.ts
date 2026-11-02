@@ -1,4 +1,4 @@
-import { readMapColors } from './mapColors';
+import { readMapColors, readMapFontFamily } from './mapColors';
 
 const tokens = {
   '--color-availability-good': '#15803d',
@@ -40,5 +40,19 @@ describe('readMapColors', () => {
       pointSelectedStroke: '#0b5cad',
       emptyStroke: '#b42318',
     });
+  });
+});
+
+describe('readMapFontFamily', () => {
+  afterEach(() => document.documentElement.style.removeProperty('--font-sans'));
+
+  it('reads the app font from the theme', () => {
+    document.documentElement.style.setProperty('--font-sans', "'Inter Variable', sans-serif");
+
+    expect(readMapFontFamily()).toBe("'Inter Variable', sans-serif");
+  });
+
+  it('falls back to the default sans-serif font without the token', () => {
+    expect(readMapFontFamily()).toBe('sans-serif');
   });
 });

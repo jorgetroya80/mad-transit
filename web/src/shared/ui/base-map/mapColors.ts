@@ -10,6 +10,8 @@ export type MapColors = {
   emptyStroke: string;
 };
 
+const FALLBACK_FONT_FAMILY = 'sans-serif';
+
 // The theme tokens in index.css are the single source of these colors; MapLibre paint
 // properties cannot read CSS variables, so their values are copied when the layers are added.
 export function readMapColors(): MapColors {
@@ -30,4 +32,10 @@ export function readMapColors(): MapColors {
     pointSelectedStroke: token('map-point-selected-stroke'),
     emptyStroke: token('availability-empty-line'),
   };
+}
+
+// The point images write their numbers in the app font.
+export function readMapFontFamily(): string {
+  const family = getComputedStyle(document.documentElement).getPropertyValue('--font-sans').trim();
+  return family || FALLBACK_FONT_FAMILY;
 }
