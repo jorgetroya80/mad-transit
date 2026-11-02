@@ -52,7 +52,7 @@ export function AvailabilityBadge({
   return (
     <span
       aria-hidden={decorative || undefined}
-      className="inline-flex shrink-0 flex-col items-center gap-0.5"
+      className="inline-flex shrink-0 flex-col items-end gap-0.5"
     >
       <span
         aria-hidden="true"
@@ -60,7 +60,7 @@ export function AvailabilityBadge({
       >
         {availabilityLabel({ level, count })}
       </span>
-      <span aria-hidden="true" className={`text-xs font-medium ${tone.label}`}>
+      <span aria-hidden="true" className={`text-right text-xs font-medium ${tone.label}`}>
         {availabilityStatusText(level, need)}
       </span>
       {decorative ? null : <span className="sr-only">{spokenText(level, count, need)}</span>}

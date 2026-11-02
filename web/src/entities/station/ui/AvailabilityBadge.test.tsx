@@ -40,6 +40,14 @@ describe('AvailabilityBadge', () => {
     expect(screen.getByText(text, { selector: '.sr-only' })).toBeInTheDocument();
   });
 
+  it('aligns the pill and its label to the right edge', () => {
+    render(<AvailabilityBadge level="good" count={12} need="bikes" />);
+
+    const label = screen.getByText('Disponible');
+    expect(label.parentElement).toHaveClass('items-end');
+    expect(label).toHaveClass('text-right');
+  });
+
   it('draws the empty pill with a dashed border', () => {
     render(<AvailabilityBadge level="empty" count={0} need="bikes" />);
 
