@@ -31,6 +31,7 @@ export function DesktopMapPage() {
             center={location.mapCenter}
             userLocation={location.userLocation}
             focusPadding={CARD_COVERED_MAP}
+            onRecenter={location.locate}
             className="h-full w-full"
           />
           <StationCard center={location.center} />

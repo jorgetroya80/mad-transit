@@ -16,6 +16,7 @@ type CapturedMapProps = {
   focus?: { lng: number; lat: number };
   userLocation?: { lng: number; lat: number };
   focusPadding?: { bottom: number };
+  onRecenter?: () => void;
   className?: string;
 };
 
@@ -152,6 +153,15 @@ describe('StationsMap', () => {
     );
 
     expect(lastMapProps().focusPadding).toEqual({ bottom: 400 });
+  });
+
+  it('passes the recenter action through', async () => {
+    const onRecenter = vi.fn<() => void>();
+    await renderWithRouter(
+      <StationsMap center={SOL} userLocation={USER} onRecenter={onRecenter} />,
+    );
+
+    expect(lastMapProps().onRecenter).toBe(onRecenter);
   });
 
   it('selects the station of the tapped point', async () => {

@@ -20,6 +20,7 @@ type StationsMapProps = {
   focusSelected?: boolean;
   // Called on every tapped point, also the station already selected, which does not change the URL.
   onSelect?: (number: string) => void;
+  onRecenter?: () => void;
   className?: string;
 };
 
@@ -38,6 +39,7 @@ export function StationsMap({
   focusPadding,
   focusSelected = true,
   onSelect,
+  onRecenter,
   className,
 }: StationsMapProps) {
   const query = useAllStations();
@@ -64,6 +66,7 @@ export function StationsMap({
       focus={selected && focusSelected ? { lng: selected.lon, lat: selected.lat } : center}
       focusPadding={focusPadding}
       userLocation={userLocation}
+      onRecenter={onRecenter}
     />
   );
 }

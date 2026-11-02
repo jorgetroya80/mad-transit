@@ -10,6 +10,7 @@ type CapturedMapProps = {
   className?: string;
   onSelectPoint?: (id: string) => void;
   focusPadding?: { bottom: number; right?: number };
+  onRecenter?: () => void;
 };
 
 const mapRenders = vi.hoisted(() => [] as CapturedMapProps[]);
@@ -212,6 +213,17 @@ describe('DesktopMapPage', () => {
     expect(getCurrentPosition).toHaveBeenCalledTimes(2);
     expect(await within(panel()).findByRole('region', { name: 'Cerca de ti' })).toBeVisible();
     expect(within(panel()).getByText('Usando tu ubicación actual.')).toBeInTheDocument();
+  });
+
+  it('recenters the map on the user by asking for the position again', async () => {
+    const getCurrentPosition = stubLocationAfterRetry();
+    await renderPage();
+    await within(panel()).findByRole('region', { name: 'Cerca de la Puerta del Sol' });
+
+    await act(async () => lastMapProps().onRecenter?.());
+
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
+    expect(await within(panel()).findByRole('region', { name: 'Cerca de ti' })).toBeVisible();
   });
 
   it('names the map after the stations', async () => {
