@@ -112,7 +112,7 @@ T2 a T6 solo dependen de T1 y no comparten archivos; van en serie para tener un 
 ### Checkpoint: Fase 2
 
 - [x] `pnpm check:task` en verde, salvo los avisos explicados.
-- [ ] `dev:mock` con Tab: buscador → modo → aviso → lista, con foco visible.
+- [x] `dev:mock` con Tab: buscador → modo → aviso → lista, con foco visible.
 
 ### Fase 3: Mapa y cierre
 
@@ -177,4 +177,4 @@ Unas 8 h 45 min en total. Fase 1 ~2 h 45 min, fase 2 ~3 h y fase 3 ~3 h.
 - 2026-11-02: T8 cambia de enfoque: MapLibre pinta todos los iconos de una capa antes que sus textos, así que la cifra va dibujada dentro de la imagen de cada punto (decisión del usuario).
 - 2026-11-02: T8 hecha. Una sola capa `symbol` (`point-images`) solo con `icon-image`; las capas de círculos y de cifras desaparecen. Cada imagen se llama `point:<tono>:<0|1>:<cifra>`, con la cifra al final para que «25A» o «–» no rompan el nombre, y se pinta en un canvas al recibir `styleimagemissing`, solo si el mapa no la tiene ya. El canvas usa `devicePixelRatio` con un máximo de 2. Círculo de 40 px (48 px el seleccionado) con el borde por fuera, como el `circle-stroke` de antes: 1,5 px `map-point-stroke`, 2 px `availability-empty-line` en `empty` y 3 px `map-point-selected-stroke` en el seleccionado; cifra de 14 px en negrita con la fuente de la app (`--font-sans`). Los colores siguen saliendo de `MapColors`, leídos una vez al crear las capas y pasados al pintor. El escuchador se quita al desmontar. Los tests de las capas de círculo y de texto se sustituyen por los del pintor, que comprueban lo mismo sobre un contexto 2D simulado (jsdom no tiene canvas). Falta la comprobación visual con las estaciones 1a y 1b en `dev:mock`.
 - 2026-11-02: tras la revisión visual y de código: insignias alineadas a la derecha; los números del mapa se repintan al cargar Inter; Escape con el buscador vacío no bloquea la tecla; el aviso «Sin confirmar» y el mensaje de error usan el mismo marco que el aviso de ubicación (borde fino, fondo de su color e icono). 572 tests; `floor-guard` con 56 aserciones reescritas, explicadas en sus commits.
-- 2026-11-02: en `main` con el PR #95 y desplegada en Render (web 0.7.0); el usuario revisa el mapa con las estaciones reales en el zoom 12 y las piezas en escritorio y móvil. El recorrido con Tab del checkpoint de la fase 2 no se confirmó. Spec, plan y capability map pasan a **implemented**.
+- 2026-11-02: en `main` con el PR #95 y desplegada en Render (web 0.7.0); el usuario revisa el mapa con las estaciones reales en el zoom 12 y las piezas en escritorio y móvil. El recorrido con Tab del checkpoint de la fase 2 también es correcto. Spec, plan y capability map pasan a **implemented**.
