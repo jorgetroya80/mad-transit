@@ -76,6 +76,24 @@ describe('StationCard', () => {
     expect(within(region).getByRole('button', { name: 'Cerrar' })).toBeInTheDocument();
   });
 
+  it('puts «Cerrar» on top and the star beside the name, in that Tab order', async () => {
+    await renderCard();
+    const region = await card('Puerta del Sol A');
+    const close = within(region).getByRole('button', { name: 'Cerrar' });
+    const star = within(region).getByRole('button', { name: 'Añadir a favoritas' });
+
+    expect(close).toHaveClass('row-start-1', 'col-start-2');
+    expect(star).toHaveClass('row-start-2', 'col-start-2', 'self-center');
+    expect(within(region).getByRole('heading', { level: 2 })).toHaveClass(
+      'row-start-2',
+      'self-center',
+    );
+    await userEvent.tab();
+    expect(close).toHaveFocus();
+    await userEvent.tab();
+    expect(star).toHaveFocus();
+  });
+
   it('toggles the favorite with an icon button', async () => {
     await renderCard();
     const region = await card('Puerta del Sol A');
