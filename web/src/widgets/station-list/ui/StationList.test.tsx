@@ -297,7 +297,7 @@ describe('StationList', () => {
 
     expect(await screen.findByText('Sin conexión')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/^Sin conexión$/);
   });
 
   it('asks again and drops the notice when the connection returns', async () => {

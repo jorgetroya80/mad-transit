@@ -3,7 +3,7 @@ export { BottomSheet, useBottomSheetOverlap } from './bottom-sheet';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt } from './data-freshness';
 export { BikeIcon, ClearIcon, DockIcon, InfoIcon, OfflineIcon, WarningIcon } from './icons';
-export { PanelNotice } from './panel-notice';
 export { RelativeTime } from './relative-time';
 export { SidePanel } from './side-panel';
+export { StatusBanner } from './status-banner';
 export { StateMessage } from './state-message';

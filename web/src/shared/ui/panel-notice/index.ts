@@ -1,1 +1,0 @@
-export { PanelNotice } from './PanelNotice';
