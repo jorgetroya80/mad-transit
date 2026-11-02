@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.6.0...web-v0.7.0) (2026-11-02)
+
+
+### Features
+
+* **web:** restyle the station pieces for the redesign ([#95](https://github.com/jorgetroya80/mad-transit/issues/95)) ([b6b2504](https://github.com/jorgetroya80/mad-transit/commit/b6b250406e33a231902cf2422ab25936cf1ace3b))
+
 ## [0.6.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.5.0...web-v0.6.0) (2026-10-31)
 
 
