@@ -71,7 +71,7 @@ T2 a T6 solo dependen de T1 y no comparten archivos; van en serie para tener un 
 
 ### Checkpoint: Fase 1
 
-- [ ] `pnpm check:task` en verde, salvo los avisos de aserciones reescritas explicados en los commits.
+- [x] `pnpm check:task` en verde, salvo los avisos de aserciones reescritas explicados en los commits.
 - [ ] `dev:mock` en escritorio y móvil: filas e insignias con el aspecto del lienzo.
 
 ### Fase 2: Controles
@@ -111,12 +111,12 @@ T2 a T6 solo dependen de T1 y no comparten archivos; van en serie para tener un 
 
 ### Checkpoint: Fase 2
 
-- [ ] `pnpm check:task` en verde, salvo los avisos explicados.
+- [x] `pnpm check:task` en verde, salvo los avisos explicados.
 - [ ] `dev:mock` con Tab: buscador → modo → aviso → lista, con foco visible.
 
 ### Fase 3: Mapa y cierre
 
-- [ ] **T7: Puntos del mapa de 40 px, límites de zoom y cierre** (S, ~1 h)
+- [x] **T7: Puntos del mapa de 40 px, límites de zoom y cierre** (S, ~1 h)
   - Descripción: `POINT_RADIUS_PX` a 20 y `SELECTED_POINT_RADIUS_PX` a 24, con el anillo `primary` del seleccionado (de `web-design-tokens`) y el número a un tamaño legible dentro del círculo. `MAP_MIN_ZOOM` (12) y `MAP_MAX_ZOOM` (18) en `shared/config`, pasados como `minZoom` y `maxZoom` al crear el mapa en `useMapLibre.ts`. Comprobar a la vista con el zoom inicial y con el 12. Changelog del plan.
   - Aceptación:
     - `pointLayers()` usa radio 20 y 24 y el seleccionado se dibuja encima.
@@ -161,3 +161,4 @@ Unas 6 h 45 min en total. Fase 1 ~2 h 45 min, fase 2 ~3 h y fase 3 ~1 h.
 - 2026-11-02: T4 hecha. `NeedToggle` recibe `variant` obligatoria; `MapPanel` elige `cards` desde `md` y `pill` por debajo con `useMediaQuery(MD_MEDIA_QUERY)`. El subtítulo de cada tarjeta va oculto con `aria-hidden` y enlazado con `aria-describedby`, para que el nombre del botón sea solo «Sacar bici» o «Dejar bici» en las dos variantes. Extra aprobado por el usuario: `availabilityText` dice «Fuera de servicio» para `off`, como la etiqueta de la insignia, en lugar de «Sin servicio»; el campo «Estado» del detalle no cambia. 7 tests nuevos (531 en total) y `check:task` en verde salvo los avisos de aserciones reescritas.
 - 2026-11-02: T5 hecha. La etiqueta pasa de «Buscar estación por número» a «Buscar estación» y la ayuda «Busca por número de estación.» es su descripción; las dos salen del `itemLabel` de la fuente, así que el autobús dirá «Buscar parada». El botón «Borrar búsqueda» solo aparece con texto, vacía y devuelve el foco; se oculta la «×» nativa de `type="search"` para que no haya dos. Escape en el campo lo vacía; en un resultado sigue volviendo al campo sin borrar, como hoy, así que el test que lo comprueba no cambia. `useNumberSearch` expone `clearQuery` y `useResultsKeyboard` recibe `onClear`. `matchByNumber` y sus tests no cambian. 6 tests nuevos (537 en total) y `check:task` en verde salvo los avisos de aserciones reescritas.
 - 2026-11-02: T6 hecha. `StatusBanner` sustituye a `PanelNotice` (borrado; no queda ninguna referencia). `info` reutiliza los tokens `primary-soft`, `primary-soft-border` y `primary` (icono), como el aviso de ubicación del lienzo; no hay tokens `notice-info` ni hace falta crearlos. `info` usa `InfoIcon` hasta que `web-redesign-desktop` traiga el icono de ubicación y sus textos. `offline` usa fondo y texto `notice-offline`, sin línea lateral y con el icono en `currentColor`. `action` es `{ label, onClick }` y se pinta como botón con el anillo de foco en `currentColor`, para que se vea también sobre el fondo oscuro. «Sin conexión» pasa a `role="alert"`, así que el test de la lista que pedía ninguna alerta ahora pide que la única sea «Sin conexión». 8 tests nuevos (545 en total) y `check:task` en verde salvo los avisos de aserciones reescritas.
+- 2026-11-02: T7 hecha. Puntos de radio 20 y 24 y número de 14 px (antes 12, para que se lea dentro del círculo de 40 px). `MAP_MIN_ZOOM` 12 y `MAP_MAX_ZOOM` 18 en `shared/config`, pasados como `minZoom` y `maxZoom` al crear el mapa. Los radios se comprueban con un test nuevo y el anterior (seleccionado mayor que el resto) no cambia; un test nuevo fija que el seleccionado se dibuja encima. No se ha comprobado a la vista: falta revisar SC5 en `dev:mock` con el zoom inicial (15) y con el 12. Cierre: en el código de producción no queda `PanelNotice` ni «Bicis» / «Anclajes» como etiquetas del selector, y «Sin servicio» solo queda en el campo «Estado» del detalle; `pnpm --filter web build` en verde. 548 tests en total (486 tras T1). El floor guard da 35 avisos, todos aserciones reescritas por cambios de texto o de estructura buscados en T2, T4, T5 y T6, y explicadas en el commit de cada tarea.

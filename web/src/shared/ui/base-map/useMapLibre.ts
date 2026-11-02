@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import {
   MADRID_CENTER,
   MADRID_ZOOM,
+  MAP_MAX_ZOOM,
+  MAP_MIN_ZOOM,
   MAP_STYLE_URL,
   MD_MEDIA_QUERY,
   REDUCED_MOTION_QUERY,
@@ -63,6 +65,8 @@ export function useMapLibre(
       style: MAP_STYLE_URL,
       center: MADRID_CENTER,
       zoom: MADRID_ZOOM,
+      minZoom: MAP_MIN_ZOOM,
+      maxZoom: MAP_MAX_ZOOM,
       attributionControl: false,
     });
     const stopPlacingAttribution = placeAttribution(map);

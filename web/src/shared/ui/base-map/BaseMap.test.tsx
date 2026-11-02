@@ -2,6 +2,8 @@ import { act, render } from '@testing-library/react';
 import {
   MADRID_CENTER,
   MADRID_ZOOM,
+  MAP_MAX_ZOOM,
+  MAP_MIN_ZOOM,
   MAP_STYLE_URL,
   MD_MEDIA_QUERY,
   REDUCED_MOTION_QUERY,
@@ -138,7 +140,7 @@ describe('BaseMap', () => {
     expect(maplibre.workerUrls).toEqual(['/assets/maplibre-gl-worker.js']);
   });
 
-  it('creates the map once in its container, centered on Madrid with the OpenFreeMap style', () => {
+  it('creates the map once in its container, centered on Madrid with the OpenFreeMap style, between zoom 12 and 18', () => {
     const { getByRole } = render(<BaseMap />);
 
     expect(renderedMap().options).toEqual({
@@ -146,6 +148,8 @@ describe('BaseMap', () => {
       style: MAP_STYLE_URL,
       center: MADRID_CENTER,
       zoom: MADRID_ZOOM,
+      minZoom: MAP_MIN_ZOOM,
+      maxZoom: MAP_MAX_ZOOM,
       attributionControl: false,
     });
   });

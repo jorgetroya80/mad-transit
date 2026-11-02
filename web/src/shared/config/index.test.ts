@@ -6,6 +6,8 @@ import {
   LOW_AVAILABILITY_THRESHOLD,
   MADRID_CENTER,
   MADRID_ZOOM,
+  MAP_MAX_ZOOM,
+  MAP_MIN_ZOOM,
   MAP_STYLE_URL,
   MD_MEDIA_QUERY,
   NEARBY_STORAGE_KEYS,
@@ -45,6 +47,11 @@ describe('shared/config public API', () => {
   it('centers the map on Puerta del Sol', () => {
     expect(MADRID_CENTER).toEqual({ lng: -3.7038, lat: 40.4168 });
     expect(MADRID_ZOOM).toBe(15);
+  });
+
+  it('limits the map zoom between the city (12) and the street (18)', () => {
+    expect(MAP_MIN_ZOOM).toBe(12);
+    expect(MAP_MAX_ZOOM).toBe(18);
   });
 
   it('uses the OpenFreeMap liberty style', () => {

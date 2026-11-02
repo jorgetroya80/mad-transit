@@ -23,10 +23,10 @@ export const USER_LOCATION_LAYER_ID = 'user-location-dot';
 
 // A font the liberty style already uses: its glyph server only has the style's fonts.
 const LABEL_FONT = ['Noto Sans Bold'];
-const LABEL_SIZE_PX = 12;
-// Fits a two-digit label inside the circle.
-const POINT_RADIUS_PX = 12;
-const SELECTED_POINT_RADIUS_PX = 16;
+const LABEL_SIZE_PX = 14;
+// A 40 px point fits a three-character label ('25A') and is an easy target to tap.
+const POINT_RADIUS_PX = 20;
+const SELECTED_POINT_RADIUS_PX = 24;
 const POINT_STROKE_WIDTH_PX = 1.5;
 const SELECTED_POINT_STROKE_WIDTH_PX = 3;
 // The empty tone is filled white like the map, so its border has to be visible.

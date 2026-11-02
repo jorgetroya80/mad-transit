@@ -142,6 +142,21 @@ describe('pointLayers', () => {
     expect(selectedWidth).toBeGreaterThan(widthOtherwise as number);
   });
 
+  it('draws 40 px points, the selected one 48 px, with a 14 px number', () => {
+    const [circle, label] = pointLayers(colors);
+
+    expect(circle.paint?.['circle-radius']).toEqual(['case', ['get', 'selected'], 24, 20]);
+    expect(label.layout?.['text-size']).toBe(14);
+  });
+
+  it('draws the selected point and its number above the rest', () => {
+    const [circle, label] = pointLayers(colors);
+    const selectedOnTop = ['case', ['get', 'selected'], 1, 0];
+
+    expect(circle.layout?.['circle-sort-key']).toEqual(selectedOnTop);
+    expect(label.layout?.['symbol-sort-key']).toEqual(selectedOnTop);
+  });
+
   it('borders the empty tone with a 2 px line, between the selected and the other widths', () => {
     const [circle] = pointLayers(colors);
     const strokeWidth = circle.paint?.['circle-stroke-width'] as unknown[];
