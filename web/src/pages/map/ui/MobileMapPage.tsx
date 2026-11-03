@@ -1,44 +1,41 @@
-import { useState } from 'react';
+import { NeedToggle } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
-import type { SheetSnap } from '@/shared/ui';
-import { AppLayout } from '@/widgets/app-layout';
+import { BottomSheet } from '@/shared/ui';
 import { StationsMap } from '@/widgets/stations-map';
+import { TransitSearch } from '@/widgets/transit-search';
 import { useListFocusReturn } from '../model/useListFocusReturn';
 import { useMapFocusPadding } from '../model/useMapFocusPadding';
 import { useMapLocation } from '../model/useMapLocation';
-import { usePanelExpanded } from '../model/usePanelExpanded';
+import { useSheetSnap } from '../model/useSheetSnap';
 import { useUserFocus } from '../model/useUserFocus';
 import { MapPanel } from './MapPanel';
+import { RecenterButton } from './RecenterButton';
 
-const LIST_NEXT_SNAP: Record<SheetSnap, SheetSnap> = { peek: 'half', half: 'full', full: 'half' };
-
-// Interim: keeps the expanded / collapsed state of today as `half` / `peek`, plus `full`.
-function usePanelSnap(selectedStation: string | undefined) {
-  const [panelExpanded, setPanelExpanded] = usePanelExpanded(selectedStation);
-  const [isPanelFull, setPanelFull] = useState(false);
-  const fullOrHalf: SheetSnap = isPanelFull ? 'full' : 'half';
-  const snap: SheetSnap = panelExpanded ? fullOrHalf : 'peek';
-
-  function changeSnap(next: SheetSnap) {
-    setPanelExpanded(next !== 'peek');
-    setPanelFull(next === 'full');
-  }
-
-  return [snap, changeSnap] as const;
-}
-
+// Full-screen map with the search and mode floating on top. The sheet's peek strip takes the
+// last row of the column, so the map (and its attribution) ends above it.
 export function MobileMapPage() {
   const location = useMapLocation();
   const { number } = useSelectedStation();
-  const [panelSnap, setPanelSnap] = usePanelSnap(number);
+  const sheet = useSheetSnap(number);
   const panelRef = useListFocusReturn(number);
-  const focusPadding = useMapFocusPadding(panelSnap);
+  const focusPadding = useMapFocusPadding(sheet.snap);
   const { focusSelected, focusSelection, locate } = useUserFocus(number, location.locate);
 
   return (
-    <AppLayout
-      title="Mad Transit"
-      map={
+    <main className="flex h-dvh flex-col overflow-hidden">
+      <h1 className="sr-only">Mad Transit</h1>
+      <div className="relative min-h-0 min-w-0 flex-1">
+        <div className="absolute inset-x-4 top-4 z-20 flex flex-col gap-2.5">
+          <TransitSearch variant="floating" />
+          <div className="self-end rounded-control shadow-float">
+            <NeedToggle variant="pill" />
+          </div>
+        </div>
+        <RecenterButton
+          snap={sheet.snap}
+          isRecentering={location.status === 'pending'}
+          onRecenter={locate}
+        />
         <StationsMap
           center={location.mapCenter}
           userLocation={location.userLocation}
@@ -47,19 +44,20 @@ export function MobileMapPage() {
           onSelect={focusSelection}
           className="h-full w-full"
         />
-      }
-      panelLabel="Estaciones"
-      panelSnap={panelSnap}
-      onPanelSnapChange={setPanelSnap}
-      panelNextSnap={LIST_NEXT_SNAP}
-      panelHandleLabel={panelSnap === 'full' ? 'Reducir lista' : 'Ampliar lista'}
-      panel={
+      </div>
+      <BottomSheet
+        label="Estaciones"
+        snap={sheet.snap}
+        onSnapChange={sheet.setSnap}
+        nextSnap={sheet.nextSnap}
+        handleLabel={sheet.handleLabel}
+      >
         <MapPanel
           ref={panelRef}
           location={{ ...location, locate }}
           isStationOpen={number !== undefined}
         />
-      }
-    />
+      </BottomSheet>
+    </main>
   );
 }

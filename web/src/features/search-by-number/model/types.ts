@@ -15,3 +15,6 @@ export type SearchSource = {
   status: 'loading' | 'ready' | 'error';
   onSelect: (number: string) => void;
 };
+
+/** `floating`: a round field over the map, with the results opening over it. */
+export type SearchVariant = 'inline' | 'floating';

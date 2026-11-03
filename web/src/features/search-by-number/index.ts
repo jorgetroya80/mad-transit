@@ -1,2 +1,2 @@
-export type { SearchItem, SearchSource } from './model/types';
+export type { SearchItem, SearchSource, SearchVariant } from './model/types';
 export { SearchByNumber } from './ui/SearchByNumber';

@@ -108,6 +108,10 @@ function sheetHandle() {
   return screen.getByRole('button', { name: /^(Ampliar|Reducir) lista$/ });
 }
 
+function recenterButton() {
+  return screen.getByRole('button', { name: 'Centrar en mi posición' });
+}
+
 async function rowIn(section: string, number: string) {
   const region = await screen.findByRole('region', { name: section });
   return within(region).findByRole('button', { name: new RegExp(`^Estación ${number},`) });
@@ -150,22 +154,28 @@ describe('MapPage', () => {
     });
 
     // Bottom sheet below md; DesktopMapPage.test.tsx covers the desktop panel.
-    it.each([false])(
-      'puts search, filter, location, list and attribution in the panel (from md: %s)',
-      async (isWide) => {
-        stubMatchMedia(isWide);
-        await renderPage();
+    it('puts the list and attribution in the panel', async () => {
+      await renderPage();
 
-        const region = panel();
-        expect(within(region).getByRole('searchbox')).toBeInTheDocument();
-        expect(within(region).getByRole('button', { name: 'Dejar bici' })).toBeInTheDocument();
-        expect(within(region).getByRole('button', { name: 'Mi ubicación' })).toBeInTheDocument();
-        expect(
-          await within(region).findByRole('region', { name: 'Cerca de ti' }),
-        ).toBeInTheDocument();
-        expect(within(region).getByRole('link', { name: 'EMT de Madrid' })).toBeInTheDocument();
-      },
-    );
+      const region = panel();
+      expect(
+        await within(region).findByRole('region', { name: 'Cerca de ti' }),
+      ).toBeInTheDocument();
+      expect(within(region).getByRole('link', { name: 'EMT de Madrid' })).toBeInTheDocument();
+    });
+
+    it('floats search, mode and recenter over the map, out of the panel', async () => {
+      await renderPage();
+
+      const main = within(screen.getByRole('main'));
+      const region = within(panel());
+      expect(main.getByRole('searchbox', { name: 'Buscar estación' })).toHaveClass('h-12.5');
+      expect(main.getByRole('button', { name: 'Dejar bici' })).toBeInTheDocument();
+      expect(main.getByRole('button', { name: 'Centrar en mi posición' })).toBeInTheDocument();
+      expect(region.queryByRole('searchbox')).not.toBeInTheDocument();
+      expect(region.queryByRole('button', { name: 'Dejar bici' })).not.toBeInTheDocument();
+      expect(region.queryByRole('button', { name: 'Mi ubicación' })).not.toBeInTheDocument();
+    });
 
     it.each([
       { isWide: true, description: 'Anclajes libres' },
@@ -198,13 +208,13 @@ describe('MapPage', () => {
     });
 
     // The user may have moved the map away: an equal position must still bring it back.
-    it('brings the map back to the user with "Mi ubicación", though the position is the same', async () => {
+    it('brings the map back to the user with "Centrar en mi posición", though the position is the same', async () => {
       const user = userEvent.setup();
       await renderPage();
       await rowIn('Cerca de ti', '1a');
       mapRenders.length = 0;
 
-      await user.click(screen.getByRole('button', { name: 'Mi ubicación' }));
+      await user.click(recenterButton());
 
       // The focus is released while asking, so the same answer is a new focus for the map.
       await waitFor(() =>
@@ -223,12 +233,12 @@ describe('MapPage', () => {
       );
     });
 
-    it('centers the map on the user with "Mi ubicación" and keeps the station open', async () => {
+    it('centers the map on the user with "Centrar en mi posición" and keeps the station open', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
       await detailTitle('1a · Puerta del Sol A');
 
-      await user.click(screen.getByRole('button', { name: 'Mi ubicación' }));
+      await user.click(recenterButton());
 
       await waitFor(() => expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: USER }));
       expect(
@@ -236,11 +246,11 @@ describe('MapPage', () => {
       ).toBeVisible();
     });
 
-    it('focuses the next station chosen after "Mi ubicación"', async () => {
+    it('focuses the next station chosen after "Centrar en mi posición"', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
       await detailTitle('1a · Puerta del Sol A');
-      await user.click(screen.getByRole('button', { name: 'Mi ubicación' }));
+      await user.click(recenterButton());
       await waitFor(() => expect(lastMapProps().focus).toEqual(USER));
 
       await act(async () => lastMapProps().onSelectPoint?.('1b'));
@@ -250,11 +260,11 @@ describe('MapPage', () => {
       );
     });
 
-    it('focuses the open station again when its point is tapped after "Mi ubicación"', async () => {
+    it('focuses the open station again when its point is tapped after recentering', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
       await detailTitle('1a · Puerta del Sol A');
-      await user.click(screen.getByRole('button', { name: 'Mi ubicación' }));
+      await user.click(recenterButton());
       await waitFor(() => expect(lastMapProps().focus).toEqual(USER));
 
       await act(async () => lastMapProps().onSelectPoint?.('1a'));
@@ -347,28 +357,28 @@ describe('MapPage', () => {
       expect(lastMapProps()).toMatchObject({ focus: MADRID_CENTER, userLocation: undefined });
     });
 
-    it('asks again with "Mi ubicación"', async () => {
+    it('asks again with "Centrar en mi posición"', async () => {
       const geolocation = stubGeolocation('denied');
       const user = userEvent.setup();
       await renderPage();
       await rowIn('Cerca de la Puerta del Sol', '1a');
 
       geolocation.answerWith('granted');
-      await user.click(screen.getByRole('button', { name: 'Mi ubicación' }));
+      await user.click(recenterButton());
 
       expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
       expect(await rowIn('Cerca de ti', '1a')).toBeInTheDocument();
       expect(lastMapProps()).toMatchObject({ focus: USER, userLocation: USER });
     });
 
-    it('brings the map back to Puerta del Sol when "Mi ubicación" is denied again', async () => {
+    it('brings the map back to Puerta del Sol when recentering is denied again', async () => {
       stubGeolocation('denied');
       const user = userEvent.setup();
       await renderPage();
       await rowIn('Cerca de la Puerta del Sol', '1a');
       mapRenders.length = 0;
 
-      await user.click(screen.getByRole('button', { name: 'Mi ubicación' }));
+      await user.click(recenterButton());
 
       await waitFor(() => expect(lastMapProps().focus).toEqual(MADRID_CENTER));
       expect(mapRenders.some((props) => props.focus === undefined)).toBe(true);
@@ -388,7 +398,7 @@ describe('MapPage', () => {
     });
   });
 
-  describe('while "Mi ubicación" asks again', () => {
+  describe('while "Centrar en mi posición" asks again', () => {
     it('keeps describing the list it shows: still near Puerta del Sol', async () => {
       const geolocation = stubGeolocation('denied');
       const user = userEvent.setup();
@@ -396,9 +406,9 @@ describe('MapPage', () => {
       await rowIn('Cerca de la Puerta del Sol', '1a');
 
       geolocation.answerWith('pending');
-      await user.click(screen.getByRole('button', { name: 'Mi ubicación' }));
+      await user.click(recenterButton());
 
-      expect(screen.getByRole('button', { name: 'Localizando…' })).toBeInTheDocument();
+      expect(recenterButton()).toHaveAttribute('aria-busy', 'true');
       expect(
         screen.getByRole('heading', { level: 2, name: 'Cerca de la Puerta del Sol' }),
       ).toBeInTheDocument();
@@ -415,18 +425,21 @@ describe('MapPage', () => {
   describe('bottom sheet below md', () => {
     beforeEach(() => stubGeolocation('granted'));
 
-    it('starts collapsed on the list', async () => {
+    it('starts at half on the list', async () => {
       await renderPage();
-      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'false');
+
+      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
+      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
     });
 
-    it('starts expanded on a station link', async () => {
+    it('starts at half on a station link', async () => {
       await renderPage('/?station=1a');
 
       expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
+      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
     });
 
-    it('expands when a station is tapped on the map, and the handle cycles half and full', async () => {
+    it('shows a station tapped on the map, and the handle cycles half and full', async () => {
       const user = userEvent.setup();
       await renderPage();
 
@@ -442,23 +455,27 @@ describe('MapPage', () => {
       expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
     });
 
-    it('opens to half from peek with the handle', async () => {
+    // jsdom's 768 px viewport: half covers 430 - 112 px and full min(700, 768 - 144) - 112 px.
+    it('leaves the map above the half sheet to the focus', async () => {
+      await renderPage();
+
+      expect(lastMapProps().focusPadding).toEqual({ bottom: 318 });
+    });
+
+    it('keeps the recenter button 16 px above the sheet and hides it at full', async () => {
       const user = userEvent.setup();
       await renderPage();
+      expect(recenterButton()).toHaveStyle({ bottom: '334px' });
 
       await user.click(sheetHandle());
+      expect(
+        screen.queryByRole('button', { name: 'Centrar en mi posición' }),
+      ).not.toBeInTheDocument();
 
-      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
-      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
+      await user.click(sheetHandle());
+      expect(recenterButton()).toHaveStyle({ bottom: '334px' });
     });
 
-    it('leaves the whole map to the focus while the sheet is collapsed', async () => {
-      await renderPage();
-
-      expect(lastMapProps().focusPadding).toEqual({ bottom: 0 });
-    });
-
-    // jsdom's 768 px viewport: half covers 430 - 112 px and full min(700, 768 - 144) - 112 px.
     it('centers the selected station above the sheet at its current height', async () => {
       const user = userEvent.setup();
       await renderPage();
@@ -471,11 +488,11 @@ describe('MapPage', () => {
       expect(lastMapProps().focusPadding).toEqual({ bottom: 512 });
     });
 
-    it('keeps the map on the user after "Mi ubicación" when the sheet grows', async () => {
+    it('keeps the map on the user after recentering when the sheet grows', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
       await detailTitle('1a · Puerta del Sol A');
-      await user.click(screen.getByRole('button', { name: 'Mi ubicación' }));
+      await user.click(recenterButton());
       await waitFor(() => expect(lastMapProps().focus).toEqual(USER));
 
       await user.click(sheetHandle());
@@ -483,8 +500,7 @@ describe('MapPage', () => {
       expect(lastMapProps()).toMatchObject({ focus: USER, focusPadding: { bottom: 512 } });
     });
 
-    // jsdom ignores `inert`, so the row of the collapsed sheet can be clicked.
-    it('expands when a row is chosen', async () => {
+    it('stays open when a row is chosen', async () => {
       const user = userEvent.setup();
       await renderPage();
 
