@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { type ReactNode, type Ref, useId } from 'react';
 import { HANDLE_HEIGHT_PX, SHEET_HEIGHT_PX, sheetHeight, type SheetSnap } from './sheetSize';
 
 type BottomSheetProps = {
@@ -11,6 +11,8 @@ type BottomSheetProps = {
   header?: ReactNode;
   // Given by the page when a header control also points at the body (aria-controls).
   bodyId?: string;
+  // Lets the page focus the handle, the one control left when the body is inert at peek.
+  handleRef?: Ref<HTMLButtonElement>;
   children: ReactNode;
 };
 
@@ -29,6 +31,7 @@ export function BottomSheet({
   handleLabel,
   header,
   bodyId: givenBodyId,
+  handleRef,
   children,
 }: BottomSheetProps) {
   const generatedBodyId = useId();
@@ -42,6 +45,7 @@ export function BottomSheet({
         className="fixed inset-x-0 bottom-0 z-10 flex flex-col rounded-t-sheet bg-surface shadow-sheet transition-[height] duration-320 ease-sheet motion-reduce:transition-none"
       >
         <button
+          ref={handleRef}
           type="button"
           aria-label={handleLabel}
           aria-expanded={!isPeek}

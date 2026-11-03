@@ -8,13 +8,23 @@ import { MobileSheetHeader } from './MobileSheetHeader';
 
 type MobileSheetProps = {
   sheet: ReturnType<typeof useSheetSnap>;
+  // Where the page puts the focus that would be lost: see useListFocusReturn.
   panelRef: Ref<HTMLDivElement>;
+  handleRef: Ref<HTMLButtonElement>;
+  detailHeadingRef: Ref<HTMLHeadingElement>;
   location: MapLocation;
   selectedStation: string | undefined;
 };
 
 // The list, or the selected station in its place. Either way the header stays visible at peek.
-export function MobileSheet({ sheet, panelRef, location, selectedStation }: MobileSheetProps) {
+export function MobileSheet({
+  sheet,
+  panelRef,
+  handleRef,
+  detailHeadingRef,
+  location,
+  selectedStation,
+}: MobileSheetProps) {
   const bodyId = useId();
   const isStationOpen = selectedStation !== undefined;
   return (
@@ -25,9 +35,14 @@ export function MobileSheet({ sheet, panelRef, location, selectedStation }: Mobi
       nextSnap={sheet.nextSnap}
       handleLabel={sheet.handleLabel}
       bodyId={bodyId}
+      handleRef={handleRef}
       header={
         isStationOpen ? (
-          <StationSheetHeader number={selectedStation} center={location.center} />
+          <StationSheetHeader
+            number={selectedStation}
+            center={location.center}
+            headingRef={detailHeadingRef}
+          />
         ) : (
           <MobileSheetHeader
             location={location}

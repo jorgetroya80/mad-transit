@@ -26,6 +26,7 @@ Que en el móvil el mapa ocupe la pantalla y la lista viva en un panel inferior 
 3. **Sin leyenda** en el móvil, como el lienzo; cada insignia ya lleva su etiqueta.
 4. **Alturas con el detalle abierto:** al abrirlo, el panel pasa a `half` desde cualquier altura y guarda la que tenía la lista; el asa alterna `half ↔ peek` («Reducir detalle» / «Ampliar detalle»); `full` no se usa. Al cerrar, el panel vuelve a la altura guardada.
 5. **Volver a la lista** (flecha a la izquierda de la cabecera, como en Bus móvil, o Escape con el foco dentro) quita `?station`, como en escritorio, y devuelve el foco a la fila de la estación o, si se abrió desde el mapa, la búsqueda o un enlace, al primer encabezado de la lista.
+6. **El foco solo se mueve si se perdería** (2026-11-03, tras T4): abrir el detalle desde una fila de la lista (la fila desaparece) lleva el foco al nombre de la estación (`h2` con `tabIndex={-1}`); abrirlo desde el mapa, la búsqueda o un enlace no lo mueve. Volver a una lista en `peek` (cuerpo `inert`) lleva el foco al asa «Ampliar lista»; en `half` o `full`, a la fila, como en la decisión 5.
 
 ## Assumptions
 
@@ -132,3 +133,4 @@ Ninguna.
 - 2026-11-03: decisión 1 cambiada según el tablero «Móvil — estación elegida» del diseñador: detalle dentro del panel; se añaden las decisiones 4 y 5.
 - 2026-11-03: el diseñador alinea «Móvil — interactivo» y «Móvil — estación elegida» con Bus móvil: flecha «Volver a la lista» en lugar de «Cerrar», pie «Actualizado hace N s» y la pantalla arranca en la lista sin estación elegida.
 - 2026-11-03: aprobada por el usuario.
+- 2026-11-03: decisión 6 sobre el foco, tras ver en T4 que se perdía al abrir desde una fila y al volver a `peek`.

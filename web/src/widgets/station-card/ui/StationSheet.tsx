@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { type Coordinates, useStationDetail } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
 import { UpdatedAt } from '@/shared/ui';
@@ -7,15 +8,17 @@ import { SheetCardHeader } from './SheetCardHeader';
 
 // The station card inside the mobile sheet, in two pieces: the header row goes in the sheet's
 // header, visible at peek, and the rest in its body. Both read the same cached detail, and
-// both go back to the list on Escape. Opening leaves the focus where it was.
+// both go back to the list on Escape. The page decides whether opening moves the focus to the
+// name, through `headingRef`.
 
 type StationSheetHeaderProps = {
   number: string;
   // Center of the nearby list: the distance is read from it. Undefined hides the distance.
   center: Coordinates | undefined;
+  headingRef?: Ref<HTMLHeadingElement>;
 };
 
-export function StationSheetHeader({ number, center }: StationSheetHeaderProps) {
+export function StationSheetHeader({ number, center, headingRef }: StationSheetHeaderProps) {
   const detail = useStationDetail(number);
   const { clear } = useSelectedStation();
   const escapeRef = useCloseOnEscape(clear);
@@ -23,7 +26,13 @@ export function StationSheetHeader({ number, center }: StationSheetHeaderProps) 
 
   return (
     <div ref={escapeRef} className="px-4 pb-3">
-      <SheetCardHeader number={number} station={station} center={center} onBack={clear} />
+      <SheetCardHeader
+        number={number}
+        station={station}
+        center={center}
+        onBack={clear}
+        headingRef={headingRef}
+      />
     </div>
   );
 }

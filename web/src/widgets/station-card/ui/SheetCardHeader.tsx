@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import type { Coordinates, Station } from '@/entities/station';
 import { FavoriteButton } from '@/features/toggle-favorite';
 import { ArrowLeftIcon } from '@/shared/ui';
@@ -9,10 +10,18 @@ type SheetCardHeaderProps = {
   station: Station | undefined;
   center: Coordinates | undefined;
   onBack: () => void;
+  headingRef?: Ref<HTMLHeadingElement>;
 };
 
 // One row, so it fits the sheet at peek: the arrow back, the meta above the name, the star.
-export function SheetCardHeader({ number, station, center, onBack }: SheetCardHeaderProps) {
+// The name takes programmatic focus (`tabIndex={-1}`, no tab stop) when the page moves it there.
+export function SheetCardHeader({
+  number,
+  station,
+  center,
+  onBack,
+  headingRef,
+}: SheetCardHeaderProps) {
   return (
     <div className="flex items-center gap-1">
       <button
@@ -25,7 +34,11 @@ export function SheetCardHeader({ number, station, center, onBack }: SheetCardHe
       </button>
       <div className="min-w-0 flex-1">
         {station ? <StationMeta number={station.number} center={center} /> : null}
-        <h2 className="text-lg leading-tight font-bold break-words text-fg">
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-lg leading-tight font-bold break-words text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
           {station?.name ?? `Estación ${number}`}
         </h2>
       </div>

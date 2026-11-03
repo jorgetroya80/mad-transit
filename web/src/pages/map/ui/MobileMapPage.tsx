@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { NeedToggle } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
 import { StationsMap } from '@/widgets/stations-map';
@@ -11,44 +12,52 @@ import { MobileSheet } from './MobileSheet';
 import { RecenterButton } from './RecenterButton';
 
 // Full-screen map with the search and mode floating on top. The sheet's peek strip takes the
-// last row of the column, so the map (and its attribution) ends above it.
+// last grid row, so the map (and its attribution) ends above it. The map comes last in the DOM,
+// so Tab reaches it after the sheet; the grid puts it back in the first row, under the floating
+// controls, and also places the recenter button against that row.
 export function MobileMapPage() {
   const location = useMapLocation();
   const { number } = useSelectedStation();
   const sheet = useSheetSnap(number);
-  const panelRef = useListFocusReturn(number);
+  const handleRef = useRef<HTMLButtonElement>(null);
+  const detailHeadingRef = useRef<HTMLHeadingElement>(null);
+  const panelRef = useListFocusReturn(number, {
+    detailHeading: detailHeadingRef,
+    listFallback: handleRef,
+  });
   const focusPadding = useMapFocusPadding(sheet.snap);
   const { focusSelected, focusSelection, locate } = useUserFocus(number, location.locate);
 
   return (
-    <main className="flex h-dvh flex-col overflow-hidden">
+    <main className="relative grid h-dvh grid-cols-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
       <h1 className="sr-only">Mad Transit</h1>
-      <div className="relative min-h-0 min-w-0 flex-1">
-        <div className="absolute inset-x-4 top-4 z-20 flex flex-col gap-2.5">
-          <TransitSearch variant="floating" />
-          <div className="self-end rounded-control shadow-float">
-            <NeedToggle variant="pill" />
-          </div>
+      <div className="absolute inset-x-4 top-4 z-20 flex flex-col gap-2.5">
+        <TransitSearch variant="floating" />
+        <div className="self-end rounded-control shadow-float">
+          <NeedToggle variant="pill" />
         </div>
-        <RecenterButton
-          snap={sheet.snap}
-          isRecentering={location.status === 'pending'}
-          onRecenter={locate}
-        />
-        <StationsMap
-          center={location.mapCenter}
-          userLocation={location.userLocation}
-          focusPadding={focusPadding}
-          focusSelected={focusSelected}
-          onSelect={focusSelection}
-          className="h-full w-full"
-        />
       </div>
+      <RecenterButton
+        snap={sheet.snap}
+        isRecentering={location.status === 'pending'}
+        onRecenter={locate}
+        className="col-start-1 row-start-1"
+      />
       <MobileSheet
         sheet={sheet}
         panelRef={panelRef}
+        handleRef={handleRef}
+        detailHeadingRef={detailHeadingRef}
         location={{ ...location, locate }}
         selectedStation={number}
+      />
+      <StationsMap
+        center={location.mapCenter}
+        userLocation={location.userLocation}
+        focusPadding={focusPadding}
+        focusSelected={focusSelected}
+        onSelect={focusSelection}
+        className="col-start-1 row-start-1 h-full w-full"
       />
     </main>
   );

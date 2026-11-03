@@ -327,7 +327,7 @@ describe('MapPage', () => {
       await rowIn('Favoritas · 1', '1a');
 
       await user.click(await rowIn('Cercanas', '1a'));
-      expect(await detailTitle('Puerta del Sol A')).not.toHaveFocus();
+      expect(await detailTitle('Puerta del Sol A')).toHaveFocus();
 
       await act(() => router.history.back());
 
@@ -573,18 +573,23 @@ describe('MapPage', () => {
       },
     );
 
-    it('opens a row chosen at full at half, without focusing the detail', async () => {
-      const user = userEvent.setup();
-      await renderPage();
-      await rowIn('Cercanas', '1a');
+    // The row unmounts with the list, so the focus would be lost: the station name takes it.
+    it.each(['half', 'full'] as const)(
+      'opens a row chosen with the list at %s at half, focusing the station name',
+      async (snap) => {
+        const user = userEvent.setup();
+        await renderPage();
+        await rowIn('Cercanas', '1a');
 
-      await openFromList(user, 'full');
+        await openFromList(user, snap);
 
-      expect(await detailTitle('Puerta del Sol B')).toBeInTheDocument();
-      expect(detailHandle()).toHaveAccessibleName('Reducir detalle');
-      expect(detailSheet()).not.toContainElement(document.activeElement as HTMLElement);
-      expect(screen.queryByRole('button', { name: /^Ver (todas|mapa)$/ })).not.toBeInTheDocument();
-    });
+        expect(await detailTitle('Puerta del Sol B')).toHaveFocus();
+        expect(detailHandle()).toHaveAccessibleName('Reducir detalle');
+        expect(
+          screen.queryByRole('button', { name: /^Ver (todas|mapa)$/ }),
+        ).not.toBeInTheDocument();
+      },
+    );
 
     it('keeps the marker selected while the detail is at peek', async () => {
       const user = userEvent.setup();
@@ -640,6 +645,24 @@ describe('MapPage', () => {
         await goBack(user, way);
 
         expect(await rowIn('Cercanas', '1b')).toHaveFocus();
+      },
+    );
+
+    // At peek the list is inert, so neither its rows nor its headings can take the focus back.
+    it.each(['the arrow', 'Escape', 'Back'] as const)(
+      'focuses the handle when %s goes back to the list at peek',
+      async (way) => {
+        const user = userEvent.setup();
+        const { router } = await renderPage();
+        await rowIn('Cercanas', '1a');
+        await openFromList(user, 'peek');
+        await detailTitle('Puerta del Sol B');
+
+        if (way === 'Back') await act(() => router.history.back());
+        else await goBack(user, way);
+
+        expect(sheetHandle()).toHaveFocus();
+        expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
       },
     );
 
