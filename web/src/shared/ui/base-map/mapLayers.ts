@@ -14,27 +14,27 @@ import {
 
 const POINTER_CURSOR = 'pointer';
 const DEFAULT_CURSOR = '';
-const IMAGE_MISSING_EVENT = 'styleimagemissing';
 // Sharp on most screens; a higher ratio only makes every image bigger in memory.
 const MAX_PIXEL_RATIO = 2;
 
-type ImageMissingListener = (event: { id: string }) => void;
+type MissingImageResolver = (id: string) => void;
 
 export type PointImageHost = {
   hasImage(id: string): boolean;
   addImage(id: string, image: ImageData, options: { pixelRatio: number }): void;
   updateImage(id: string, image: ImageData): void;
-  on(type: typeof IMAGE_MISSING_EVENT, listener: ImageMissingListener): unknown;
-  off(type: typeof IMAGE_MISSING_EVENT, listener: ImageMissingListener): unknown;
+  setMissingStyleImageResolver(resolver: MissingImageResolver | null): unknown;
 };
 
-// Paints each point image the first time the layer asks for it; returns how to stop. Images painted
-// before the app font loaded are painted again once it has, so no number keeps the fallback font.
+// Paints each point image the first time the layer asks for it; returns how to stop. MapLibre 6
+// calls the resolver before laying the tile out, while `styleimagemissing` comes too late: an image
+// added there only shows on the next layout, so a newly selected point vanished until a zoom.
+// Images painted before the app font loaded are painted again once it has.
 export function paintMissingPointImages(map: PointImageHost, style: PointStyle) {
   const pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
   const painted = new Set<string>();
   let isStopped = false;
-  const onImageMissing: ImageMissingListener = ({ id }) => {
+  const paintMissingImage: MissingImageResolver = (id) => {
     const spec = parsePointImageId(id);
     if (!spec || map.hasImage(id)) return;
     const image = createPointImage(spec, style, pixelRatio);
@@ -51,10 +51,10 @@ export function paintMissingPointImages(map: PointImageHost, style: PointStyle) 
     }
   };
   void document.fonts?.load(labelFont(style)).then(repaintInFont, () => {});
-  map.on(IMAGE_MISSING_EVENT, onImageMissing);
+  map.setMissingStyleImageResolver(paintMissingImage);
   return () => {
     isStopped = true;
-    map.off(IMAGE_MISSING_EVENT, onImageMissing);
+    map.setMissingStyleImageResolver(null);
   };
 }
 
