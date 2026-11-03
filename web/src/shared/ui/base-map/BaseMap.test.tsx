@@ -43,6 +43,7 @@ const maplibre = vi.hoisted(() => {
     readonly easeTo = vi.fn<(options: unknown) => void>();
     readonly zoomIn = vi.fn<() => void>();
     readonly zoomOut = vi.fn<() => void>();
+    readonly setMissingStyleImageResolver = vi.fn<(resolver: unknown) => void>();
     readonly sources = new Map<string, MockSource>();
     readonly subscriptions: Subscription[] = [];
     readonly canvas = { style: { cursor: '' } };
@@ -289,12 +290,11 @@ describe('BaseMap points', () => {
   it('paints the point images on demand until the map is removed', () => {
     const { unmount } = render(<BaseMap points={points} />);
     const map = loadedMap();
-    const [painter] = map.subscriptions.filter(({ type }) => type === 'styleimagemissing');
-    expect(painter).toBeDefined();
+    expect(map.setMissingStyleImageResolver).toHaveBeenCalledExactlyOnceWith(expect.any(Function));
 
     unmount();
 
-    expect(map.off).toHaveBeenCalledWith('styleimagemissing', painter?.handler);
+    expect(map.setMissingStyleImageResolver).toHaveBeenLastCalledWith(null);
   });
 
   it('applies the points passed before the style loaded', () => {

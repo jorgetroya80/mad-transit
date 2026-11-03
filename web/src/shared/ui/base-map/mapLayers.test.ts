@@ -8,22 +8,25 @@ vi.mock('./pointImage', async (importOriginal) => ({
   createPointImage: vi.fn<() => ImageData | undefined>(),
 }));
 
-type MissingListener = (event: { id: string }) => void;
+type MissingImageResolver = (id: string) => void | Promise<void>;
 
 const style = { colors: {} as MapColors, fontFamily: 'sans-serif' };
 const image = { width: 1, height: 1, data: new Uint8ClampedArray(4) } as ImageData;
 
+// Like MapLibre 6, the map asks its resolver for a missing image and only then lays the tile out.
 function fakeMap(existingIds: string[] = []) {
-  const listeners = new Set<MissingListener>();
+  let resolver: MissingImageResolver | null = null;
   const map = {
     hasImage: (id: string) => existingIds.includes(id),
     addImage: vi.fn<PointImageHost['addImage']>(),
     updateImage: vi.fn<PointImageHost['updateImage']>(),
-    on: (_type: 'styleimagemissing', listener: MissingListener) => listeners.add(listener),
-    off: (_type: 'styleimagemissing', listener: MissingListener) => listeners.delete(listener),
+    setMissingStyleImageResolver: (next: MissingImageResolver | null) => {
+      resolver = next;
+    },
   } satisfies PointImageHost;
-  const requestImage = (id: string) => listeners.forEach((listener) => listener({ id }));
-  return { map, listeners, requestImage };
+  const requestImage = (id: string) => void resolver?.(id);
+  const hasResolver = () => resolver !== null;
+  return { map, requestImage, hasResolver };
 }
 
 function stubFontLoading() {
@@ -120,13 +123,24 @@ describe('paintMissingPointImages', () => {
     expect(map.addImage).not.toHaveBeenCalled();
   });
 
-  it('stops listening when stopped', () => {
-    const { map, listeners } = fakeMap();
+  it('adds a missing image before the map lays the tile out', () => {
+    const { map, requestImage } = fakeMap();
+    paintMissingPointImages(map, style);
+
+    requestImage('point:low:1:4');
+
+    expect(map.addImage).toHaveBeenCalledExactlyOnceWith('point:low:1:4', image, {
+      pixelRatio: 2,
+    });
+  });
+
+  it('stops resolving images when stopped', () => {
+    const { map, hasResolver } = fakeMap();
 
     const stop = paintMissingPointImages(map, style);
-    expect(listeners.size).toBe(1);
+    expect(hasResolver()).toBe(true);
     stop();
 
-    expect(listeners.size).toBe(0);
+    expect(hasResolver()).toBe(false);
   });
 });
