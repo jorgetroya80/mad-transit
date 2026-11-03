@@ -4,7 +4,8 @@ import { CardAvailability } from './CardAvailability';
 
 type CardBodyProps = { detail: StationDetailState };
 
-// The card's own «Cerrar» closes every state, so not found needs no action of its own.
+// The card's «Cerrar» (the sheet's arrow back) closes every state, so not found needs no action
+// of its own.
 export function CardBody({ detail }: CardBodyProps) {
   if (detail.status === 'loading') {
     return <StateMessage variant="loading" title="Cargando estación…" />;

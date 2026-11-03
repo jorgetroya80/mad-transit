@@ -109,6 +109,18 @@ function sheetHandle() {
   return screen.getByRole('button', { name: /^(Ampliar|Reducir) lista$/ });
 }
 
+function detailHandle() {
+  return screen.getByRole('button', { name: /^(Ampliar|Reducir) detalle$/ });
+}
+
+function detailSheet() {
+  return screen.getByRole('region', { name: 'Detalle de la estación' });
+}
+
+function backButton() {
+  return screen.getByRole('button', { name: 'Volver a la lista' });
+}
+
 function sheetSubtitle() {
   return screen.getByText(/^Cerca de (ti|la Puerta del Sol)/);
 }
@@ -234,7 +246,7 @@ describe('MapPage', () => {
     it('opens ?station=1a in place of the list and selects it on the map (SC5)', async () => {
       await renderPage('/?station=1a');
 
-      expect(await detailTitle('1a · Puerta del Sol A')).toBeInTheDocument();
+      expect(await detailTitle('Puerta del Sol A')).toBeInTheDocument();
       expect(screen.queryByRole('region', { name: 'Cercanas' })).not.toBeInTheDocument();
       await waitFor(() =>
         expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: PUERTA_DEL_SOL_A }),
@@ -244,20 +256,18 @@ describe('MapPage', () => {
     it('centers the map on the user with "Centrar en mi posición" and keeps the station open', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
-      await detailTitle('1a · Puerta del Sol A');
+      await detailTitle('Puerta del Sol A');
 
       await user.click(recenterButton());
 
       await waitFor(() => expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: USER }));
-      expect(
-        screen.getByRole('heading', { level: 2, name: '1a · Puerta del Sol A' }),
-      ).toBeVisible();
+      expect(screen.getByRole('heading', { level: 2, name: 'Puerta del Sol A' })).toBeVisible();
     });
 
     it('focuses the next station chosen after "Centrar en mi posición"', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
-      await detailTitle('1a · Puerta del Sol A');
+      await detailTitle('Puerta del Sol A');
       await user.click(recenterButton());
       await waitFor(() => expect(lastMapProps().focus).toEqual(USER));
 
@@ -271,7 +281,7 @@ describe('MapPage', () => {
     it('focuses the open station again when its point is tapped after recentering', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
-      await detailTitle('1a · Puerta del Sol A');
+      await detailTitle('Puerta del Sol A');
       await user.click(recenterButton());
       await waitFor(() => expect(lastMapProps().focus).toEqual(USER));
 
@@ -317,7 +327,7 @@ describe('MapPage', () => {
       await rowIn('Favoritas · 1', '1a');
 
       await user.click(await rowIn('Cercanas', '1a'));
-      expect(await detailTitle('1a · Puerta del Sol A')).toHaveFocus();
+      expect(await detailTitle('Puerta del Sol A')).not.toHaveFocus();
 
       await act(() => router.history.back());
 
@@ -325,14 +335,14 @@ describe('MapPage', () => {
       expect(router.state.location.href).toBe('/');
     });
 
-    it('returns the focus to the favorite row with "Volver"', async () => {
+    it('returns the focus to the favorite row with "Volver a la lista"', async () => {
       saveFavorites(['1a']);
       const user = userEvent.setup();
       await renderPage();
 
       await user.click(await rowIn('Favoritas · 1', '1a'));
-      await detailTitle('1a · Puerta del Sol A');
-      await user.click(screen.getByRole('button', { name: 'Volver' }));
+      await detailTitle('Puerta del Sol A');
+      await user.click(backButton());
 
       expect(await rowIn('Favoritas · 1', '1a')).toHaveFocus();
     });
@@ -341,8 +351,8 @@ describe('MapPage', () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
 
-      await detailTitle('1a · Puerta del Sol A');
-      await user.click(screen.getByRole('button', { name: 'Volver' }));
+      await detailTitle('Puerta del Sol A');
+      await user.click(backButton());
 
       expect(await screen.findByRole('heading', { level: 3, name: 'Cercanas' })).toHaveFocus();
     });
@@ -441,24 +451,28 @@ describe('MapPage', () => {
     it('starts at half on a station link', async () => {
       await renderPage('/?station=1a');
 
-      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
-      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
+      expect(detailHandle()).toHaveAttribute('aria-expanded', 'true');
+      expect(detailHandle()).toHaveAccessibleName('Reducir detalle');
     });
 
-    it('shows a station tapped on the map, and the handle cycles half and full', async () => {
+    it('shows a station tapped on the map, and the handle toggles half and peek', async () => {
       const user = userEvent.setup();
       await renderPage();
 
       await act(async () => lastMapProps().onSelectPoint?.('1b'));
 
-      expect(await detailTitle('1b · Puerta del Sol B')).toBeInTheDocument();
-      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
-      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
-      await user.click(sheetHandle());
-      expect(sheetHandle()).toHaveAccessibleName('Reducir lista');
-      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
-      await user.click(sheetHandle());
-      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
+      expect(await detailTitle('Puerta del Sol B')).toBeInTheDocument();
+      expect(detailHandle()).toHaveAttribute('aria-expanded', 'true');
+      expect(detailHandle()).toHaveAccessibleName('Reducir detalle');
+      await user.click(detailHandle());
+      expect(detailHandle()).toHaveAccessibleName('Ampliar detalle');
+      expect(detailHandle()).toHaveAttribute('aria-expanded', 'false');
+      expect(
+        within(detailSheet()).getByRole('button', { name: 'Volver a la lista' }),
+      ).toBeVisible();
+      await user.click(detailHandle());
+      expect(detailHandle()).toHaveAccessibleName('Reducir detalle');
+      expect(detailHandle()).toHaveAttribute('aria-expanded', 'true');
     });
 
     // jsdom's 768 px viewport: half covers 430 - 112 px and full min(700, 768 - 144) - 112 px.
@@ -487,23 +501,23 @@ describe('MapPage', () => {
       await renderPage();
 
       await act(async () => lastMapProps().onSelectPoint?.('1b'));
-      expect(await detailTitle('1b · Puerta del Sol B')).toBeInTheDocument();
+      expect(await detailTitle('Puerta del Sol B')).toBeInTheDocument();
       expect(lastMapProps().focusPadding).toEqual({ bottom: 318 });
 
-      await user.click(sheetHandle());
-      expect(lastMapProps().focusPadding).toEqual({ bottom: 512 });
+      await user.click(detailHandle());
+      expect(lastMapProps().focusPadding).toEqual({ bottom: 0 });
     });
 
-    it('keeps the map on the user after recentering when the sheet grows', async () => {
+    it('keeps the map on the user after recentering when the sheet changes height', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
-      await detailTitle('1a · Puerta del Sol A');
+      await detailTitle('Puerta del Sol A');
       await user.click(recenterButton());
       await waitFor(() => expect(lastMapProps().focus).toEqual(USER));
 
-      await user.click(sheetHandle());
+      await user.click(detailHandle());
 
-      expect(lastMapProps()).toMatchObject({ focus: USER, focusPadding: { bottom: 512 } });
+      expect(lastMapProps()).toMatchObject({ focus: USER, focusPadding: { bottom: 0 } });
     });
 
     it('stays open when a row is chosen', async () => {
@@ -512,8 +526,133 @@ describe('MapPage', () => {
 
       await user.click(await rowIn('Cercanas', '1b'));
 
-      expect(await detailTitle('1b · Puerta del Sol B')).toBeInTheDocument();
-      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
+      expect(await detailTitle('Puerta del Sol B')).toBeInTheDocument();
+      expect(detailHandle()).toHaveAttribute('aria-expanded', 'true');
+    });
+  });
+
+  describe('station detail in the sheet below md', () => {
+    type User = ReturnType<typeof userEvent.setup>;
+    type ListSnap = 'peek' | 'half' | 'full';
+
+    beforeEach(() => stubGeolocation('granted'));
+
+    // «Ver todas» takes the list to full, and «Ver mapa» from there to peek.
+    async function moveListTo(user: User, snap: ListSnap) {
+      if (snap === 'half') return;
+      await user.click(sheetSnapButton());
+      if (snap === 'peek') await user.click(sheetSnapButton());
+    }
+
+    // The list region keeps the name «Estaciones»; at peek its rows are inert, so the map opens.
+    async function openFromList(user: User, snap: ListSnap) {
+      await moveListTo(user, snap);
+      if (snap === 'peek') {
+        await act(async () => lastMapProps().onSelectPoint?.('1b'));
+        return;
+      }
+      await user.click(await rowIn('Cercanas', '1b'));
+    }
+
+    it.each(['peek', 'half', 'full'] as const)(
+      'opens a station tapped on the map at half from %s, without moving the focus',
+      async (snap) => {
+        const user = userEvent.setup();
+        await renderPage();
+        await rowIn('Cercanas', '1a');
+        await moveListTo(user, snap);
+        sheetHandle().focus();
+
+        await act(async () => lastMapProps().onSelectPoint?.('1b'));
+
+        expect(await detailTitle('Puerta del Sol B')).toBeInTheDocument();
+        expect(detailHandle()).toHaveFocus();
+        expect(detailHandle()).toHaveAttribute('aria-expanded', 'true');
+        expect(recenterButton()).toHaveStyle({ bottom: '334px' });
+        expect(lastMapProps().selectedId).toBe('1b');
+      },
+    );
+
+    it('opens a row chosen at full at half, without focusing the detail', async () => {
+      const user = userEvent.setup();
+      await renderPage();
+      await rowIn('Cercanas', '1a');
+
+      await openFromList(user, 'full');
+
+      expect(await detailTitle('Puerta del Sol B')).toBeInTheDocument();
+      expect(detailHandle()).toHaveAccessibleName('Reducir detalle');
+      expect(detailSheet()).not.toContainElement(document.activeElement as HTMLElement);
+      expect(screen.queryByRole('button', { name: /^Ver (todas|mapa)$/ })).not.toBeInTheDocument();
+    });
+
+    it('keeps the marker selected while the detail is at peek', async () => {
+      const user = userEvent.setup();
+      await renderPage('/?station=1a');
+      await detailTitle('Puerta del Sol A');
+
+      await user.click(detailHandle());
+
+      expect(lastMapProps().selectedId).toBe('1a');
+    });
+
+    async function goBack(user: User, way: 'the arrow' | 'Escape') {
+      if (way === 'the arrow') {
+        await user.click(backButton());
+        return;
+      }
+      within(detailSheet()).getByRole('button', { name: 'Favorita' }).focus();
+      await user.keyboard('{Escape}');
+    }
+
+    it.each([
+      { snap: 'peek', way: 'the arrow' },
+      { snap: 'full', way: 'the arrow' },
+      { snap: 'peek', way: 'Escape' },
+      { snap: 'full', way: 'Escape' },
+    ] as const)('goes back to the list at $snap with $way, unselected', async ({ snap, way }) => {
+      const user = userEvent.setup();
+      const { router } = await renderPage();
+      await rowIn('Cercanas', '1a');
+      await openFromList(user, snap);
+      await detailTitle('Puerta del Sol B');
+      await user.click(detailHandle());
+
+      await goBack(user, way);
+
+      expect(router.state.location.search.station).toBeUndefined();
+      expect(lastMapProps().selectedId).toBeUndefined();
+      expect(sheetHandle()).toHaveAttribute('aria-expanded', String(snap !== 'peek'));
+      expect(sheetHandle()).toHaveAccessibleName(
+        snap === 'full' ? 'Reducir lista' : 'Ampliar lista',
+      );
+    });
+
+    it.each(['the arrow', 'Escape'] as const)(
+      'returns the focus to the row with %s',
+      async (way) => {
+        const user = userEvent.setup();
+        await renderPage();
+        await rowIn('Cercanas', '1a');
+        await openFromList(user, 'full');
+        await detailTitle('Puerta del Sol B');
+
+        await goBack(user, way);
+
+        expect(await rowIn('Cercanas', '1b')).toHaveFocus();
+      },
+    );
+
+    it('has no axe violations with the detail open, at half and peek', async () => {
+      stubGeolocation('denied');
+      const user = userEvent.setup();
+      await renderPage('/?station=1a');
+      await detailTitle('Puerta del Sol A');
+      const sheet = detailSheet().parentElement as HTMLElement;
+
+      await expect(expectNoAxeViolations(sheet)).resolves.toBeUndefined();
+      await user.click(detailHandle());
+      await expect(expectNoAxeViolations(sheet)).resolves.toBeUndefined();
     });
   });
 
@@ -604,7 +743,7 @@ describe('MapPage', () => {
     it('leaves the header out while a station is open', async () => {
       stubGeolocation('granted');
       await renderPage('/?station=1a');
-      await detailTitle('1a · Puerta del Sol A');
+      await detailTitle('Puerta del Sol A');
 
       expect(screen.queryByRole('button', { name: 'Ver todas' })).not.toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: /estaciones con/ })).not.toBeInTheDocument();

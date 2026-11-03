@@ -10,6 +10,7 @@ export { CollapsibleSection } from './collapsible-section';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
 export {
+  ArrowLeftIcon,
   BikeIcon,
   ChevronIcon,
   ClearIcon,

@@ -1,5 +1,6 @@
 import { type Ref, useId } from 'react';
 import { BottomSheet } from '@/shared/ui';
+import { StationSheetBody, StationSheetHeader } from '@/widgets/station-card';
 import type { MapLocation } from '../model/useMapLocation';
 import type { useSheetSnap } from '../model/useSheetSnap';
 import { MobilePanel } from './MobilePanel';
@@ -9,22 +10,25 @@ type MobileSheetProps = {
   sheet: ReturnType<typeof useSheetSnap>;
   panelRef: Ref<HTMLDivElement>;
   location: MapLocation;
-  isStationOpen: boolean;
+  selectedStation: string | undefined;
 };
 
-// The list header only: the station detail keeps today's content until it gets its own.
-export function MobileSheet({ sheet, panelRef, location, isStationOpen }: MobileSheetProps) {
+// The list, or the selected station in its place. Either way the header stays visible at peek.
+export function MobileSheet({ sheet, panelRef, location, selectedStation }: MobileSheetProps) {
   const bodyId = useId();
+  const isStationOpen = selectedStation !== undefined;
   return (
     <BottomSheet
-      label="Estaciones"
+      label={isStationOpen ? 'Detalle de la estación' : 'Estaciones'}
       snap={sheet.snap}
       onSnapChange={sheet.setSnap}
       nextSnap={sheet.nextSnap}
       handleLabel={sheet.handleLabel}
       bodyId={bodyId}
       header={
-        isStationOpen ? undefined : (
+        isStationOpen ? (
+          <StationSheetHeader number={selectedStation} center={location.center} />
+        ) : (
           <MobileSheetHeader
             location={location}
             snap={sheet.snap}
@@ -34,7 +38,11 @@ export function MobileSheet({ sheet, panelRef, location, isStationOpen }: Mobile
         )
       }
     >
-      <MobilePanel ref={panelRef} location={location} isStationOpen={isStationOpen} />
+      {isStationOpen ? (
+        <StationSheetBody number={selectedStation} />
+      ) : (
+        <MobilePanel ref={panelRef} location={location} />
+      )}
     </BottomSheet>
   );
 }

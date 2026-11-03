@@ -48,7 +48,7 @@ export function MobileMapPage() {
         sheet={sheet}
         panelRef={panelRef}
         location={{ ...location, locate }}
-        isStationOpen={number !== undefined}
+        selectedStation={number}
       />
     </main>
   );
