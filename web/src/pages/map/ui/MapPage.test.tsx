@@ -5,6 +5,7 @@ import { nearbyStationsFixture, stationsFixture } from '@/shared/api/mocks/fixtu
 import { server } from '@/shared/api/mocks/node';
 import { env, FAVORITES_STORAGE_KEY, MADRID_CENTER } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import { stubMatchMedia } from '../../../../test/matchMedia';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 
@@ -108,6 +109,14 @@ function sheetHandle() {
   return screen.getByRole('button', { name: /^(Ampliar|Reducir) lista$/ });
 }
 
+function sheetSubtitle() {
+  return screen.getByText(/^Cerca de (ti|la Puerta del Sol)/);
+}
+
+function sheetSnapButton() {
+  return screen.getByRole('button', { name: /^Ver (todas|mapa)$/ });
+}
+
 function recenterButton() {
   return screen.getByRole('button', { name: 'Centrar en mi posición' });
 }
@@ -158,9 +167,7 @@ describe('MapPage', () => {
       await renderPage();
 
       const region = panel();
-      expect(
-        await within(region).findByRole('region', { name: 'Cerca de ti' }),
-      ).toBeInTheDocument();
+      expect(await within(region).findByRole('region', { name: 'Cercanas' })).toBeInTheDocument();
       expect(within(region).getByRole('link', { name: 'EMT de Madrid' })).toBeInTheDocument();
     });
 
@@ -201,8 +208,9 @@ describe('MapPage', () => {
 
       await renderPage();
 
-      expect(await rowIn('Cerca de ti', '1a')).toBeInTheDocument();
-      expect(screen.queryByText(/Sin ubicación/)).not.toBeInTheDocument();
+      expect(await rowIn('Cercanas', '1a')).toBeInTheDocument();
+      expect(screen.getByText('Usando tu ubicación actual.')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Activar' })).not.toBeInTheDocument();
       expect(requests[0]?.searchParams.get('near')).toBe('40.4169,-3.7033');
       expect(lastMapProps()).toMatchObject({ focus: USER, userLocation: USER });
     });
@@ -211,7 +219,7 @@ describe('MapPage', () => {
     it('brings the map back to the user with "Centrar en mi posición", though the position is the same', async () => {
       const user = userEvent.setup();
       await renderPage();
-      await rowIn('Cerca de ti', '1a');
+      await rowIn('Cercanas', '1a');
       mapRenders.length = 0;
 
       await user.click(recenterButton());
@@ -227,7 +235,7 @@ describe('MapPage', () => {
       await renderPage('/?station=1a');
 
       expect(await detailTitle('1a · Puerta del Sol A')).toBeInTheDocument();
-      expect(screen.queryByRole('region', { name: 'Cerca de ti' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Cercanas' })).not.toBeInTheDocument();
       await waitFor(() =>
         expect(lastMapProps()).toMatchObject({ selectedId: '1a', focus: PUERTA_DEL_SOL_A }),
       );
@@ -277,14 +285,14 @@ describe('MapPage', () => {
       const docks = holdDocksResponse();
       const user = userEvent.setup();
       const { router } = await renderPage();
-      await rowIn('Cerca de ti', '1a');
+      await rowIn('Cercanas', '1a');
 
       await user.click(screen.getByRole('button', { name: 'Dejar bici' }));
 
       expect(router.state.location.href).toBe('/?need=docks');
       await waitFor(() => expect(requests.at(-1)?.searchParams.get('need')).toBe('docks'));
       expect(screen.queryByText(/Cargando estaciones cercanas/)).not.toBeInTheDocument();
-      expect(await rowIn('Cerca de ti', '1a')).toHaveAccessibleName(/12 anclajes libres$/);
+      expect(await rowIn('Cercanas', '1a')).toHaveAccessibleName(/12 anclajes libres$/);
 
       docks.release();
     });
@@ -294,7 +302,7 @@ describe('MapPage', () => {
 
       await renderPage('/?need=xyz');
 
-      expect(await rowIn('Cerca de ti', '1a')).toHaveAccessibleName(/12 bicis$/);
+      expect(await rowIn('Cercanas', '1a')).toHaveAccessibleName(/12 bicis$/);
       expect(screen.getByRole('button', { name: 'Sacar bici' })).toHaveAttribute(
         'aria-pressed',
         'true',
@@ -306,14 +314,14 @@ describe('MapPage', () => {
       saveFavorites(['1a']);
       const user = userEvent.setup();
       const { router } = await renderPage();
-      await rowIn('Favoritas', '1a');
+      await rowIn('Favoritas · 1', '1a');
 
-      await user.click(await rowIn('Cerca de ti', '1a'));
+      await user.click(await rowIn('Cercanas', '1a'));
       expect(await detailTitle('1a · Puerta del Sol A')).toHaveFocus();
 
       await act(() => router.history.back());
 
-      expect(await rowIn('Cerca de ti', '1a')).toHaveFocus();
+      expect(await rowIn('Cercanas', '1a')).toHaveFocus();
       expect(router.state.location.href).toBe('/');
     });
 
@@ -322,11 +330,11 @@ describe('MapPage', () => {
       const user = userEvent.setup();
       await renderPage();
 
-      await user.click(await rowIn('Favoritas', '1a'));
+      await user.click(await rowIn('Favoritas · 1', '1a'));
       await detailTitle('1a · Puerta del Sol A');
       await user.click(screen.getByRole('button', { name: 'Volver' }));
 
-      expect(await rowIn('Favoritas', '1a')).toHaveFocus();
+      expect(await rowIn('Favoritas · 1', '1a')).toHaveFocus();
     });
 
     it('focuses the list heading when the detail was not opened from the list', async () => {
@@ -336,7 +344,7 @@ describe('MapPage', () => {
       await detailTitle('1a · Puerta del Sol A');
       await user.click(screen.getByRole('button', { name: 'Volver' }));
 
-      expect(await screen.findByRole('heading', { level: 2, name: 'Cerca de ti' })).toHaveFocus();
+      expect(await screen.findByRole('heading', { level: 3, name: 'Cercanas' })).toHaveFocus();
     });
   });
 
@@ -347,7 +355,7 @@ describe('MapPage', () => {
 
       await renderPage();
 
-      expect(await rowIn('Cerca de la Puerta del Sol', '1a')).toBeInTheDocument();
+      expect(await rowIn('Cercanas', '1a')).toBeInTheDocument();
       expect(
         screen.getByText(
           'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol',
@@ -361,13 +369,14 @@ describe('MapPage', () => {
       const geolocation = stubGeolocation('denied');
       const user = userEvent.setup();
       await renderPage();
-      await rowIn('Cerca de la Puerta del Sol', '1a');
+      await rowIn('Cercanas', '1a');
 
       geolocation.answerWith('granted');
       await user.click(recenterButton());
 
       expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
-      expect(await rowIn('Cerca de ti', '1a')).toBeInTheDocument();
+      expect(await rowIn('Cercanas', '1a')).toBeInTheDocument();
+      await waitFor(() => expect(sheetSubtitle()).toHaveTextContent(/^Cerca de ti · /));
       expect(lastMapProps()).toMatchObject({ focus: USER, userLocation: USER });
     });
 
@@ -375,7 +384,7 @@ describe('MapPage', () => {
       stubGeolocation('denied');
       const user = userEvent.setup();
       await renderPage();
-      await rowIn('Cerca de la Puerta del Sol', '1a');
+      await rowIn('Cercanas', '1a');
       mapRenders.length = 0;
 
       await user.click(recenterButton());
@@ -391,10 +400,9 @@ describe('MapPage', () => {
 
       await renderPage();
 
-      expect(await rowIn('Cerca de la Puerta del Sol', '1a')).toBeInTheDocument();
-      expect(
-        screen.getByText('Sin ubicación: mostrando estaciones cerca de la Puerta del Sol'),
-      ).toBeInTheDocument();
+      expect(await rowIn('Cercanas', '1a')).toBeInTheDocument();
+      expect(screen.getByText('Sin tu ubicación: cerca de la Puerta del Sol')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Activar' })).toBeInTheDocument();
     });
   });
 
@@ -403,15 +411,13 @@ describe('MapPage', () => {
       const geolocation = stubGeolocation('denied');
       const user = userEvent.setup();
       await renderPage();
-      await rowIn('Cerca de la Puerta del Sol', '1a');
+      await rowIn('Cercanas', '1a');
 
       geolocation.answerWith('pending');
       await user.click(recenterButton());
 
       expect(recenterButton()).toHaveAttribute('aria-busy', 'true');
-      expect(
-        screen.getByRole('heading', { level: 2, name: 'Cerca de la Puerta del Sol' }),
-      ).toBeInTheDocument();
+      expect(sheetSubtitle()).toHaveTextContent(/^Cerca de la Puerta del Sol · /);
       expect(
         screen.getByText(
           'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol',
@@ -504,10 +510,116 @@ describe('MapPage', () => {
       const user = userEvent.setup();
       await renderPage();
 
-      await user.click(await rowIn('Cerca de ti', '1b'));
+      await user.click(await rowIn('Cercanas', '1b'));
 
       expect(await detailTitle('1b · Puerta del Sol B')).toBeInTheDocument();
       expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
+    });
+  });
+
+  describe('sheet header below md', () => {
+    it('counts the nearby stations with bikes, then with free docks, as the mode changes', async () => {
+      stubGeolocation('granted');
+      server.use(
+        http.get(STATIONS_URL, ({ request }) => {
+          const params = new URL(request.url).searchParams;
+          if (!params.has('near')) return HttpResponse.json(stationsFixture);
+          if (params.get('need') === 'bikes') return HttpResponse.json(nearbyStationsFixture);
+          return HttpResponse.json({
+            ...nearbyStationsFixture,
+            stations: nearbyStationsFixture.stations.map((station) =>
+              station.number === '1a' ? { ...station, freeDocks: 0 } : station,
+            ),
+          });
+        }),
+      );
+      const user = userEvent.setup();
+      await renderPage();
+
+      // 1a and 1b have bikes; station 2 is out of service.
+      expect(
+        await screen.findByRole('heading', { level: 2, name: '2 estaciones con bicis' }),
+      ).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Dejar bici' }));
+
+      expect(
+        await screen.findByRole('heading', { level: 2, name: '1 estación con hueco' }),
+      ).toBeInTheDocument();
+    });
+
+    it('says the list is near the user and how old it is', async () => {
+      stubGeolocation('granted');
+      await renderPage();
+      await rowIn('Cercanas', '1a');
+
+      expect(sheetSubtitle()).toHaveTextContent('Cerca de ti · hace 5 minutos');
+    });
+
+    it('says the list is near Puerta del Sol without the location', async () => {
+      stubGeolocation('denied');
+      await renderPage();
+      await rowIn('Cercanas', '1a');
+
+      expect(sheetSubtitle()).toHaveTextContent('Cerca de la Puerta del Sol · hace 5 minutos');
+    });
+
+    it('names the nearby stations without a count or an age while they load', async () => {
+      stubGeolocation('pending');
+      await renderPage();
+
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Estaciones cercanas' }),
+      ).toBeInTheDocument();
+      expect(sheetSubtitle()).toHaveTextContent(/^Cerca de ti$/);
+    });
+
+    it('opens the sheet to full with «Ver todas» and down to peek with «Ver mapa»', async () => {
+      stubGeolocation('granted');
+      const user = userEvent.setup();
+      await renderPage();
+      const chevron = () => sheetSnapButton().querySelector('svg');
+
+      expect(sheetSnapButton()).toHaveAccessibleName('Ver todas');
+      expect(sheetSnapButton()).toHaveAttribute(
+        'aria-controls',
+        sheetHandle().getAttribute('aria-controls'),
+      );
+      // ChevronIcon points down: «Ver todas» shows it up, as the design does.
+      expect(chevron()).toHaveClass('rotate-180');
+      expect(chevron()).toHaveClass('duration-320', 'ease-sheet', 'motion-reduce:transition-none');
+
+      await user.click(sheetSnapButton());
+      expect(sheetHandle()).toHaveAccessibleName('Reducir lista');
+      expect(sheetSnapButton()).toHaveAccessibleName('Ver mapa');
+      expect(chevron()).not.toHaveClass('rotate-180');
+
+      await user.click(sheetSnapButton());
+      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'false');
+      expect(sheetSnapButton()).toHaveAccessibleName('Ver todas');
+
+      await user.click(sheetSnapButton());
+      expect(sheetHandle()).toHaveAccessibleName('Reducir lista');
+    });
+
+    it('leaves the header out while a station is open', async () => {
+      stubGeolocation('granted');
+      await renderPage('/?station=1a');
+      await detailTitle('1a · Puerta del Sol A');
+
+      expect(screen.queryByRole('button', { name: 'Ver todas' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /estaciones con/ })).not.toBeInTheDocument();
+    });
+
+    it('has no axe violations in the sheet with its header, at half and full', async () => {
+      stubGeolocation('denied');
+      const user = userEvent.setup();
+      await renderPage();
+      await rowIn('Cercanas', '1a');
+      const sheet = panel().parentElement as HTMLElement;
+
+      await expect(expectNoAxeViolations(sheet)).resolves.toBeUndefined();
+      await user.click(sheetSnapButton());
+      await expect(expectNoAxeViolations(sheet)).resolves.toBeUndefined();
     });
   });
 

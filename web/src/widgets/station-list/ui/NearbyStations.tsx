@@ -9,9 +9,17 @@ type NearbyStationsProps = {
   need: Need;
   selectedNumber: string | undefined;
   onSelect: (number: string) => void;
+  // False on mobile, where the sheet header already says how old the list is.
+  showUpdatedAt: boolean;
 };
 
-export function NearbyStations({ list, need, selectedNumber, onSelect }: NearbyStationsProps) {
+export function NearbyStations({
+  list,
+  need,
+  selectedNumber,
+  onSelect,
+  showUpdatedAt,
+}: NearbyStationsProps) {
   const { stations } = list;
   if (list.status === 'loading') {
     return <StateMessage variant="loading" title="Cargando estaciones cercanas…" />;
@@ -32,7 +40,7 @@ export function NearbyStations({ list, need, selectedNumber, onSelect }: NearbyS
   }
   return (
     <>
-      {list.updatedAt ? <UpdatedAt date={list.updatedAt} /> : null}
+      {showUpdatedAt && list.updatedAt ? <UpdatedAt date={list.updatedAt} /> : null}
       {stations.length === 0 ? (
         <StateMessage variant="empty" title={`Ninguna estación en ${NEARBY_RADIUS_M} m`} />
       ) : (

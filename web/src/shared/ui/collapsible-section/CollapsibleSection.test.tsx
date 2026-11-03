@@ -72,6 +72,22 @@ describe('CollapsibleSection', () => {
     expect(screen.getByRole('heading', { level: 2 })).toHaveAttribute('tabindex', '-1');
   });
 
+  it('puts the header under an h3 when asked', () => {
+    render(
+      <CollapsibleSection
+        title="Favoritas"
+        count={2}
+        icon={StarIcon}
+        storageKey={STORAGE_KEY}
+        level={3}
+      >
+        <p>Contenido</p>
+      </CollapsibleSection>,
+    );
+
+    expect(screen.getByRole('heading', { level: 3 })).toContainElement(header());
+  });
+
   it.each([
     { state: 'open', clicks: 0 },
     { state: 'folded', clicks: 1 },

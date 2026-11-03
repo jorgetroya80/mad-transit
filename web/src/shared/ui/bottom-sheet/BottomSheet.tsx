@@ -9,6 +9,8 @@ type BottomSheetProps = {
   nextSnap: Record<SheetSnap, SheetSnap>;
   handleLabel: string;
   header?: ReactNode;
+  // Given by the page when a header control also points at the body (aria-controls).
+  bodyId?: string;
   children: ReactNode;
 };
 
@@ -26,9 +28,11 @@ export function BottomSheet({
   nextSnap,
   handleLabel,
   header,
+  bodyId: givenBodyId,
   children,
 }: BottomSheetProps) {
-  const bodyId = useId();
+  const generatedBodyId = useId();
+  const bodyId = givenBodyId ?? generatedBodyId;
   const isPeek = snap === 'peek';
 
   return (

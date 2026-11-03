@@ -2,7 +2,7 @@
 // focusable heading; each row, `data-station-number`.
 const SECTION_ATTRIBUTE = 'data-station-list';
 const ROW_SELECTOR = '[data-station-number]';
-const SECTION_HEADING_SELECTOR = `[${SECTION_ATTRIBUTE}] h2`;
+const SECTION_HEADING_SELECTOR = `[${SECTION_ATTRIBUTE}] h2, [${SECTION_ATTRIBUTE}] h3`;
 
 // A station can be listed in two sections (favorite and nearby), so the number alone is not enough.
 export type RowOrigin = { section: string; number: string };

@@ -1,6 +1,5 @@
 import { NeedToggle } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
-import { BottomSheet } from '@/shared/ui';
 import { StationsMap } from '@/widgets/stations-map';
 import { TransitSearch } from '@/widgets/transit-search';
 import { useListFocusReturn } from '../model/useListFocusReturn';
@@ -8,7 +7,7 @@ import { useMapFocusPadding } from '../model/useMapFocusPadding';
 import { useMapLocation } from '../model/useMapLocation';
 import { useSheetSnap } from '../model/useSheetSnap';
 import { useUserFocus } from '../model/useUserFocus';
-import { MapPanel } from './MapPanel';
+import { MobileSheet } from './MobileSheet';
 import { RecenterButton } from './RecenterButton';
 
 // Full-screen map with the search and mode floating on top. The sheet's peek strip takes the
@@ -45,19 +44,12 @@ export function MobileMapPage() {
           className="h-full w-full"
         />
       </div>
-      <BottomSheet
-        label="Estaciones"
-        snap={sheet.snap}
-        onSnapChange={sheet.setSnap}
-        nextSnap={sheet.nextSnap}
-        handleLabel={sheet.handleLabel}
-      >
-        <MapPanel
-          ref={panelRef}
-          location={{ ...location, locate }}
-          isStationOpen={number !== undefined}
-        />
-      </BottomSheet>
+      <MobileSheet
+        sheet={sheet}
+        panelRef={panelRef}
+        location={{ ...location, locate }}
+        isStationOpen={number !== undefined}
+      />
     </main>
   );
 }

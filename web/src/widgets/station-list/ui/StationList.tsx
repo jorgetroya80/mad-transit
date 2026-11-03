@@ -1,19 +1,20 @@
-import type { Coordinates } from '@/entities/station';
+import type { Coordinates, Need } from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
 import { StaleNotice, StatusBanner } from '@/shared/ui';
 import { needCaption } from '../lib/needCaption';
 import { useNearbyList } from '../model/useNearbyList';
 import { FavoriteStations } from './FavoriteStations';
-import { ApproximateLocationNotice, DesktopLocationNotice } from './LocationNotice';
+import { ApproximateLocationNotice, type LocatingLayout, LocatingNotice } from './LocationNotice';
 import { NearbyStations } from './NearbyStations';
 import { StationSection } from './StationSection';
 
-// On desktop the location notice is always there and can ask for the position, and the
-// mode cards already say what the numbers count, so the heading says how the list is sorted.
+// On desktop and mobile the location notice is always there and can ask for the position, and
+// the mode already says what the numbers count. On desktop the heading says how the list is
+// sorted; on mobile it sits under the sheet header, which names the place and the list's age.
 type LayoutProps =
-  | { layout?: 'mobile' }
-  | { layout: 'desktop'; onLocate: () => void; isLocating?: boolean };
+  | { layout?: undefined }
+  | { layout: LocatingLayout; onLocate: () => void; isLocating?: boolean };
 
 type StationListProps = {
   // Undefined while the location is still being resolved: the nearby list waits for it.
@@ -24,13 +25,26 @@ type StationListProps = {
   isLocationDenied?: boolean;
 } & LayoutProps;
 
+type NearbyHeading = { heading: string; caption?: string; level: 2 | 3 };
+
+function nearbyHeading(
+  layout: LocatingLayout | undefined,
+  isApproximateLocation: boolean,
+  need: Need,
+): NearbyHeading {
+  if (layout === 'mobile') return { heading: 'Cercanas', level: 3 };
+  const heading = isApproximateLocation ? 'Cerca de la Puerta del Sol' : 'Cerca de ti';
+  const caption = layout === 'desktop' ? 'Ordenadas por distancia' : needCaption(need);
+  return { heading, caption, level: 2 };
+}
+
 function LocationNotice({
   center,
   isApproximateLocation,
   isLocationDenied = false,
   ...layoutProps
 }: StationListProps) {
-  if (layoutProps.layout !== 'desktop') {
+  if (layoutProps.layout === undefined) {
     return (
       <ApproximateLocationNotice
         isApproximateLocation={isApproximateLocation}
@@ -40,9 +54,10 @@ function LocationNotice({
   }
   if (center === undefined) return null;
   return (
-    <DesktopLocationNotice
+    <LocatingNotice
       isApproximateLocation={isApproximateLocation}
       isLocationDenied={isLocationDenied}
+      layout={layoutProps.layout}
       onLocate={layoutProps.onLocate}
       isLocating={layoutProps.isLocating ?? false}
     />
@@ -54,6 +69,7 @@ export function StationList(props: StationListProps) {
   const [need] = useNeed();
   const { number: selectedNumber, select } = useSelectedStation();
   const nearby = useNearbyList(center, need);
+  const { level, ...heading } = nearbyHeading(layout, isApproximateLocation, need);
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,18 +82,16 @@ export function StationList(props: StationListProps) {
         need={need}
         selectedNumber={selectedNumber}
         onSelect={select}
-        isCollapsible={layout === 'desktop'}
+        isCollapsible={layout !== undefined}
+        level={level}
       />
-      <StationSection
-        section="nearby"
-        heading={isApproximateLocation ? 'Cerca de la Puerta del Sol' : 'Cerca de ti'}
-        caption={layout === 'desktop' ? 'Ordenadas por distancia' : needCaption(need)}
-      >
+      <StationSection section="nearby" level={level} {...heading}>
         <NearbyStations
           list={nearby}
           need={need}
           selectedNumber={selectedNumber}
           onSelect={select}
+          showUpdatedAt={layout !== 'mobile'}
         />
       </StationSection>
     </div>

@@ -85,6 +85,30 @@ describe('BottomSheet', () => {
     expect(content).toHaveAttribute('id', handle.getAttribute('aria-controls'));
   });
 
+  it('takes the content id from the parent, so a header control can point at it too', () => {
+    render(
+      <BottomSheet
+        label="Estaciones"
+        snap="half"
+        onSnapChange={() => {}}
+        nextSnap={LIST_CYCLE}
+        handleLabel="Ampliar lista"
+        bodyId="sheet-body"
+      >
+        <p>Contenido del panel</p>
+      </BottomSheet>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Ampliar lista' })).toHaveAttribute(
+      'aria-controls',
+      'sheet-body',
+    );
+    expect(screen.getByText('Contenido del panel').parentElement).toHaveAttribute(
+      'id',
+      'sheet-body',
+    );
+  });
+
   // jsdom and Testing Library ignore `inert`, so the tests assert the attribute itself.
   it('makes the content inert and hides it in peek', () => {
     const { content } = renderSheet('peek');
