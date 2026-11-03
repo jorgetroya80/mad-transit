@@ -8,7 +8,16 @@ type AvailabilityBadgeProps = {
   count: number;
   need: Need;
   decorative?: boolean;
+  // `end` lines the badge up with the right edge of a row; `center` sits it in a box.
+  align?: BadgeAlign;
 };
+
+type BadgeAlign = 'end' | 'center';
+
+const ALIGN = {
+  end: { badge: 'items-end', label: 'text-right' },
+  center: { badge: 'items-center', label: 'text-center' },
+} as const satisfies Record<BadgeAlign, { badge: string; label: string }>;
 
 // Full class names (not built from `level`) so Tailwind finds them in the source. The pill has a
 // fixed size, so the dashed border of `empty` does not change it.
@@ -47,12 +56,14 @@ export function AvailabilityBadge({
   count,
   need,
   decorative = false,
+  align = 'end',
 }: AvailabilityBadgeProps) {
   const tone = TONES[level];
+  const alignment = ALIGN[align];
   return (
     <span
       aria-hidden={decorative || undefined}
-      className="inline-flex shrink-0 flex-col items-end gap-0.5"
+      className={`inline-flex shrink-0 flex-col gap-0.5 ${alignment.badge}`}
     >
       <span
         aria-hidden="true"
@@ -60,7 +71,7 @@ export function AvailabilityBadge({
       >
         {availabilityLabel({ level, count })}
       </span>
-      <span aria-hidden="true" className={`text-right text-xs font-medium ${tone.label}`}>
+      <span aria-hidden="true" className={`text-xs font-medium ${alignment.label} ${tone.label}`}>
         {availabilityStatusText(level, need)}
       </span>
       {decorative ? null : <span className="sr-only">{spokenText(level, count, need)}</span>}

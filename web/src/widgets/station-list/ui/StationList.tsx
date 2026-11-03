@@ -5,8 +5,15 @@ import { StaleNotice, StatusBanner } from '@/shared/ui';
 import { needCaption } from '../lib/needCaption';
 import { useNearbyList } from '../model/useNearbyList';
 import { FavoriteStations } from './FavoriteStations';
+import { ApproximateLocationNotice, DesktopLocationNotice } from './LocationNotice';
 import { NearbyStations } from './NearbyStations';
 import { StationSection } from './StationSection';
+
+// On desktop the location notice is always there and can ask for the position, and the
+// mode cards already say what the numbers count, so the heading says how the list is sorted.
+type LayoutProps =
+  | { layout?: 'mobile' }
+  | { layout: 'desktop'; onLocate: () => void; isLocating?: boolean };
 
 type StationListProps = {
   // Undefined while the location is still being resolved: the nearby list waits for it.
@@ -15,37 +22,63 @@ type StationListProps = {
   isApproximateLocation: boolean;
   // True when the fallback is because the user did not give the location permission.
   isLocationDenied?: boolean;
-};
+} & LayoutProps;
 
-export function StationList({
+function LocationNotice({
   center,
   isApproximateLocation,
   isLocationDenied = false,
+  ...layoutProps
 }: StationListProps) {
+  if (layoutProps.layout !== 'desktop') {
+    return (
+      <ApproximateLocationNotice
+        isApproximateLocation={isApproximateLocation}
+        isLocationDenied={isLocationDenied}
+      />
+    );
+  }
+  if (center === undefined) return null;
+  return (
+    <DesktopLocationNotice
+      isApproximateLocation={isApproximateLocation}
+      isLocationDenied={isLocationDenied}
+      onLocate={layoutProps.onLocate}
+      isLocating={layoutProps.isLocating ?? false}
+    />
+  );
+}
+
+export function StationList(props: StationListProps) {
+  const { center, isApproximateLocation, layout } = props;
   const [need] = useNeed();
-  const { select } = useSelectedStation();
+  const { number: selectedNumber, select } = useSelectedStation();
   const nearby = useNearbyList(center, need);
 
   return (
     <div className="flex flex-col gap-4">
-      {isApproximateLocation ? (
-        <StatusBanner variant="info">
-          {isLocationDenied
-            ? 'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol'
-            : 'Sin ubicación: mostrando estaciones cerca de la Puerta del Sol'}
-        </StatusBanner>
-      ) : null}
+      <LocationNotice {...props} />
       {nearby.status === 'stale' ? <StaleNotice updatedAt={nearby.updatedAt} /> : null}
       {nearby.status === 'offline' && nearby.stations ? (
         <StatusBanner variant="offline">Sin conexión</StatusBanner>
       ) : null}
-      <FavoriteStations need={need} onSelect={select} />
+      <FavoriteStations
+        need={need}
+        selectedNumber={selectedNumber}
+        onSelect={select}
+        isCollapsible={layout === 'desktop'}
+      />
       <StationSection
         section="nearby"
         heading={isApproximateLocation ? 'Cerca de la Puerta del Sol' : 'Cerca de ti'}
-        caption={needCaption(need)}
+        caption={layout === 'desktop' ? 'Ordenadas por distancia' : needCaption(need)}
       >
-        <NearbyStations list={nearby} need={need} onSelect={select} />
+        <NearbyStations
+          list={nearby}
+          need={need}
+          selectedNumber={selectedNumber}
+          onSelect={select}
+        />
       </StationSection>
     </div>
   );

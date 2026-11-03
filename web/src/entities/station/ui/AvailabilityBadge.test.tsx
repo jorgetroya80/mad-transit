@@ -48,6 +48,15 @@ describe('AvailabilityBadge', () => {
     expect(label).toHaveClass('text-right');
   });
 
+  it('centers the pill and its label when asked to', () => {
+    render(<AvailabilityBadge level="good" count={12} need="bikes" align="center" />);
+
+    const label = screen.getByText('Disponible');
+    expect(label.parentElement).toHaveClass('items-center');
+    expect(label).toHaveClass('text-center');
+    expect(label).not.toHaveClass('text-right');
+  });
+
   it('draws the empty pill with a dashed border', () => {
     render(<AvailabilityBadge level="empty" count={0} need="bikes" />);
 

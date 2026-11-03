@@ -3,12 +3,17 @@ import { InfoIcon, OfflineIcon, WarningIcon } from '../icons';
 
 type StatusBannerVariant = 'info' | 'stale' | 'offline';
 
-type StatusBannerAction = { label: string; onClick: () => void };
+// A pending action says so in its label and stays focusable, like `LocateButton`.
+type StatusBannerAction = { label: string; onClick: () => void; isPending?: boolean };
+
+type BannerIcon = typeof InfoIcon;
 
 type StatusBannerProps = {
   variant: StatusBannerVariant;
   children: ReactNode;
   action?: StatusBannerAction;
+  // Replaces the variant's icon when the notice is about something more specific.
+  icon?: BannerIcon;
 };
 
 // `status` is announced politely when it appears; losing the connection interrupts (`alert`).
@@ -34,23 +39,26 @@ const VARIANTS = {
   },
 } as const satisfies Record<
   StatusBannerVariant,
-  { role: 'status' | 'alert'; Icon: typeof InfoIcon; className: string; iconClassName: string }
+  { role: 'status' | 'alert'; Icon: BannerIcon; className: string; iconClassName: string }
 >;
 
-function ActionButton({ label, onClick }: StatusBannerAction) {
+function ActionButton({ label, onClick, isPending = false }: StatusBannerAction) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="ml-auto min-h-11 shrink-0 rounded-control px-3 font-semibold underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+      aria-busy={isPending || undefined}
+      aria-disabled={isPending || undefined}
+      onClick={isPending ? undefined : onClick}
+      className="ml-auto min-h-11 shrink-0 rounded-control px-3 font-semibold underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current aria-disabled:cursor-wait"
     >
       {label}
     </button>
   );
 }
 
-export function StatusBanner({ variant, children, action }: StatusBannerProps) {
-  const { role, Icon, className, iconClassName } = VARIANTS[variant];
+export function StatusBanner({ variant, children, action, icon }: StatusBannerProps) {
+  const { role, Icon: variantIcon, className, iconClassName } = VARIANTS[variant];
+  const Icon = icon ?? variantIcon;
   return (
     <div role={role} className={`flex items-center gap-2 rounded-card p-3 text-sm ${className}`}>
       <Icon className={`size-5 shrink-0 ${iconClassName}`} />

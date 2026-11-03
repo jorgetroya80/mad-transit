@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FAVORITES_STORAGE_KEY } from '@/shared/config';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import { FavoriteButton } from './FavoriteButton';
 
 function favoriteButton() {
@@ -56,5 +57,38 @@ describe('FavoriteButton', () => {
     render(<FavoriteButton number="538" className="extra" data-testid="favorite" />);
 
     expect(screen.getByTestId('favorite')).toHaveClass('extra');
+  });
+
+  describe('as an icon', () => {
+    it('keeps the name «Favorita» and tells the action in its tooltip', async () => {
+      render(<FavoriteButton number="538" variant="icon" />);
+
+      const button = screen.getByRole('button', { name: 'Favorita' });
+      expect(button).toHaveAttribute('aria-pressed', 'false');
+      expect(button).toHaveAttribute('title', 'Añadir a favoritas');
+
+      await userEvent.click(button);
+
+      expect(button).toHaveAccessibleName('Favorita');
+      expect(button).toHaveAttribute('aria-pressed', 'true');
+      expect(button).toHaveAttribute('title', 'Quitar de favoritas');
+      expect(localStorage.getItem(FAVORITES_STORAGE_KEY)).toBe('["538"]');
+    });
+
+    it('fills the star only when pressed', async () => {
+      render(<FavoriteButton number="538" variant="icon" />);
+      const button = screen.getByRole('button');
+      const star = button.querySelector('svg');
+
+      expect(star).not.toHaveClass('fill-current');
+      await userEvent.click(button);
+      expect(star).toHaveClass('fill-current');
+    });
+
+    it('has no axe violations', async () => {
+      const { container } = render(<FavoriteButton number="538" variant="icon" />);
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
   });
 });

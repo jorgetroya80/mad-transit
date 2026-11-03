@@ -10,7 +10,14 @@ import {
   stationsFixture,
 } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
-import { env, FAVORITES_STORAGE_KEY, NEARBY_STORAGE_KEYS, POLL_INTERVAL_MS } from '@/shared/config';
+import {
+  env,
+  FAVORITES_OPEN_STORAGE_KEY,
+  FAVORITES_STORAGE_KEY,
+  NEARBY_STORAGE_KEYS,
+  POLL_INTERVAL_MS,
+} from '@/shared/config';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { findStaleNotice } from '../../../../test/staleNotice';
 import { StationList } from './StationList';
@@ -171,6 +178,128 @@ describe('StationList', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/Sin ubicación/)).not.toBeInTheDocument();
     expect(await nearbyRegion('Cerca de la Puerta del Sol')).toBeInTheDocument();
+  });
+
+  describe('on desktop', () => {
+    const NO_LOCATION =
+      'Mostrando estaciones cerca de la Puerta del Sol porque no tenemos tu ubicación.';
+
+    function renderDesktopList(props: Partial<ListProps> = {}, onLocate = () => {}) {
+      return renderWithRouter(
+        <StationList {...LOCATED} {...props} layout="desktop" onLocate={onLocate} />,
+      );
+    }
+
+    it('says it is using the current location, under «Cerca de ti» sorted by distance', async () => {
+      await renderDesktopList();
+
+      expect(screen.getByText('Usando tu ubicación actual.')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
+      expect(await nearbyRegion('Cerca de ti')).toHaveAccessibleDescription(
+        'Ordenadas por distancia',
+      );
+    });
+
+    it('offers to use the location when it has none, and asks for it', async () => {
+      const onLocate = vi.fn<() => void>();
+      await renderDesktopList({ isApproximateLocation: true }, onLocate);
+
+      expect(screen.getByText(NO_LOCATION)).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Usar mi ubicación' }));
+
+      expect(onLocate).toHaveBeenCalledOnce();
+      expect(await nearbyRegion('Cerca de la Puerta del Sol')).toHaveAccessibleDescription(
+        'Ordenadas por distancia',
+      );
+    });
+
+    it('says it is locating while it asks for the position again', async () => {
+      const onLocate = vi.fn<() => void>();
+      await renderWithRouter(
+        <StationList
+          center={SOL}
+          isApproximateLocation
+          layout="desktop"
+          onLocate={onLocate}
+          isLocating
+        />,
+      );
+
+      const button = screen.getByRole('button', { name: 'Localizando…' });
+      expect(button).toHaveAttribute('aria-busy', 'true');
+      expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
+      await userEvent.click(button);
+
+      expect(onLocate).not.toHaveBeenCalled();
+    });
+
+    it('says the permission was not given, without offering to ask again', async () => {
+      await renderDesktopList({ isApproximateLocation: true, isLocationDenied: true });
+
+      expect(
+        screen.getByText(
+          'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
+      expect(await nearbyRegion('Cerca de la Puerta del Sol')).toBeInTheDocument();
+    });
+
+    it('says nothing about the location while it is still pending', async () => {
+      await renderDesktopList({ center: undefined });
+
+      expect(screen.queryByText('Usando tu ubicación actual.')).not.toBeInTheDocument();
+      expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
+    });
+
+    it('folds the favorites under «Favoritas · N» and remembers it (SC5)', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      saveFavorites(['3', '1b']);
+      const { unmount } = await renderDesktopList();
+      const header = await screen.findByRole('button', { name: 'Favoritas · 2' });
+      const favorites = screen.getByRole('region', { name: 'Favoritas · 2' });
+      await within(favorites).findAllByRole('button', { name: /^Estación/ });
+
+      expect(header).toHaveAttribute('aria-expanded', 'true');
+      expect(favorites.closest('[data-station-list="favorites"]')).not.toBeNull();
+      await user.click(header);
+
+      expect(header).toHaveAttribute('aria-expanded', 'false');
+      expect(within(favorites).queryByRole('button', { name: /^Estación/ })).toBeNull();
+      expect(localStorage.getItem(FAVORITES_OPEN_STORAGE_KEY)).toBe('false');
+      unmount();
+
+      await renderDesktopList();
+
+      expect(await screen.findByRole('button', { name: 'Favoritas · 2' })).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      );
+    });
+
+    it('has no favorites header without favorites', async () => {
+      await renderDesktopList();
+      await nearbyRegion();
+
+      expect(screen.queryByRole('button', { name: /^Favoritas/ })).not.toBeInTheDocument();
+    });
+
+    it('has no axe violations with the favorites folded', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      saveFavorites(['1b']);
+      const { container } = await renderDesktopList();
+      await user.click(await screen.findByRole('button', { name: 'Favoritas · 1' }));
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+
+    it('has no axe violations with the location notice and its action', async () => {
+      const { container } = await renderDesktopList({ isApproximateLocation: true });
+      await nearbyRegion('Cerca de la Puerta del Sol');
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
   });
 
   it('shows loading without asking for nearby stations while the location is pending', async () => {
@@ -420,6 +549,21 @@ describe('StationList', () => {
     await user.click(await screen.findByRole('button', { name: /^Estación 1b/ }));
 
     expect(router.state.location.href).toBe('/?station=1b');
+  });
+
+  it('marks the rows of the selected station in every section, whatever the case of ?station', async () => {
+    saveFavorites(['1a', '3']);
+
+    await renderList({}, ['/?station=1A']);
+
+    const favorites = await screen.findByRole('region', { name: 'Favoritas' });
+    const favoriteRow = await within(favorites).findByRole('button', { name: /^Estación 1a,/ });
+    const nearbyRow = await within(await nearbyRegion()).findByRole('button', {
+      name: /^Estación 1a,/,
+    });
+    expect(favoriteRow).toHaveAttribute('aria-current', 'true');
+    expect(nearbyRow).toHaveAttribute('aria-current', 'true');
+    expect(document.querySelectorAll('[aria-current]')).toHaveLength(2);
   });
 
   it('asks for and shows free docks with need=docks', async () => {

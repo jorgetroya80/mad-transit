@@ -106,4 +106,11 @@ describe('useDataStatus', () => {
 
     expect(refetch).toHaveBeenCalledOnce();
   });
+
+  it('hands back the refetch promise, so the caller can wait for it', () => {
+    const pending = Promise.resolve();
+    const { result } = renderHook(() => useDataStatus(query({ refetch: () => pending })));
+
+    expect(result.current.retry()).toBe(pending);
+  });
 });

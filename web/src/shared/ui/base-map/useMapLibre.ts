@@ -15,6 +15,7 @@ import {
   toFeatureCollection,
   toUserLocationCollection,
   USER_LOCATION_SOURCE_ID,
+  type FocusPadding,
   type LngLat,
   type MapPoint,
 } from './points';
@@ -109,18 +110,21 @@ export function useUserLocationData(map: Map | undefined, location?: LngLat) {
 
 // Depends on the numbers, not the objects, so an equal focus or padding does not move the map
 // again. A new padding re-eases to the same focus, so it stays in the visible area. The padding
-// is always passed: MapLibre keeps the last one for later camera moves.
-export function useEaseTo(map: Map | undefined, focus?: LngLat, paddingBottom = 0) {
+// is always passed: MapLibre keeps the last one for later camera moves. A page passes `right`
+// always or never, so a right padding left over from an earlier move cannot happen.
+export function useEaseTo(map: Map | undefined, focus?: LngLat, padding?: FocusPadding) {
   const lng = focus?.lng;
   const lat = focus?.lat;
+  const bottom = padding?.bottom ?? 0;
+  const right = padding?.right;
   useEffect(() => {
     const target = toLngLat(lng, lat);
     if (!map || !target) return;
     const camera: EaseToOptions = {
       center: [target.lng, target.lat],
-      padding: { bottom: paddingBottom },
+      padding: right === undefined ? { bottom } : { bottom, right },
     };
     const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
     map.easeTo(reduceMotion ? { ...camera, duration: 0 } : camera);
-  }, [map, lng, lat, paddingBottom]);
+  }, [map, lng, lat, bottom, right]);
 }

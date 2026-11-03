@@ -52,3 +52,57 @@ export function InfoIcon({ className }: IconProps) {
     </IconFrame>
   );
 }
+
+// The same x as ClearIcon: closing a card and clearing a field share the glyph.
+export const CloseIcon = ClearIcon;
+
+export function LocationIcon({ className }: IconProps) {
+  return (
+    <IconFrame className={className}>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </IconFrame>
+  );
+}
+
+// Outline by default; a `fill-current` class fills it, since the class beats the fill attribute.
+export function StarIcon({ className }: IconProps) {
+  return (
+    <IconFrame className={className}>
+      <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2 2 9.3l6.9-1L12 2Z" />
+    </IconFrame>
+  );
+}
+
+export function ChevronIcon({ className }: IconProps) {
+  return (
+    <IconFrame className={className}>
+      <path d="m6 9 6 6 6-6" />
+    </IconFrame>
+  );
+}
+
+export function PlusIcon({ className }: IconProps) {
+  return (
+    <IconFrame className={className}>
+      <path d="M12 5v14M5 12h14" />
+    </IconFrame>
+  );
+}
+
+export function MinusIcon({ className }: IconProps) {
+  return (
+    <IconFrame className={className}>
+      <path d="M5 12h14" />
+    </IconFrame>
+  );
+}
+
+export function RefreshIcon({ className }: IconProps) {
+  return (
+    <IconFrame className={className}>
+      <path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8" />
+      <path d="M21 3v5h-5M3 21v-5h5" />
+    </IconFrame>
+  );
+}

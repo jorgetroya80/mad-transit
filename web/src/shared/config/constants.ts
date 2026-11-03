@@ -42,6 +42,8 @@ export const SEARCH_MAX_RESULTS = 8;
 
 export const FAVORITES_STORAGE_KEY = 'bicimad-now:favorites';
 
+export const FAVORITES_OPEN_STORAGE_KEY = 'bicimad-now:favorites-open';
+
 // The last stations lists, shown while the network answers or when it cannot.
 export const STATIONS_STORAGE_KEY = 'bicimad-now:stations';
 

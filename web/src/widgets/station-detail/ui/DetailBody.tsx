@@ -1,8 +1,6 @@
-import type { Coordinates } from '@/entities/station';
+import type { Coordinates, StationDetailState } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
-import { StateMessage } from '@/shared/ui';
-import type { StationDetailState } from '../model/useStationDetail';
-import { MessageAction } from './MessageAction';
+import { MessageAction, StateMessage } from '@/shared/ui';
 import { StationInfo } from './StationInfo';
 
 type DetailBodyProps = { detail: StationDetailState; center: Coordinates | undefined };

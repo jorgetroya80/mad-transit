@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expectNoAxeViolations } from '../../../../test/axe';
-import { InfoIcon, OfflineIcon, WarningIcon } from '../icons';
+import { InfoIcon, LocationIcon, OfflineIcon, WarningIcon } from '../icons';
 import { StatusBanner } from './StatusBanner';
 
 function iconMarkup(Icon: typeof InfoIcon) {
@@ -32,6 +32,20 @@ describe('StatusBanner', () => {
     },
   );
 
+  it('shows the icon it is given instead of its variant one', () => {
+    const expectedIcon = iconMarkup(LocationIcon);
+
+    render(
+      <StatusBanner variant="info" icon={LocationIcon}>
+        Usando tu ubicación actual.
+      </StatusBanner>,
+    );
+
+    const icon = screen.getByRole('status').querySelector('svg');
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+    expect(icon?.innerHTML).toBe(expectedIcon);
+  });
+
   it('frames the stale banner like the info one, with a thin border all round', () => {
     render(<StatusBanner variant="stale">Sin confirmar</StatusBanner>);
 
@@ -58,6 +72,35 @@ describe('StatusBanner', () => {
 
     expect(screen.getByRole('alert')).toContainElement(screen.getByRole('button'));
     expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a pending action focusable but busy, and ignores its clicks', async () => {
+    const onClick = vi.fn<() => void>();
+    render(
+      <StatusBanner variant="info" action={{ label: 'Localizando…', onClick, isPending: true }}>
+        Sin ubicación
+      </StatusBanner>,
+    );
+    const button = screen.getByRole('button', { name: 'Localizando…' });
+
+    await userEvent.click(button);
+
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toBeEnabled();
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('marks an idle action neither busy nor disabled', () => {
+    render(
+      <StatusBanner variant="info" action={{ label: 'Usar mi ubicación', onClick: () => {} }}>
+        Sin ubicación
+      </StatusBanner>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Usar mi ubicación' });
+    expect(button).not.toHaveAttribute('aria-busy');
+    expect(button).not.toHaveAttribute('aria-disabled');
   });
 
   it.each(['info', 'stale', 'offline'] as const)('has no axe violations as %s', async (variant) => {

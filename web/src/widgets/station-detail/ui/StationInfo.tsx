@@ -1,8 +1,12 @@
-import type { Coordinates, DataStatus, Station } from '@/entities/station';
+import {
+  type Coordinates,
+  type DataStatus,
+  type Station,
+  useStationDistance,
+} from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
 import { FavoriteButton } from '@/features/toggle-favorite';
 import { StaleNotice, StatusBanner, UpdatedAt } from '@/shared/ui';
-import { useStationDistance } from '../model/useStationDistance';
 import { StationFields } from './StationFields';
 
 type StationInfoProps = {

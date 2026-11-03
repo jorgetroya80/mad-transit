@@ -5,9 +5,13 @@ export { useAllStations, useNearbyStations, useStation } from './api/stationQuer
 export { readNearbyStations } from './api/stationsCache';
 export { availabilityFor, availabilityLabel } from './model/availability';
 export { parseUpdatedAt } from './model/parseUpdatedAt';
+export { isSameStationNumber } from './model/stationNumber';
 export type { AvailabilityLevel, DataStatus, Need, Station } from './model/types';
 export type { DataStatusResult } from './model/useDataStatus';
 export { useDataStatus } from './model/useDataStatus';
+export type { StationDetailState } from './model/useStationDetail';
+export { useStationDetail } from './model/useStationDetail';
+export { useStationDistance } from './model/useStationDistance';
 export { AvailabilityBadge } from './ui/AvailabilityBadge';
 export { formatDistance } from './ui/formatDistance';
 export { StationRow } from './ui/StationRow';

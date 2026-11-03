@@ -1,4 +1,5 @@
-import { act, render } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {
   MADRID_CENTER,
   MADRID_ZOOM,
@@ -40,6 +41,8 @@ const maplibre = vi.hoisted(() => {
     readonly off = vi.fn<(type: string, handler: Handler) => void>();
     readonly addLayer = vi.fn<(layer: { id: string; source?: unknown }) => void>();
     readonly easeTo = vi.fn<(options: unknown) => void>();
+    readonly zoomIn = vi.fn<() => void>();
+    readonly zoomOut = vi.fn<() => void>();
     readonly sources = new Map<string, MockSource>();
     readonly subscriptions: Subscription[] = [];
     readonly canvas = { style: { cursor: '' } };
@@ -210,6 +213,12 @@ describe('BaseMap', () => {
     unmount();
 
     expect(map.remove).toHaveBeenCalledOnce();
+  });
+
+  it('names the container with the given label', () => {
+    const { getByRole } = render(<BaseMap label="Mapa de estaciones" />);
+
+    expect(getByRole('region', { name: 'Mapa de estaciones' })).toBeInTheDocument();
   });
 
   it('applies the given class name to the container', () => {
@@ -395,6 +404,16 @@ describe('BaseMap points', () => {
     expect(map.easeTo).toHaveBeenCalledTimes(2);
   });
 
+  it('centers the focus clear of the right padding too, when given', () => {
+    render(<BaseMap focus={{ lng: -3.7, lat: 40.4 }} focusPadding={{ bottom: 0, right: 352 }} />);
+    const map = loadedMap();
+
+    expect(map.easeTo).toHaveBeenCalledExactlyOnceWith({
+      center: [-3.7, 40.4],
+      padding: { bottom: 0, right: 352 },
+    });
+  });
+
   it('does not move the map on a padding change without a focus', () => {
     const { rerender } = render(<BaseMap focusPadding={{ bottom: 400 }} />);
     const map = loadedMap();
@@ -414,5 +433,79 @@ describe('BaseMap points', () => {
       padding: { bottom: 400 },
       duration: 0,
     });
+  });
+});
+
+describe('BaseMap controls', () => {
+  beforeEach(() => {
+    maplibre.instances.length = 0;
+    stubMatchMedia(true);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('has no controls unless asked for', () => {
+    render(<BaseMap />);
+    loadedMap();
+
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('shows the controls inside the map once it loads', () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    expect(screen.queryByRole('button', { name: 'Acercar' })).not.toBeInTheDocument();
+
+    loadedMap();
+
+    const region = screen.getByRole('region', { name: 'Mapa de Madrid' });
+    expect(region).toContainElement(screen.getByRole('button', { name: 'Acercar' }));
+    expect(region).toHaveClass('isolate');
+  });
+
+  it('zooms the map in and out', async () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    const map = loadedMap();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Acercar' }));
+    expect(map.zoomIn).toHaveBeenCalledOnce();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Alejar' }));
+    expect(map.zoomOut).toHaveBeenCalledOnce();
+    expect(map.zoomIn).toHaveBeenCalledOnce();
+  });
+
+  it('recenters with the given action', async () => {
+    const onRecenter = vi.fn<() => void>();
+    render(<BaseMap controls={{ onRecenter }} />);
+    const map = loadedMap();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Centrar en mi posición' }));
+
+    expect(onRecenter).toHaveBeenCalledOnce();
+    expect(map.zoomIn).not.toHaveBeenCalled();
+    expect(map.zoomOut).not.toHaveBeenCalled();
+  });
+
+  it('shows the zoom controls without «Centrar en mi posición» when there is no recenter action', () => {
+    render(<BaseMap controls={{}} />);
+    loadedMap();
+
+    expect(screen.getByRole('button', { name: 'Acercar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Alejar' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Centrar en mi posición' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('marks «Centrar en mi posición» busy while recentering', () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>(), isRecentering: true }} />);
+    loadedMap();
+
+    expect(screen.getByRole('button', { name: 'Centrar en mi posición' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
   });
 });

@@ -1,11 +1,8 @@
-import {
-  type DataStatus,
-  type Station,
-  StationNotFoundError,
-  useAllStations,
-  useDataStatus,
-  useStation,
-} from '@/entities/station';
+import { StationNotFoundError } from '../api/StationNotFoundError';
+import { useAllStations, useStation } from '../api/stationQueries';
+import { isSameStationNumber } from './stationNumber';
+import type { DataStatus, Station } from './types';
+import { useDataStatus } from './useDataStatus';
 
 export type StationDetailState =
   | { status: 'not-found' }
@@ -17,10 +14,8 @@ export type StationDetailState =
       retry: () => void;
     };
 
-// `?station` may differ in case from the API's number (`1A` vs `1a`).
 function findStation(stations: readonly Station[] | undefined, number: string) {
-  const wanted = number.toLowerCase();
-  return stations?.find((station) => station.number.toLowerCase() === wanted);
+  return stations?.find((station) => isSameStationNumber(station.number, number));
 }
 
 // Not found wins over any data: a station the API no longer has should not stay on screen.

@@ -7,10 +7,11 @@ import { StationRows } from './StationRows';
 type NearbyStationsProps = {
   list: NearbyList;
   need: Need;
+  selectedNumber: string | undefined;
   onSelect: (number: string) => void;
 };
 
-export function NearbyStations({ list, need, onSelect }: NearbyStationsProps) {
+export function NearbyStations({ list, need, selectedNumber, onSelect }: NearbyStationsProps) {
   const { stations } = list;
   if (list.status === 'loading') {
     return <StateMessage variant="loading" title="Cargando estaciones cercanas…" />;
@@ -35,7 +36,13 @@ export function NearbyStations({ list, need, onSelect }: NearbyStationsProps) {
       {stations.length === 0 ? (
         <StateMessage variant="empty" title={`Ninguna estación en ${NEARBY_RADIUS_M} m`} />
       ) : (
-        <StationRows stations={stations} need={need} status={list.status} onSelect={onSelect} />
+        <StationRows
+          stations={stations}
+          need={need}
+          status={list.status}
+          selectedNumber={selectedNumber}
+          onSelect={onSelect}
+        />
       )}
     </>
   );

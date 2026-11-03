@@ -11,6 +11,9 @@ export type MapPointTone = (typeof MAP_POINT_TONES)[number];
 
 export type LngLat = { lng: number; lat: number };
 
+// Pixels of the map hidden by something on top of it: the focus is centered in the rest.
+export type FocusPadding = { bottom: number; right?: number };
+
 export type MapPoint = LngLat & { id: string; label: string; tone: MapPointTone };
 
 type MapPointProperties = Pick<MapPoint, 'id' | 'label' | 'tone'> & { selected: boolean };

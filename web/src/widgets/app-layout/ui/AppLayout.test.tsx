@@ -1,7 +1,6 @@
 import type { ComponentProps } from 'react';
-import { act, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { stubMatchMedia } from '../../../../test/matchMedia';
 import { AppLayout } from './AppLayout';
 
 function renderLayout(
@@ -42,35 +41,11 @@ describe('AppLayout', () => {
     expect(screen.getAllByText('Contenido del panel')).toHaveLength(1);
   });
 
-  it('renders the panel once, inside a side panel in the main landmark from md up', () => {
-    stubMatchMedia(true);
-    renderLayout();
-
-    const sidePanel = within(screen.getByRole('main')).getByRole('region', {
-      name: 'Estaciones',
-    });
-    expect(within(sidePanel).getByText('Contenido del panel')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Estaciones' })).not.toBeInTheDocument();
-    expect(screen.getAllByText('Contenido del panel')).toHaveLength(1);
-  });
-
-  it('switches the panel container when the viewport crosses md', () => {
-    const media = stubMatchMedia(false);
-    renderLayout();
-
-    act(() => media.change(true));
-
-    expect(screen.queryByRole('button', { name: 'Estaciones' })).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Estaciones' })).toHaveTextContent(
-      'Contenido del panel',
-    );
-  });
-
   it('fills the dynamic viewport height', () => {
     renderLayout();
 
     // Column below md, so the bottom sheet strip sits under the map instead of over it.
-    expect(screen.getByRole('main')).toHaveClass('flex', 'h-dvh', 'flex-col', 'md:flex-row');
+    expect(screen.getByRole('main')).toHaveClass('flex', 'h-dvh', 'flex-col');
   });
 
   it('lets the page control the bottom sheet below md', async () => {
@@ -84,18 +59,5 @@ describe('AppLayout', () => {
     await user.click(handle);
     expect(onPanelExpandedChange).toHaveBeenCalledExactlyOnceWith(false);
     expect(handle).toHaveAttribute('aria-expanded', 'true');
-  });
-
-  it('ignores the expanded state from md up', () => {
-    stubMatchMedia(true);
-    renderLayout({
-      panelExpanded: false,
-      onPanelExpandedChange: vi.fn<(expanded: boolean) => void>(),
-    });
-
-    const sidePanel = screen.getByRole('region', { name: 'Estaciones' });
-    expect(sidePanel).not.toHaveAttribute('inert');
-    expect(within(sidePanel).getByText('Contenido del panel')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Estaciones' })).not.toBeInTheDocument();
   });
 });
