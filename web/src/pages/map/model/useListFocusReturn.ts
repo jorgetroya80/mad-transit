@@ -1,4 +1,5 @@
 import { type RefObject, useCallback, useEffect, useRef } from 'react';
+import { isSameStationNumber } from '@/entities/station';
 import {
   findFirstSectionHeading,
   findRow,
@@ -9,7 +10,10 @@ import {
 // Hidden (inert) at peek, the list cannot hold the focus: no target then.
 function listFocusTarget(panel: HTMLElement, origin: RowOrigin | undefined, closedStation: string) {
   if (panel.closest('[inert]')) return undefined;
-  const row = origin?.number === closedStation ? findRow(panel, origin) : undefined;
+  const row =
+    origin && isSameStationNumber(origin.number, closedStation)
+      ? findRow(panel, origin)
+      : undefined;
   return row ?? findFirstSectionHeading(panel);
 }
 
@@ -62,7 +66,9 @@ export function useListFocusReturn(openStation: string | undefined, sheet?: Shee
     }
 
     if (previousStation === undefined && openStation !== undefined) {
-      if (originRef.current?.number === openStation) detailHeading?.current?.focus();
+      if (isSameStationNumber(openStation, originRef.current?.number)) {
+        detailHeading?.current?.focus();
+      }
     } else if (previousStation !== undefined && openStation === undefined) {
       returnFocusToList(previousStation);
     }

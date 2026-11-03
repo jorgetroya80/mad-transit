@@ -4,7 +4,7 @@ export type SheetSnap = 'peek' | 'half' | 'full';
 
 export const SHEET_HEIGHT_PX: Record<SheetSnap, number> = { peek: 112, half: 430, full: 700 };
 // Kept free above the full sheet, so the floating search and mode stay in view on short screens.
-export const FULL_SHEET_TOP_MARGIN_PX = 144;
+export const FULL_SHEET_TOP_MARGIN_PX = 166;
 export const HANDLE_HEIGHT_PX = 44;
 
 // Every snap is capped like `full`, so `half` is never taller than it.

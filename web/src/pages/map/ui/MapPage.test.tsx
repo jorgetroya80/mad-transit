@@ -188,7 +188,7 @@ describe('MapPage', () => {
 
       const main = within(screen.getByRole('main'));
       const region = within(panel());
-      expect(main.getByRole('searchbox', { name: 'Buscar estación' })).toHaveClass('h-12.5');
+      expect(main.getByRole('searchbox', { name: 'Buscar estación' })).toHaveClass('h-11');
       expect(main.getByRole('button', { name: 'Dejar bici' })).toBeInTheDocument();
       expect(main.getByRole('button', { name: 'Centrar en mi posición' })).toBeInTheDocument();
       expect(region.queryByRole('searchbox')).not.toBeInTheDocument();
@@ -375,32 +375,15 @@ describe('MapPage', () => {
       expect(lastMapProps()).toMatchObject({ focus: MADRID_CENTER, userLocation: undefined });
     });
 
-    it('asks again with "Centrar en mi posición"', async () => {
-      const geolocation = stubGeolocation('denied');
-      const user = userEvent.setup();
-      await renderPage();
-      await rowIn('Cercanas', '1a');
-
-      geolocation.answerWith('granted');
-      await user.click(recenterButton());
-
-      expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
-      expect(await rowIn('Cercanas', '1a')).toBeInTheDocument();
-      await waitFor(() => expect(sheetSubtitle()).toHaveTextContent(/^Cerca de ti · /));
-      expect(lastMapProps()).toMatchObject({ focus: USER, userLocation: USER });
-    });
-
-    it('brings the map back to Puerta del Sol when recentering is denied again', async () => {
+    // As from md: the browser would not ask a denied permission again.
+    it('drops the recenter button', async () => {
       stubGeolocation('denied');
-      const user = userEvent.setup();
       await renderPage();
       await rowIn('Cercanas', '1a');
-      mapRenders.length = 0;
 
-      await user.click(recenterButton());
-
-      await waitFor(() => expect(lastMapProps().focus).toEqual(MADRID_CENTER));
-      expect(mapRenders.some((props) => props.focus === undefined)).toBe(true);
+      expect(
+        screen.queryByRole('button', { name: 'Centrar en mi posición' }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -414,11 +397,43 @@ describe('MapPage', () => {
       expect(screen.getByText('Sin tu ubicación: cerca de la Puerta del Sol')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Activar' })).toBeInTheDocument();
     });
+
+    it('asks again with "Centrar en mi posición"', async () => {
+      const geolocation = stubGeolocation('unavailable');
+      const user = userEvent.setup();
+      await renderPage();
+      await rowIn('Cercanas', '1a');
+
+      geolocation.answerWith('granted');
+      await user.click(recenterButton());
+
+      expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
+      expect(await rowIn('Cercanas', '1a')).toBeInTheDocument();
+      await waitFor(() => expect(sheetSubtitle()).toHaveTextContent(/^Cerca de ti · /));
+      expect(lastMapProps()).toMatchObject({ focus: USER, userLocation: USER });
+    });
+
+    it('brings the map back to Puerta del Sol and drops recentering when it is denied', async () => {
+      const geolocation = stubGeolocation('unavailable');
+      const user = userEvent.setup();
+      await renderPage();
+      await rowIn('Cercanas', '1a');
+      mapRenders.length = 0;
+
+      geolocation.answerWith('denied');
+      await user.click(recenterButton());
+
+      await waitFor(() => expect(lastMapProps().focus).toEqual(MADRID_CENTER));
+      expect(mapRenders.some((props) => props.focus === undefined)).toBe(true);
+      expect(
+        screen.queryByRole('button', { name: 'Centrar en mi posición' }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   describe('while "Centrar en mi posición" asks again', () => {
     it('keeps describing the list it shows: still near Puerta del Sol', async () => {
-      const geolocation = stubGeolocation('denied');
+      const geolocation = stubGeolocation('unavailable');
       const user = userEvent.setup();
       await renderPage();
       await rowIn('Cercanas', '1a');
@@ -428,11 +443,7 @@ describe('MapPage', () => {
 
       expect(recenterButton()).toHaveAttribute('aria-busy', 'true');
       expect(sheetSubtitle()).toHaveTextContent(/^Cerca de la Puerta del Sol · /);
-      expect(
-        screen.getByText(
-          'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol',
-        ),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Sin tu ubicación: cerca de la Puerta del Sol')).toBeInTheDocument();
       // Without a focus the map stays where it is until the answer arrives.
       expect(lastMapProps().focus).toBeUndefined();
     });
@@ -475,7 +486,7 @@ describe('MapPage', () => {
       expect(detailHandle()).toHaveAttribute('aria-expanded', 'true');
     });
 
-    // jsdom's 768 px viewport: half covers 430 - 112 px and full min(700, 768 - 144) - 112 px.
+    // jsdom's 768 px viewport: half covers 430 - 112 px and full min(700, 768 - 166) - 112 px.
     it('leaves the map above the half sheet to the focus', async () => {
       await renderPage();
 

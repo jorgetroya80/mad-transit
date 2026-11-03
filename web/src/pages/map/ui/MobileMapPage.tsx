@@ -14,7 +14,8 @@ import { RecenterButton } from './RecenterButton';
 // Full-screen map with the search and mode floating on top. The sheet's peek strip takes the
 // last grid row, so the map (and its attribution) ends above it. The map comes last in the DOM,
 // so Tab reaches it after the sheet; the grid puts it back in the first row, under the floating
-// controls, and also places the recenter button against that row.
+// controls, and also places the recenter button against that row. The controls start 44 px
+// down, below MapLibre's compact attribution (top-right, 10 px down, about 24 px tall).
 export function MobileMapPage() {
   const location = useMapLocation();
   const { number } = useSelectedStation();
@@ -31,18 +32,21 @@ export function MobileMapPage() {
   return (
     <main className="relative grid h-dvh grid-cols-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
       <h1 className="sr-only">Mad Transit</h1>
-      <div className="absolute inset-x-4 top-4 z-20 flex flex-col gap-2.5">
+      <div className="absolute inset-x-4 top-11 z-20 flex flex-col gap-2.5">
         <TransitSearch variant="floating" />
         <div className="self-end rounded-control shadow-float">
           <NeedToggle variant="pill" />
         </div>
       </div>
-      <RecenterButton
-        snap={sheet.snap}
-        isRecentering={location.status === 'pending'}
-        onRecenter={locate}
-        className="col-start-1 row-start-1"
-      />
+      {/* The browser would not ask a denied permission again, as on desktop. */}
+      {location.isLocationDenied ? null : (
+        <RecenterButton
+          snap={sheet.snap}
+          isRecentering={location.status === 'pending'}
+          onRecenter={locate}
+          className="col-start-1 row-start-1"
+        />
+      )}
       <MobileSheet
         sheet={sheet}
         panelRef={panelRef}

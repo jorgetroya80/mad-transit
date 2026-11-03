@@ -109,6 +109,17 @@ describe('MobileMapPage', () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
   });
 
+  // MapLibre's compact attribution sits top-right, 10 px down and about 24 px tall.
+  it('floats a 44 px search and the mode 44 px from the top, clear of the map attribution', async () => {
+    await renderPage();
+    const search = screen.getByRole('searchbox', { name: 'Buscar estación' });
+    const controls = search.closest('.absolute');
+
+    expect(search).toHaveClass('h-11');
+    expect(controls).toHaveClass('top-11');
+    expect(controls).toContainElement(screen.getByRole('button', { name: 'Sacar bici' }));
+  });
+
   // «Ver todas» takes the list to full, and «Ver mapa» from there to peek.
   it.each([
     { snap: 'half', clicks: 0 },

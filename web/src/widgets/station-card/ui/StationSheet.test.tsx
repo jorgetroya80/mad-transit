@@ -124,6 +124,15 @@ describe('StationSheetHeader and StationSheetBody', () => {
     );
   });
 
+  it('credits EMT at the foot of the body, below the update time', async () => {
+    await renderSheet();
+    await title();
+
+    const link = within(sheet()).getByRole('link', { name: 'EMT de Madrid' });
+    const updated = within(sheet()).getByText(/^Actualizado/);
+    expect(updated.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('heads the row with «Volver a la lista», the title and the star, in that Tab order', async () => {
     await renderSheet();
     const heading = await title();

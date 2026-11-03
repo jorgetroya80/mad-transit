@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
 import { type Coordinates, useStationDetail } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
-import { UpdatedAt } from '@/shared/ui';
+import { DataAttribution, UpdatedAt } from '@/shared/ui';
 import { useCloseOnEscape } from '../model/useCloseOnEscape';
 import { CardBody } from './CardBody';
 import { SheetCardHeader } from './SheetCardHeader';
@@ -39,7 +39,8 @@ export function StationSheetHeader({ number, center, headingRef }: StationSheetH
 
 type StationSheetBodyProps = { number: string };
 
-// The age is the detail's own, or the full list's when the detail falls back to it.
+// The age is the detail's own, or the full list's when the detail falls back to it. The list
+// and its EMT attribution unmount while the detail is open, so the detail credits EMT itself.
 export function StationSheetBody({ number }: StationSheetBodyProps) {
   const detail = useStationDetail(number);
   const { clear } = useSelectedStation();
@@ -47,9 +48,12 @@ export function StationSheetBody({ number }: StationSheetBodyProps) {
   const updatedAt = detail.status !== 'not-found' && detail.station ? detail.updatedAt : undefined;
 
   return (
-    <div ref={escapeRef} className="flex flex-col gap-3">
+    <div ref={escapeRef} className="flex min-h-full flex-col gap-3">
       <CardBody detail={detail} />
       {updatedAt ? <UpdatedAt date={updatedAt} /> : null}
+      <footer className="mt-auto">
+        <DataAttribution />
+      </footer>
     </div>
   );
 }

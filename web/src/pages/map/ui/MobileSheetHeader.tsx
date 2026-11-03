@@ -35,8 +35,8 @@ export function MobileSheetHeader({
   return (
     <div className="flex items-center gap-3 px-4 pb-3">
       <div className="min-w-0 flex-1">
-        <h2 className="text-[17px] font-bold text-fg">{availabilityTitle(count, need)}</h2>
-        <p className="text-[13px] text-fg-muted">
+        <h2 className="text-sheet-title font-bold text-fg">{availabilityTitle(count, need)}</h2>
+        <p className="text-sheet-subtitle text-fg-muted">
           {location.isApproximateLocation ? 'Cerca de la Puerta del Sol' : 'Cerca de ti'}
           {updatedAt ? (
             <>

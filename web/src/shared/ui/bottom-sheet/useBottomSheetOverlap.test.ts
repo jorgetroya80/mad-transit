@@ -20,23 +20,23 @@ describe('useBottomSheetOverlap', () => {
     expect(result.current).toBe(overlap);
   });
 
-  // 667 px viewport: full is capped at 667 - 144 = 523 px.
-  it('caps full at the viewport height minus the 144 px top margin', () => {
+  // 667 px viewport: full is capped at 667 - 166 = 501 px.
+  it('caps full at the viewport height minus the 166 px top margin', () => {
     vi.stubGlobal('innerHeight', 667);
 
     const { result } = renderHook(() => useBottomSheetOverlap('full'));
 
-    expect(result.current).toBe(523 - 112);
+    expect(result.current).toBe(501 - 112);
   });
 
-  // 500 px viewport: full is 356 px, so half cannot keep its 430 px.
+  // 500 px viewport: full is 334 px, so half cannot keep its 430 px.
   it('never lets half cover more than full', () => {
     vi.stubGlobal('innerHeight', 500);
 
     const half = renderHook(() => useBottomSheetOverlap('half')).result.current;
     const full = renderHook(() => useBottomSheetOverlap('full')).result.current;
 
-    expect(half).toBe(356 - 112);
+    expect(half).toBe(334 - 112);
     expect(half).toBe(full);
   });
 

@@ -144,10 +144,10 @@ describe('BottomSheet', () => {
   });
 
   it.each([
-    ['peek', 'min(112px, 100dvh - 144px)'],
-    ['half', 'min(430px, 100dvh - 144px)'],
-    ['full', 'min(700px, 100dvh - 144px)'],
-  ] as const)('caps the %s height so the top 144 px stay free', (snap, height) => {
+    ['peek', 'min(112px, 100dvh - 166px)'],
+    ['half', 'min(430px, 100dvh - 166px)'],
+    ['full', 'min(700px, 100dvh - 166px)'],
+  ] as const)('caps the %s height so the top 166 px stay free', (snap, height) => {
     const { sheet } = renderSheet(snap);
 
     expect(sheet).toHaveStyle({ height });

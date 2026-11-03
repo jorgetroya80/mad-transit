@@ -185,10 +185,10 @@ describe('TransitSearch', () => {
       return { user, ...view };
     }
 
-    it('is a 50 px round field with a floating shadow', async () => {
+    it('is a 44 px round field with a floating shadow', async () => {
       await renderFloatingSearch();
 
-      expect(searchBox()).toHaveClass('h-12.5', 'rounded-full', 'bg-surface', 'shadow-float');
+      expect(searchBox()).toHaveClass('h-11', 'rounded-full', 'bg-surface', 'shadow-float');
     });
 
     it('hides its label visually and keeps the help as its description', async () => {

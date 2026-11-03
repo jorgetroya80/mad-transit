@@ -27,7 +27,7 @@ const VARIANTS = {
   },
   floating: {
     label: 'sr-only',
-    input: 'h-12.5 rounded-full pl-5 shadow-float',
+    input: 'h-11 rounded-full pl-5 shadow-float',
     help: 'sr-only',
     clear: 'rounded-full',
   },
