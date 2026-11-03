@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import type { SheetSnap } from './sheetSize';
 import { useBottomSheetOverlap } from './useBottomSheetOverlap';
 
 describe('useBottomSheetOverlap', () => {
@@ -6,24 +7,52 @@ describe('useBottomSheetOverlap', () => {
     vi.unstubAllGlobals();
   });
 
-  // 60 % of 740 px minus the 44 px handle strip, which is already outside the content above.
-  it('is the expanded sheet height minus the handle strip kept in the flow', () => {
-    vi.stubGlobal('innerHeight', 740);
+  // The 112 px peek strip is in the page flow, so the content above already ends over it.
+  it.each([
+    ['peek', 0],
+    ['half', 430 - 112],
+    ['full', 700 - 112],
+  ] as const)('is the %s height minus the peek strip on a tall viewport', (snap, overlap) => {
+    vi.stubGlobal('innerHeight', 900);
 
-    const { result } = renderHook(() => useBottomSheetOverlap());
+    const { result } = renderHook(() => useBottomSheetOverlap(snap));
 
-    expect(result.current).toBe(400);
+    expect(result.current).toBe(overlap);
   });
 
-  it('follows the viewport height, rounded to whole pixels', () => {
-    vi.stubGlobal('innerHeight', 740);
-    const { result } = renderHook(() => useBottomSheetOverlap());
+  // 667 px viewport: full is capped at 667 - 144 = 523 px.
+  it('caps full at the viewport height minus the 144 px top margin', () => {
+    vi.stubGlobal('innerHeight', 667);
 
-    act(() => {
-      vi.stubGlobal('innerHeight', 768);
-      window.dispatchEvent(new Event('resize'));
+    const { result } = renderHook(() => useBottomSheetOverlap('full'));
+
+    expect(result.current).toBe(523 - 112);
+  });
+
+  // 500 px viewport: full is 356 px, so half cannot keep its 430 px.
+  it('never lets half cover more than full', () => {
+    vi.stubGlobal('innerHeight', 500);
+
+    const half = renderHook(() => useBottomSheetOverlap('half')).result.current;
+    const full = renderHook(() => useBottomSheetOverlap('full')).result.current;
+
+    expect(half).toBe(356 - 112);
+    expect(half).toBe(full);
+  });
+
+  it('follows the viewport height and the snap', () => {
+    vi.stubGlobal('innerHeight', 667);
+    const { result, rerender } = renderHook(({ snap }) => useBottomSheetOverlap(snap), {
+      initialProps: { snap: 'full' as SheetSnap },
     });
 
-    expect(result.current).toBe(417);
+    act(() => {
+      vi.stubGlobal('innerHeight', 900);
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(result.current).toBe(700 - 112);
+
+    rerender({ snap: 'peek' });
+    expect(result.current).toBe(0);
   });
 });

@@ -105,7 +105,7 @@ function panel() {
 }
 
 function sheetHandle() {
-  return screen.getByRole('button', { name: 'Estaciones' });
+  return screen.getByRole('button', { name: /^(Ampliar|Reducir) lista$/ });
 }
 
 async function rowIn(section: string, number: string) {
@@ -426,7 +426,7 @@ describe('MapPage', () => {
       expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
     });
 
-    it('expands when a station is tapped on the map, and the handle still collapses it', async () => {
+    it('expands when a station is tapped on the map, and the handle cycles half and full', async () => {
       const user = userEvent.setup();
       await renderPage();
 
@@ -434,8 +434,22 @@ describe('MapPage', () => {
 
       expect(await detailTitle('1b · Puerta del Sol B')).toBeInTheDocument();
       expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
+      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
       await user.click(sheetHandle());
-      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'false');
+      expect(sheetHandle()).toHaveAccessibleName('Reducir lista');
+      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
+      await user.click(sheetHandle());
+      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
+    });
+
+    it('opens to half from peek with the handle', async () => {
+      const user = userEvent.setup();
+      await renderPage();
+
+      await user.click(sheetHandle());
+
+      expect(sheetHandle()).toHaveAttribute('aria-expanded', 'true');
+      expect(sheetHandle()).toHaveAccessibleName('Ampliar lista');
     });
 
     it('leaves the whole map to the focus while the sheet is collapsed', async () => {
@@ -444,19 +458,20 @@ describe('MapPage', () => {
       expect(lastMapProps().focusPadding).toEqual({ bottom: 0 });
     });
 
-    it('centers the selected station above the expanded sheet, and in the whole map once collapsed', async () => {
+    // jsdom's 768 px viewport: half covers 430 - 112 px and full min(700, 768 - 144) - 112 px.
+    it('centers the selected station above the sheet at its current height', async () => {
       const user = userEvent.setup();
       await renderPage();
 
       await act(async () => lastMapProps().onSelectPoint?.('1b'));
       expect(await detailTitle('1b · Puerta del Sol B')).toBeInTheDocument();
-      expect(lastMapProps().focusPadding?.bottom).toBeGreaterThan(0);
+      expect(lastMapProps().focusPadding).toEqual({ bottom: 318 });
 
       await user.click(sheetHandle());
-      expect(lastMapProps().focusPadding).toEqual({ bottom: 0 });
+      expect(lastMapProps().focusPadding).toEqual({ bottom: 512 });
     });
 
-    it('keeps the map on the user after "Mi ubicación" when the sheet collapses', async () => {
+    it('keeps the map on the user after "Mi ubicación" when the sheet grows', async () => {
       const user = userEvent.setup();
       await renderPage('/?station=1a');
       await detailTitle('1a · Puerta del Sol A');
@@ -465,7 +480,7 @@ describe('MapPage', () => {
 
       await user.click(sheetHandle());
 
-      expect(lastMapProps()).toMatchObject({ focus: USER, focusPadding: { bottom: 0 } });
+      expect(lastMapProps()).toMatchObject({ focus: USER, focusPadding: { bottom: 512 } });
     });
 
     // jsdom ignores `inert`, so the row of the collapsed sheet can be clicked.
