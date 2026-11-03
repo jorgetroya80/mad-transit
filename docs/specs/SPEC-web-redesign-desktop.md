@@ -1,7 +1,7 @@
 # Spec: web-redesign-desktop
 
 - Created: 2026-11-02
-- Status: **approved** (2026-11-02)
+- Status: **implemented** (2026-11-03)
 - Plan: [PLAN-web-redesign-desktop.md](../plans/PLAN-web-redesign-desktop.md)
 
 Módulo `web-redesign-desktop` del [Capability Map](CAPABILITY-MAP.md), el cuarto del rediseño de la UI. Es la fase 4 («Pantalla de escritorio») del documento «Mad Transit — Especificación de UI» (revisión 32) y la pantalla de escritorio del lienzo «Mad Transit · rediseño», que son privados, más las piezas nuevas de la fase 3 que solo se usan aquí. Compone la pantalla a partir de 768 px con las piezas de [web-redesign-components](SPEC-web-redesign-components.md).
@@ -122,3 +122,4 @@ Ninguna.
 
 - 2026-11-02: borrador a partir del documento de diseño (revisión 32) y del lienzo, con las decisiones 1 a 4 del usuario.
 - 2026-11-02: aprobada por el usuario.
+- 2026-11-03: implementada; en `main` con el PR #98 y desplegada como web 0.8.0.

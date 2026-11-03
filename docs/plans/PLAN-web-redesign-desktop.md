@@ -1,7 +1,7 @@
 # Plan: web-redesign-desktop
 
 - Created: 2026-11-02
-- Status: **approved** (2026-11-02)
+- Status: **implemented** (2026-11-03)
 - Spec: [SPEC-web-redesign-desktop.md](../specs/SPEC-web-redesign-desktop.md)
 
 ## Overview
@@ -74,7 +74,7 @@ T1 UpdatedIndicator + iconos
 ### Checkpoint: Fase 1
 
 - [x] `pnpm check:task` en verde, salvo avisos de aserciones reescritas explicados.
-- [ ] `dev:mock` desde 768 px: cabecera, panel ancho, lista fija y fila marcada al elegir.
+- [x] `dev:mock` desde 768 px: cabecera, panel ancho, lista fija y fila marcada al elegir.
 
 ### Fase 2: Piezas del escritorio
 
@@ -121,7 +121,7 @@ T1 UpdatedIndicator + iconos
 ### Checkpoint: Fase 2
 
 - [x] `pnpm check:task` en verde, salvo avisos explicados.
-- [ ] `dev:mock` desde 768 px: tarjeta, aviso, favoritas, leyenda y controles.
+- [x] `dev:mock` desde 768 px: tarjeta, aviso, favoritas, leyenda y controles.
 
 ### Fase 3: Cierre
 
@@ -138,9 +138,9 @@ T1 UpdatedIndicator + iconos
 
 ### Checkpoint final
 
-- [ ] SC1-SC8 comprobados; CI en verde.
-- [ ] Pedir permiso antes de push, abrir el PR y hacer merge.
-- [ ] Después del despliegue: comprobar en Render en escritorio; marcar spec, plan y capability map como **implemented**.
+- [x] SC1-SC8 comprobados; CI en verde.
+- [x] Pedir permiso antes de push, abrir el PR y hacer merge.
+- [x] Después del despliegue: comprobar en Render en escritorio; marcar spec, plan y capability map como **implemented**.
 
 ## Riesgos y mitigaciones
 
@@ -177,3 +177,4 @@ Unas 9 h en total. Fase 1 ~3 h 30 min, fase 2 ~4 h 30 min y fase 3 ~45 min.
 - 2026-11-02: decisión del usuario tras T6: en escritorio favoritas tampoco lleva el subtítulo del modo («Bicis disponibles» o «Anclajes libres»), como la lista de cercanas.
 - 2026-11-02: T8 hecha. La acción de `StatusBanner` gana `isPending`: como `LocateButton`, el botón queda `aria-busy` y `aria-disabled` (sigue enfocable) e ignora los clics. En escritorio `StationList` recibe `isLocating` (`status === 'pending'` de `useMapLocation`) y el aviso dice «Localizando…» mientras pide la posición; el aviso sigue en pantalla porque `useMapLocation` conserva la última respuesta. El test de axe de `DesktopMapPage` espera a que la tarjeta esté abierta. El test del orden de Tab recorre la página con favoritas y sin ubicación: «Actualizar» de la cabecera → buscador → «Sacar bici» y «Dejar bici» → «Usar mi ubicación» → «Favoritas · 1» → filas de favoritas y de cercanas → enlace de la atribución → controles del mapa → «Cerrar» y «Favorita» de la tarjeta; es el orden de la spec, con la cabecera antes y el pie del panel antes del mapa, así que no cambia nada. El *mock* de `BaseMap` pinta un botón «Centrar en mi posición» cuando recibe `onRecenter`, en lugar de los controles reales (jsdom no tiene WebGL); que los controles van antes del lienzo dentro del mapa queda para el recorrido manual. `AppLayout` pierde la rama de `md` (solo la usa `MobileMapPage`, que no se monta desde `md`) y la clase `md:flex-row`; se quitan sus tres tests de escritorio y la aserción de la altura deja de pedir `md:flex-row`: el floor guard avisa de esas nueve aserciones, cuya cobertura pasa a los tests de `DesktopMapPage`. El móvil no cambia: sus tests pasan sin tocarlos. 5 tests más y 3 menos (672 en web); `check:task` en verde salvo esos avisos y los dos ya explicados de T2 y T3 (pasos restantes a mano: cobertura de líneas cambiadas 100 %, capas sin violaciones, `build` correcto). Quedan sin marcar las comprobaciones manuales en `dev:mock` y la de CI del checkpoint final.
 - 2026-11-02: arreglos de la revisión. Con una estación abierta, «Centrar en mi posición» y «Usar mi ubicación» llevaban el mapa al usuario solo en el móvil: `useUserFocus` recibe ahora `locate` y devuelve `focusSelected`, `focusSelection` y el `locate` que pasa el foco al usuario, y lo usan `MobileMapPage` y `DesktopMapPage` (el escritorio pasa `focusSelected` y `onSelect`, y el panel recibe el `locate` envuelto); tocar de nuevo la estación en el mapa la vuelve a centrar. `BaseMap` y `StationsMap` cambian `onRecenter` por `controls` (`onRecenter` e `isRecentering`, opcionales): con `controls` hay zoom, y «Centrar en mi posición» solo si llega `onRecenter`; sin `controls` no hay controles, así que el móvil no cambia. Mientras se pide la posición el botón queda `aria-busy` y `aria-disabled`, sigue enfocable e ignora los clics, como `LocateButton`; con el permiso denegado desaparece y quedan acercar y alejar. En `StationsMap.test.tsx` el caso «passes the recenter action through» pasa a comprobar `controls` (aserción añadida en esta rama, el floor guard no avisa); el de `BaseMap` «sin controles» solo cambia de nombre. Además, `...layout` pasa a `...layoutProps` en `StationList` y la clase de `BaseMap` ya no deja un espacio al final. 10 tests más (682 en web, cobertura 99.33 %); `check:task` en verde salvo los 11 avisos ya explicados de T2, T3 y T8 (pasos restantes a mano: cobertura de líneas cambiadas 100 %, capas sin violaciones, `build` correcto).
+- 2026-11-03: en `main` con el PR #98 y desplegada en Render (web 0.8.0); el usuario revisa la pantalla de escritorio en Render y el recorrido con Tab es correcto. Spec, plan y capability map pasan a **implemented**.
