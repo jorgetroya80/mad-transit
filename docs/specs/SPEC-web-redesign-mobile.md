@@ -1,7 +1,7 @@
 # Spec: web-redesign-mobile
 
 - Created: 2026-11-03
-- Status: **approved** (2026-11-03)
+- Status: **implemented** (2026-11-03)
 - Plan: [PLAN-web-redesign-mobile.md](../plans/PLAN-web-redesign-mobile.md)
 
 Módulo `web-redesign-mobile` del [Capability Map](CAPABILITY-MAP.md), el quinto del rediseño de la UI. Es la fase 5 («Pantalla móvil») del documento «Mad Transit — Especificación de UI» (revisión 32) y las pantallas «Móvil — interactivo» y «Móvil — estación elegida» del lienzo «Mad Transit · rediseño», que son privados. Compone la pantalla por debajo de 768 px con las piezas de [web-redesign-components](SPEC-web-redesign-components.md) y las de [web-redesign-desktop](SPEC-web-redesign-desktop.md).
@@ -141,3 +141,4 @@ Ninguna.
 - 2026-11-03: revisión del código. Decisión 7 (buscador de 44 px, controles a 44 px del borde y `full` con 166 px libres) para no tapar la atribución del mapa; atribución EMT también con el detalle; el botón de centrar se oculta con el permiso denegado; la spec recoge cómo quedó el detalle (`StationSheetHeader` / `StationSheetBody`) y `MobilePanel`.
 - 2026-11-03: decisión 8 según el tablero «Móvil — panel oculto» del diseñador: `hidden` de 56 px con franja «Mostrar lista · …» sustituye a `peek`.
 - 2026-11-03: el diseñador quita «Ver todas / Ver mapa»; con ello desaparece `full` y el panel queda con `hidden` y `half` (decisión 8 reescrita; supuestos 4, 5, 6 y 9, pruebas y SC2, SC3 y SC7 ajustados).
+- 2026-11-03: implementada; en `main` con el PR #103 y desplegada como web 0.9.0.
