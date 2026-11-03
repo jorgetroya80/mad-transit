@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/jorgetroya80/mad-transit/compare/web-v0.8.0...web-v0.8.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* **web:** show a newly selected map point at once ([#101](https://github.com/jorgetroya80/mad-transit/issues/101)) ([ea30dbf](https://github.com/jorgetroya80/mad-transit/commit/ea30dbfdb83e82a52ec55a53c29c3db5586e1b56))
+
 ## [0.8.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.7.0...web-v0.8.0) (2026-11-03)
 
 
