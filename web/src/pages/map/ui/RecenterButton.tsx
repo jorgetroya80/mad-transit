@@ -10,7 +10,7 @@ type RecenterButtonProps = {
 
 const SHEET_GAP_PX = 16;
 
-// Rides 16 px above the sheet with its curve; at full the sheet leaves no map to recenter.
+// Rides 16 px above the sheet with its curve, at both heights.
 // aria-disabled instead of disabled while busy: a disabled button would lose the focus the
 // user just put on it.
 export function RecenterButton({
@@ -20,7 +20,6 @@ export function RecenterButton({
   className = '',
 }: RecenterButtonProps) {
   const sheetOverlap = useBottomSheetOverlap(snap);
-  if (snap === 'full') return null;
 
   return (
     <button

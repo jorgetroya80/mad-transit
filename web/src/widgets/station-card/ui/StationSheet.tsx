@@ -7,7 +7,7 @@ import { CardBody } from './CardBody';
 import { SheetCardHeader } from './SheetCardHeader';
 
 // The station card inside the mobile sheet, in two pieces: the header row goes in the sheet's
-// header, visible at peek, and the rest in its body. Both read the same cached detail, and
+// header and the rest in its body, since the sheet decides what goes in each slot. Both read the same cached detail, and
 // both go back to the list on Escape. The page decides whether opening moves the focus to the
 // name, through `headingRef`.
 

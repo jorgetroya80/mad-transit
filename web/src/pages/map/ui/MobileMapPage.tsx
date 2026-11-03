@@ -11,7 +11,7 @@ import { useUserFocus } from '../model/useUserFocus';
 import { MobileSheet } from './MobileSheet';
 import { RecenterButton } from './RecenterButton';
 
-// Full-screen map with the search and mode floating on top. The sheet's peek strip takes the
+// Full-screen map with the search and mode floating on top. The sheet's hidden strip takes the
 // last grid row, so the map (and its attribution) ends above it. The map comes last in the DOM,
 // so Tab reaches it after the sheet; the grid puts it back in the first row, under the floating
 // controls, and also places the recenter button against that row. The controls start 44 px

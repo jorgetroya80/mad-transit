@@ -26,7 +26,7 @@ function Page({ openStation, isSheet = false }: { openStation?: string; isSheet?
         Puerta del Sol A
       </h2>
       <button ref={listFallback} type="button">
-        Ampliar lista
+        Mostrar lista · 2 estaciones con bicis
       </button>
     </>
   );

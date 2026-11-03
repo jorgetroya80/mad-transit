@@ -7,7 +7,7 @@ import {
   rowOriginOf,
 } from '../lib/stationListFocus';
 
-// Hidden (inert) at peek, the list cannot hold the focus: no target then.
+// Inert in the hidden sheet, the list cannot hold the focus: no target then.
 function listFocusTarget(panel: HTMLElement, origin: RowOrigin | undefined, closedStation: string) {
   if (panel.closest('[inert]')) return undefined;
   const row =
@@ -22,7 +22,7 @@ function listFocusTarget(panel: HTMLElement, origin: RowOrigin | undefined, clos
 type SheetFocusTargets = {
   // A row that opens the detail unmounts with the list.
   detailHeading: RefObject<HTMLElement | null>;
-  // Takes the focus back when the list cannot, as when it comes back hidden at peek.
+  // Takes the focus back when the list cannot, as when it comes back in the hidden sheet.
   listFallback: RefObject<HTMLElement | null>;
 };
 

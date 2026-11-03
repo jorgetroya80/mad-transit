@@ -7,12 +7,11 @@ describe('useBottomSheetOverlap', () => {
     vi.unstubAllGlobals();
   });
 
-  // The 112 px peek strip is in the page flow, so the content above already ends over it.
+  // The 56 px hidden strip is in the page flow, so the content above already ends over it.
   it.each([
-    ['peek', 0],
-    ['half', 430 - 112],
-    ['full', 700 - 112],
-  ] as const)('is the %s height minus the peek strip on a tall viewport', (snap, overlap) => {
+    ['hidden', 0],
+    ['half', 430 - 56],
+  ] as const)('is the %s height minus the hidden strip on a tall viewport', (snap, overlap) => {
     vi.stubGlobal('innerHeight', 900);
 
     const { result } = renderHook(() => useBottomSheetOverlap(snap));
@@ -20,39 +19,28 @@ describe('useBottomSheetOverlap', () => {
     expect(result.current).toBe(overlap);
   });
 
-  // 667 px viewport: full is capped at 667 - 166 = 501 px.
-  it('caps full at the viewport height minus the 166 px top margin', () => {
-    vi.stubGlobal('innerHeight', 667);
-
-    const { result } = renderHook(() => useBottomSheetOverlap('full'));
-
-    expect(result.current).toBe(501 - 112);
-  });
-
-  // 500 px viewport: full is 334 px, so half cannot keep its 430 px.
-  it('never lets half cover more than full', () => {
+  // 500 px viewport: half is capped at 500 - 166 = 334 px.
+  it('caps half at the viewport height minus the 166 px top margin', () => {
     vi.stubGlobal('innerHeight', 500);
 
-    const half = renderHook(() => useBottomSheetOverlap('half')).result.current;
-    const full = renderHook(() => useBottomSheetOverlap('full')).result.current;
+    const { result } = renderHook(() => useBottomSheetOverlap('half'));
 
-    expect(half).toBe(334 - 112);
-    expect(half).toBe(full);
+    expect(result.current).toBe(334 - 56);
   });
 
   it('follows the viewport height and the snap', () => {
-    vi.stubGlobal('innerHeight', 667);
+    vi.stubGlobal('innerHeight', 500);
     const { result, rerender } = renderHook(({ snap }) => useBottomSheetOverlap(snap), {
-      initialProps: { snap: 'full' as SheetSnap },
+      initialProps: { snap: 'half' as SheetSnap },
     });
 
     act(() => {
       vi.stubGlobal('innerHeight', 900);
       window.dispatchEvent(new Event('resize'));
     });
-    expect(result.current).toBe(700 - 112);
+    expect(result.current).toBe(430 - 56);
 
-    rerender({ snap: 'peek' });
+    rerender({ snap: 'hidden' });
     expect(result.current).toBe(0);
   });
 });

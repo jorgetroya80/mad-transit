@@ -363,7 +363,7 @@ describe('DesktopMapPage', () => {
     act(() => media.change(false));
 
     expect(screen.queryByRole('banner')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ampliar lista' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ocultar lista' })).toBeInTheDocument();
   });
 
   it('tabs through search, mode, location notice, favorites, list, map and card in order', async () => {

@@ -17,10 +17,11 @@ function recenterButton() {
 }
 
 describe('RecenterButton', () => {
-  // jsdom's 768 px viewport: the sheet covers 0 px of the map at peek and 430 - 112 px at half.
+  // jsdom's 768 px viewport: the sheet covers 0 px of the map at hidden (its 56 px strip is
+  // below the map, so 16 px here is 72 px from the screen edge) and 430 - 56 px at half.
   it.each([
-    ['peek', 16],
-    ['half', 334],
+    ['hidden', 16],
+    ['half', 390],
   ] as const)('sits 16 px above the sheet at %s', (snap, bottom) => {
     renderButton(snap);
 
@@ -35,12 +36,6 @@ describe('RecenterButton', () => {
       'ease-sheet',
       'motion-reduce:transition-none',
     );
-  });
-
-  it('is not there with the sheet at full', () => {
-    renderButton('full');
-
-    expect(screen.queryByRole('button', { name: 'Centrar en mi posición' })).toBeNull();
   });
 
   it('recenters on click', async () => {

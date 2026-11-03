@@ -13,7 +13,7 @@ type SheetCardHeaderProps = {
   headingRef?: Ref<HTMLHeadingElement>;
 };
 
-// One row, so it fits the sheet at peek: the arrow back, the meta above the name, the star.
+// One row: the arrow back, the meta above the name, the star.
 // The name takes programmatic focus (`tabIndex={-1}`, no tab stop) when the page moves it there.
 export function SheetCardHeader({
   number,

@@ -1,10 +1,11 @@
-import { type Ref, useId } from 'react';
+import type { Ref } from 'react';
 import { BottomSheet } from '@/shared/ui';
 import { StationSheetBody, StationSheetHeader } from '@/widgets/station-card';
 import type { MapLocation } from '../model/useMapLocation';
 import type { useSheetSnap } from '../model/useSheetSnap';
 import { MobilePanel } from './MobilePanel';
 import { MobileSheetHeader } from './MobileSheetHeader';
+import { DetailStripLabel, ListStripLabel } from './SheetStripLabel';
 
 type MobileSheetProps = {
   sheet: ReturnType<typeof useSheetSnap>;
@@ -16,7 +17,8 @@ type MobileSheetProps = {
   selectedStation: string | undefined;
 };
 
-// The list, or the selected station in its place. Either way the header stays visible at peek.
+// The list, or the selected station in its place. Hidden, the sheet keeps only a strip naming
+// what it holds.
 export function MobileSheet({
   sheet,
   panelRef,
@@ -25,16 +27,20 @@ export function MobileSheet({
   location,
   selectedStation,
 }: MobileSheetProps) {
-  const bodyId = useId();
   const isStationOpen = selectedStation !== undefined;
   return (
     <BottomSheet
       label={isStationOpen ? 'Detalle de la estación' : 'Estaciones'}
       snap={sheet.snap}
       onSnapChange={sheet.setSnap}
-      nextSnap={sheet.nextSnap}
-      handleLabel={sheet.handleLabel}
-      bodyId={bodyId}
+      hideLabel={sheet.hideLabel}
+      collapsedLabel={
+        isStationOpen ? (
+          <DetailStripLabel number={selectedStation} />
+        ) : (
+          <ListStripLabel center={location.center} />
+        )
+      }
       handleRef={handleRef}
       header={
         isStationOpen ? (
@@ -44,12 +50,7 @@ export function MobileSheet({
             headingRef={detailHeadingRef}
           />
         ) : (
-          <MobileSheetHeader
-            location={location}
-            snap={sheet.snap}
-            onSnapChange={sheet.setSnap}
-            bodyId={bodyId}
-          />
+          <MobileSheetHeader location={location} />
         )
       }
     >

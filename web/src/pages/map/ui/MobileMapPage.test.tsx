@@ -64,8 +64,8 @@ function renderPage(initialEntry = '/') {
   return renderWithRouter(undefined, { initialEntries: [initialEntry] });
 }
 
-function sheetSnapButton() {
-  return screen.getByRole('button', { name: /^Ver (todas|mapa)$/ });
+function sheetHandle() {
+  return screen.getByRole('button', { name: /^Ocultar (lista|detalle)$/ });
 }
 
 async function nearbyRows() {
@@ -86,7 +86,7 @@ describe('MobileMapPage', () => {
     Reflect.deleteProperty(navigator, 'geolocation');
   });
 
-  it('tabs through search, mode, recenter, handle, «Ver todas», notice, favorites, list and map in order', async () => {
+  it('tabs through search, mode, recenter, handle, notice, favorites, list and map in order', async () => {
     localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(['1b']));
     await renderPage();
     const [firstNearbyRow] = await nearbyRows();
@@ -94,8 +94,7 @@ describe('MobileMapPage', () => {
       screen.getByRole('searchbox', { name: 'Buscar estación' }),
       screen.getByRole('button', { name: 'Sacar bici' }),
       screen.getByRole('button', { name: 'Centrar en mi posición' }),
-      screen.getByRole('button', { name: 'Ampliar lista' }),
-      screen.getByRole('button', { name: 'Ver todas' }),
+      screen.getByRole('button', { name: 'Ocultar lista' }),
       screen.getByRole('button', { name: 'Activar' }),
       screen.getByRole('button', { name: 'Favoritas · 1' }),
       firstNearbyRow,
@@ -120,22 +119,20 @@ describe('MobileMapPage', () => {
     expect(controls).toContainElement(screen.getByRole('button', { name: 'Sacar bici' }));
   });
 
-  // «Ver todas» takes the list to full, and «Ver mapa» from there to peek.
   it.each([
     { snap: 'half', clicks: 0 },
-    { snap: 'full', clicks: 1 },
-    { snap: 'peek', clicks: 2 },
+    { snap: 'hidden', clicks: 1 },
   ])('has no axe violations with the list at $snap', async ({ clicks }) => {
     const user = userEvent.setup();
     const { container } = await renderPage();
     await nearbyRows();
 
-    for (let click = 0; click < clicks; click += 1) await user.click(sheetSnapButton());
+    for (let click = 0; click < clicks; click += 1) await user.click(sheetHandle());
 
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 
-  it('has no axe violations with a station open, at half and peek', async () => {
+  it('has no axe violations with a station open, at half and hidden', async () => {
     const user = userEvent.setup();
     const { container } = await renderPage();
     await nearbyRows();
@@ -144,7 +141,10 @@ describe('MobileMapPage', () => {
     await screen.findByRole('heading', { level: 2, name: 'Puerta del Sol B' });
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
 
-    await user.click(screen.getByRole('button', { name: 'Reducir detalle' }));
+    await user.click(sheetHandle());
+    expect(
+      screen.getByRole('button', { name: 'Mostrar detalle · Puerta del Sol B' }),
+    ).toBeInTheDocument();
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 });

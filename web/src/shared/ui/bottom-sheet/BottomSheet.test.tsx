@@ -5,7 +5,7 @@ import { expectNoAxeViolations } from '../../../../test/axe';
 import { BottomSheet } from './BottomSheet';
 import type { SheetSnap } from './sheetSize';
 
-const LIST_CYCLE: Record<SheetSnap, SheetSnap> = { peek: 'half', half: 'full', full: 'half' };
+const STRIP_TEXT = 'Mostrar lista · 2 estaciones con bicis';
 
 function renderSheet(snap: SheetSnap, header?: ReactNode) {
   const onSnapChange = vi.fn<(snap: SheetSnap) => void>();
@@ -14,14 +14,14 @@ function renderSheet(snap: SheetSnap, header?: ReactNode) {
       label="Estaciones"
       snap={snap}
       onSnapChange={onSnapChange}
-      nextSnap={LIST_CYCLE}
-      handleLabel={snap === 'full' ? 'Reducir lista' : 'Ampliar lista'}
+      hideLabel="Ocultar lista"
+      collapsedLabel={STRIP_TEXT}
       header={header}
     >
       <p>Contenido del panel</p>
     </BottomSheet>,
   );
-  const handle = screen.getByRole('button', { name: /lista$/ });
+  const handle = screen.getByRole('button', { name: /lista/ });
   const content = screen.getByText('Contenido del panel').parentElement;
   const sheet = handle.parentElement;
   return { ...view, handle, content, sheet, onSnapChange };
@@ -29,25 +29,24 @@ function renderSheet(snap: SheetSnap, header?: ReactNode) {
 
 describe('BottomSheet', () => {
   it.each([
-    ['peek', 'half'],
-    ['half', 'full'],
-    ['full', 'half'],
-  ] as const)('asks the parent for the next snap from %s and waits for it', async (snap, next) => {
+    ['half', 'hidden'],
+    ['hidden', 'half'],
+  ] as const)('asks the parent to go from %s to %s and waits for it', async (snap, next) => {
     const user = userEvent.setup();
     const { handle, onSnapChange } = renderSheet(snap);
 
     await user.click(handle);
 
     expect(onSnapChange).toHaveBeenCalledExactlyOnceWith(next);
-    expect(screen.getByRole('button', { name: /lista$/ })).toBe(handle);
+    expect(screen.getByRole('button', { name: /lista/ })).toBe(handle);
   });
 
   it.each([
     ['Enter', '{Enter}'],
     ['Space', ' '],
-  ])('moves to the next snap with %s', async (_key, keys) => {
+  ])('shows the hidden sheet with %s', async (_key, keys) => {
     const user = userEvent.setup();
-    const { handle, onSnapChange } = renderSheet('peek');
+    const { handle, onSnapChange } = renderSheet('hidden');
 
     await user.tab();
     expect(handle).toHaveFocus();
@@ -56,83 +55,69 @@ describe('BottomSheet', () => {
     expect(onSnapChange).toHaveBeenCalledExactlyOnceWith('half');
   });
 
-  it.each([
-    ['peek', 'Ampliar lista', 'false'],
-    ['half', 'Ampliar lista', 'true'],
-    ['full', 'Reducir lista', 'true'],
-  ] as const)(
-    'names the handle from the parent and is collapsed only in peek (%s)',
-    (snap, name, expanded) => {
-      const { handle } = renderSheet(snap);
-
-      expect(handle).toHaveAccessibleName(name);
-      expect(handle).toHaveAttribute('type', 'button');
-      expect(handle).toHaveAttribute('aria-expanded', expanded);
-    },
-  );
-
-  it('draws the handle as a 44 px bar hidden from assistive technology', () => {
+  it('draws the handle at half as a full-width 44 px bar named by the parent', () => {
     const { handle } = renderSheet('half');
 
+    expect(handle).toHaveAccessibleName('Ocultar lista');
+    expect(handle).toHaveAttribute('type', 'button');
+    expect(handle).toHaveAttribute('aria-expanded', 'true');
     expect(handle).toHaveStyle({ height: '44px' });
+    expect(handle).toHaveClass('w-full');
     expect(handle.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
     expect(handle).toHaveTextContent('');
   });
 
-  it('points the handle at the content', () => {
-    const { handle, content } = renderSheet('half');
+  // The strip's visible text is its name: no aria-label that could drift from it.
+  it('turns the handle at hidden into a 56 px strip named by its visible text', () => {
+    const { handle } = renderSheet('hidden');
+
+    expect(handle).toHaveTextContent(STRIP_TEXT);
+    expect(handle).toHaveAccessibleName(STRIP_TEXT);
+    expect(handle).not.toHaveAttribute('aria-label');
+    expect(handle).toHaveAttribute('aria-expanded', 'false');
+    expect(handle).toHaveStyle({ height: '56px' });
+    expect(handle).toHaveClass('w-full');
+    expect(handle.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
+  });
+
+  it('keeps the strip text on one line, cut with an ellipsis', () => {
+    renderSheet('hidden');
+
+    expect(screen.getByText(STRIP_TEXT)).toHaveClass('truncate');
+  });
+
+  it.each(['half', 'hidden'] as const)('points the handle at the content at %s', (snap) => {
+    const { handle, content } = renderSheet(snap);
 
     expect(content).toHaveAttribute('id', handle.getAttribute('aria-controls'));
   });
 
-  it('takes the content id from the parent, so a header control can point at it too', () => {
-    render(
-      <BottomSheet
-        label="Estaciones"
-        snap="half"
-        onSnapChange={() => {}}
-        nextSnap={LIST_CYCLE}
-        handleLabel="Ampliar lista"
-        bodyId="sheet-body"
-      >
-        <p>Contenido del panel</p>
-      </BottomSheet>,
-    );
-
-    expect(screen.getByRole('button', { name: 'Ampliar lista' })).toHaveAttribute(
-      'aria-controls',
-      'sheet-body',
-    );
-    expect(screen.getByText('Contenido del panel').parentElement).toHaveAttribute(
-      'id',
-      'sheet-body',
-    );
-  });
-
   // jsdom and Testing Library ignore `inert`, so the tests assert the attribute itself.
-  it('makes the content inert and hides it in peek', () => {
-    const { content } = renderSheet('peek');
+  it('makes the header and the content inert and hides them at hidden', () => {
+    renderSheet('hidden', <h2>Cabecera</h2>);
+    const region = screen.getByText('Cabecera').closest('section');
 
-    expect(content).toHaveAttribute('inert');
-    expect(content).toHaveClass('invisible');
+    expect(region).toHaveAttribute('inert');
+    expect(region).toHaveClass('invisible');
+    expect(region).toContainElement(screen.getByText('Contenido del panel'));
   });
 
-  it.each(['half', 'full'] as const)('shows the content in %s', (snap) => {
-    const { content } = renderSheet(snap);
+  it('shows the header and the content at half', () => {
+    renderSheet('half', <h2>Cabecera</h2>);
+    const region = screen.getByRole('region', { name: 'Estaciones' });
 
-    expect(content).not.toHaveAttribute('inert');
-    expect(content).not.toHaveClass('invisible');
+    expect(region).not.toHaveAttribute('inert');
+    expect(region).not.toHaveClass('invisible');
   });
 
-  it('keeps the header visible between the handle and the content, also in peek', () => {
-    renderSheet('peek', <h2>Cabecera</h2>);
+  it('puts the header between the handle and the content, across the full width', () => {
+    renderSheet('half', <h2>Cabecera</h2>);
     const header = screen.getByRole('heading', { name: 'Cabecera' });
-    const handle = screen.getByRole('button', { name: 'Ampliar lista' });
+    const handle = screen.getByRole('button', { name: 'Ocultar lista' });
     const content = screen.getByText('Contenido del panel').parentElement;
 
     expect(handle.compareDocumentPosition(header)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(header.compareDocumentPosition(content as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(header.closest('[inert]')).toBeNull();
   });
 
   it('labels the sheet content as a region', () => {
@@ -144,26 +129,25 @@ describe('BottomSheet', () => {
   });
 
   it.each([
-    ['peek', 'min(112px, 100dvh - 166px)'],
+    ['hidden', 'min(56px, 100dvh - 166px)'],
     ['half', 'min(430px, 100dvh - 166px)'],
-    ['full', 'min(700px, 100dvh - 166px)'],
   ] as const)('caps the %s height so the top 166 px stay free', (snap, height) => {
     const { sheet } = renderSheet(snap);
 
     expect(sheet).toHaveStyle({ height });
   });
 
-  it('overlays the page but keeps the peek height in the flow, covering nothing above it', () => {
-    const { sheet } = renderSheet('full');
+  it('overlays the page but keeps the hidden height in the flow, covering nothing above it', () => {
+    const { sheet } = renderSheet('half');
     const strip = sheet?.parentElement;
 
     expect(sheet).toHaveClass('fixed', 'inset-x-0', 'bottom-0');
-    expect(strip).toHaveStyle({ height: '112px' });
+    expect(strip).toHaveStyle({ height: '56px' });
     expect(strip).toHaveClass('shrink-0');
   });
 
   it('animates the height unless the user prefers reduced motion', () => {
-    const { sheet, content } = renderSheet('half');
+    const { sheet } = renderSheet('half', <h2>Cabecera</h2>);
 
     expect(sheet).toHaveClass(
       'transition-[height]',
@@ -171,10 +155,12 @@ describe('BottomSheet', () => {
       'ease-sheet',
       'motion-reduce:transition-none',
     );
-    expect(content).toHaveClass('motion-reduce:transition-none');
+    expect(screen.getByRole('region', { name: 'Estaciones' })).toHaveClass(
+      'motion-reduce:transition-none',
+    );
   });
 
-  it.each(['peek', 'half', 'full'] as const)('has no axe violations in %s', async (snap) => {
+  it.each(['hidden', 'half'] as const)('has no axe violations at %s', async (snap) => {
     const { container } = renderSheet(snap, <h2>Cabecera</h2>);
 
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
