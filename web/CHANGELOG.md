@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.8.1...web-v0.9.0) (2026-11-03)
+
+
+### Features
+
+* **web:** lay out the mobile screen of the redesign ([#103](https://github.com/jorgetroya80/mad-transit/issues/103)) ([43878aa](https://github.com/jorgetroya80/mad-transit/commit/43878aa7cb984e8b1b80b25248aea820e731c979))
+
 ## [0.8.1](https://github.com/jorgetroya80/mad-transit/compare/web-v0.8.0...web-v0.8.1) (2026-11-03)
 
 
