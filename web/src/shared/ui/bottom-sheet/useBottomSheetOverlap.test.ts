@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import type { SheetSnap } from './sheetSize';
 import { useBottomSheetOverlap } from './useBottomSheetOverlap';
 
 describe('useBottomSheetOverlap', () => {
@@ -6,24 +7,40 @@ describe('useBottomSheetOverlap', () => {
     vi.unstubAllGlobals();
   });
 
-  // 60 % of 740 px minus the 44 px handle strip, which is already outside the content above.
-  it('is the expanded sheet height minus the handle strip kept in the flow', () => {
-    vi.stubGlobal('innerHeight', 740);
+  // The 56 px hidden strip is in the page flow, so the content above already ends over it.
+  it.each([
+    ['hidden', 0],
+    ['half', 430 - 56],
+  ] as const)('is the %s height minus the hidden strip on a tall viewport', (snap, overlap) => {
+    vi.stubGlobal('innerHeight', 900);
 
-    const { result } = renderHook(() => useBottomSheetOverlap());
+    const { result } = renderHook(() => useBottomSheetOverlap(snap));
 
-    expect(result.current).toBe(400);
+    expect(result.current).toBe(overlap);
   });
 
-  it('follows the viewport height, rounded to whole pixels', () => {
-    vi.stubGlobal('innerHeight', 740);
-    const { result } = renderHook(() => useBottomSheetOverlap());
+  // 500 px viewport: half is capped at 500 - 166 = 334 px.
+  it('caps half at the viewport height minus the 166 px top margin', () => {
+    vi.stubGlobal('innerHeight', 500);
 
-    act(() => {
-      vi.stubGlobal('innerHeight', 768);
-      window.dispatchEvent(new Event('resize'));
+    const { result } = renderHook(() => useBottomSheetOverlap('half'));
+
+    expect(result.current).toBe(334 - 56);
+  });
+
+  it('follows the viewport height and the snap', () => {
+    vi.stubGlobal('innerHeight', 500);
+    const { result, rerender } = renderHook(({ snap }) => useBottomSheetOverlap(snap), {
+      initialProps: { snap: 'half' as SheetSnap },
     });
 
-    expect(result.current).toBe(417);
+    act(() => {
+      vi.stubGlobal('innerHeight', 900);
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(result.current).toBe(430 - 56);
+
+    rerender({ snap: 'hidden' });
+    expect(result.current).toBe(0);
   });
 });

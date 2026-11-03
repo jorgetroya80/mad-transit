@@ -10,8 +10,9 @@ type FavoriteStationsProps = {
   need: Need;
   selectedNumber: string | undefined;
   onSelect: (number: string) => void;
-  // On desktop the section folds, and the mode cards already say what the numbers count.
+  // On desktop and mobile the section folds, and the mode already says what the numbers count.
   isCollapsible: boolean;
+  level?: 2 | 3;
 };
 
 export function FavoriteStations({
@@ -19,6 +20,7 @@ export function FavoriteStations({
   selectedNumber,
   onSelect,
   isCollapsible,
+  level = 2,
 }: FavoriteStationsProps) {
   const { stations, status } = useFavoriteStations();
 
@@ -47,6 +49,7 @@ export function FavoriteStations({
         count={stations.length}
         icon={StarIcon}
         storageKey={FAVORITES_OPEN_STORAGE_KEY}
+        level={level}
       >
         {rows}
       </CollapsibleSection>

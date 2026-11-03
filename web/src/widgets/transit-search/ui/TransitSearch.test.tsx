@@ -6,6 +6,7 @@ import type { Station, StationsResponse } from '@jorgetroya80/mad-transit-client
 import { stationsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env, SEARCH_MAX_RESULTS } from '@/shared/config';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { TransitSearch } from './TransitSearch';
 
@@ -172,5 +173,60 @@ describe('TransitSearch', () => {
     expect(screen.getByText('No se pudieron cargar las estaciones')).toBeInTheDocument();
     expect(resultNumbers()).toEqual([]);
     act(() => onlineManager.setOnline(true));
+  });
+
+  describe('floating over the map', () => {
+    async function renderFloatingSearch() {
+      const user = userEvent.setup();
+      const view = await renderWithRouter(<TransitSearch variant="floating" />);
+      await user.type(searchBox(), '1');
+      await screen.findByRole('list');
+      await user.clear(searchBox());
+      return { user, ...view };
+    }
+
+    it('is a 44 px round field with a floating shadow', async () => {
+      await renderFloatingSearch();
+
+      expect(searchBox()).toHaveClass('h-11', 'rounded-full', 'bg-surface', 'shadow-float');
+    });
+
+    it('hides its label visually and keeps the help as its description', async () => {
+      await renderFloatingSearch();
+
+      expect(screen.getByText('Buscar estación')).toHaveClass('sr-only');
+      expect(searchBox()).toHaveAccessibleDescription('Busca por número de estación.');
+    });
+
+    it('opens the results over the map instead of pushing what follows', async () => {
+      const { user } = await renderFloatingSearch();
+
+      await user.type(searchBox(), '1a');
+
+      expect(screen.getByRole('list').parentElement).toHaveClass('absolute', 'top-full');
+    });
+
+    it('selects the clicked station in the URL', async () => {
+      const { user, router } = await renderFloatingSearch();
+
+      await user.type(searchBox(), '1');
+      await user.click(screen.getByRole('button', { name: /^1b,/ }));
+
+      await waitFor(() => expect(router.state.location.search).toEqual({ station: '1b' }));
+    });
+
+    it('has no axe violations with the results open', async () => {
+      const { user, container } = await renderFloatingSearch();
+
+      await user.type(searchBox(), '1');
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+  });
+
+  it('keeps its label in view by default', async () => {
+    await renderSearch();
+
+    expect(screen.getByText('Buscar estación')).not.toHaveClass('sr-only');
   });
 });

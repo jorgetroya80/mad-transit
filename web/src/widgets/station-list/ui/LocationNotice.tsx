@@ -22,19 +22,38 @@ export function ApproximateLocationNotice({
   );
 }
 
-type DesktopLocationNoticeProps = LocationNoticeProps & {
+export type LocatingLayout = 'desktop' | 'mobile';
+
+type LocatingNoticeProps = LocationNoticeProps & {
+  layout: LocatingLayout;
   onLocate: () => void;
   isLocating: boolean;
 };
 
+// The mobile notice is the compact one of the design: it keeps «Activar» while asking, and
+// `aria-busy` says the request is pending.
+const NO_LOCATION = {
+  desktop: {
+    text: 'Mostrando estaciones cerca de la Puerta del Sol porque no tenemos tu ubicación.',
+    label: 'Usar mi ubicación',
+    pendingLabel: 'Localizando…',
+  },
+  mobile: {
+    text: 'Sin tu ubicación: cerca de la Puerta del Sol',
+    label: 'Activar',
+    pendingLabel: 'Activar',
+  },
+} as const satisfies Record<LocatingLayout, { text: string; label: string; pendingLabel: string }>;
+
 // Always on screen, so the user knows what the list is around. A denied permission is not
 // asked again: the browser would not show its prompt.
-export function DesktopLocationNotice({
+export function LocatingNotice({
   isApproximateLocation,
   isLocationDenied,
+  layout,
   onLocate,
   isLocating,
-}: DesktopLocationNoticeProps) {
+}: LocatingNoticeProps) {
   if (!isApproximateLocation) {
     return (
       <StatusBanner variant="info" icon={LocationIcon}>
@@ -49,17 +68,18 @@ export function DesktopLocationNotice({
       </StatusBanner>
     );
   }
+  const { text, label, pendingLabel } = NO_LOCATION[layout];
   return (
     <StatusBanner
       variant="info"
       icon={LocationIcon}
       action={{
-        label: isLocating ? 'Localizando…' : 'Usar mi ubicación',
+        label: isLocating ? pendingLabel : label,
         onClick: onLocate,
         isPending: isLocating,
       }}
     >
-      Mostrando estaciones cerca de la Puerta del Sol porque no tenemos tu ubicación.
+      {text}
     </StatusBanner>
   );
 }

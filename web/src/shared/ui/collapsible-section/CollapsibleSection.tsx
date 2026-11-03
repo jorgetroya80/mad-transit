@@ -10,6 +10,8 @@ type CollapsibleSectionProps = {
   icon: SectionIcon;
   // Where the open state is kept, so it survives a reload.
   storageKey: string;
+  // 3 when the section sits under another heading, as in the mobile sheet.
+  level?: 2 | 3;
   children: ReactNode;
 };
 
@@ -24,14 +26,16 @@ export function CollapsibleSection({
   count,
   icon: Icon,
   storageKey,
+  level = 2,
   children,
 }: CollapsibleSectionProps) {
   const [isOpen, setOpen] = useLocalStorage(storageKey, parseOpen, true);
   const headingId = useId();
   const contentId = useId();
+  const Heading = level === 3 ? 'h3' : 'h2';
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2">
-      <h2 id={headingId} tabIndex={-1} className="focus-visible:outline-none">
+      <Heading id={headingId} tabIndex={-1} className="focus-visible:outline-none">
         <button
           type="button"
           aria-expanded={isOpen}
@@ -45,7 +49,7 @@ export function CollapsibleSection({
             className={`size-5 shrink-0 text-fg-muted transition-transform motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
           />
         </button>
-      </h2>
+      </Heading>
       <div id={contentId} hidden={!isOpen}>
         {children}
       </div>

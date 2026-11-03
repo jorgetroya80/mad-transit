@@ -1,70 +1,110 @@
-import { useId, useState, type CSSProperties, type ReactNode } from 'react';
-import { EXPANDED_SHEET_VIEWPORT_PERCENT, HANDLE_HEIGHT_PX } from './sheetSize';
+import { type ReactNode, type Ref, useId } from 'react';
+import { HANDLE_HEIGHT_PX, SHEET_HEIGHT_PX, sheetHeight, type SheetSnap } from './sheetSize';
 
 type BottomSheetProps = {
   label: string;
-  defaultExpanded?: boolean;
-  // Passing `expanded` makes the parent own the state; the handle only asks for the change.
-  expanded?: boolean;
-  onExpandedChange?: (expanded: boolean) => void;
+  snap: SheetSnap;
+  onSnapChange: (snap: SheetSnap) => void;
+  // Names the handle at half, which hides the sheet: «Ocultar lista», for example.
+  hideLabel: string;
+  // The strip's one visible line at hidden, which is also its accessible name.
+  collapsedLabel: ReactNode;
+  header?: ReactNode;
+  // Lets the page focus the handle, the one control left when the sheet is hidden.
+  handleRef?: Ref<HTMLButtonElement>;
   children: ReactNode;
 };
 
-// Inline styles, not Tailwind classes: classes cannot be built from the shared size constants.
-// CSSProperties does not type custom properties.
-const stripStyle = { '--handle-height': `${HANDLE_HEIGHT_PX}px` } as CSSProperties;
-const sheetStyle: CSSProperties = { height: `${EXPANDED_SHEET_VIEWPORT_PERCENT}dvh` };
+const OTHER_SNAP = { hidden: 'half', half: 'hidden' } as const satisfies Record<
+  SheetSnap,
+  SheetSnap
+>;
 
-// Two states only: collapsed shows the handle, expanded takes 60 % of the viewport height.
-// dvh, not vh: 100vh ignores the Safari iOS toolbar and would hide the bottom of the sheet.
-// The sheet keeps its height and slides with a transform, so the change can be animated.
-// The root is an in-flow strip as tall as the handle, so the collapsed sheet covers nothing
-// above it (e.g. the map attribution). --handle-height carries that height to every class.
+// Inline styles, not Tailwind classes: classes cannot be built from the shared size constants.
+const stripStyle = { height: SHEET_HEIGHT_PX.hidden };
+const handleStyle = {
+  hidden: { height: SHEET_HEIGHT_PX.hidden },
+  half: { height: HANDLE_HEIGHT_PX },
+};
+
+// The sheet overlays the page and animates its height between the snaps. The root is an
+// in-flow strip as tall as `hidden`, so the hidden sheet covers nothing above it (e.g. the map
+// attribution).
 export function BottomSheet({
   label,
-  defaultExpanded = false,
-  expanded: controlledExpanded,
-  onExpandedChange,
+  snap,
+  onSnapChange,
+  hideLabel,
+  collapsedLabel,
+  header,
+  handleRef,
   children,
 }: BottomSheetProps) {
-  const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded);
-  const expanded = controlledExpanded ?? uncontrolledExpanded;
-  const handleId = useId();
-  const contentId = useId();
-
-  function toggle() {
-    setUncontrolledExpanded(!expanded);
-    onExpandedChange?.(!expanded);
-  }
+  const bodyId = useId();
+  const isHidden = snap === 'hidden';
 
   return (
-    <div className="h-(--handle-height) shrink-0" style={stripStyle}>
+    <div className="shrink-0" style={stripStyle}>
       <div
-        style={sheetStyle}
-        className={`fixed inset-x-0 bottom-0 z-10 flex flex-col rounded-t-sheet bg-surface shadow-sheet transition-transform duration-300 ease-out motion-reduce:transition-none ${expanded ? 'translate-y-0' : 'translate-y-[calc(100%-var(--handle-height))]'}`}
+        style={{ height: sheetHeight(snap) }}
+        className="fixed inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-sheet bg-surface shadow-sheet transition-[height] duration-320 ease-sheet motion-reduce:transition-none"
       >
-        <button
-          id={handleId}
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={contentId}
-          onClick={toggle}
-          className="flex h-(--handle-height) w-full shrink-0 flex-col items-center justify-center gap-1 px-4 font-medium text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
-        >
-          <span aria-hidden="true" className="h-1 w-10 rounded-full bg-handle" />
-          {label}
-        </button>
-        {/* inert, not hidden: collapsed content stays painted while it slides out, but is
-          unreachable for focus and assistive technology. */}
+        <SheetHandle
+          snap={snap}
+          onSnapChange={onSnapChange}
+          hideLabel={hideLabel}
+          collapsedLabel={collapsedLabel}
+          bodyId={bodyId}
+          handleRef={handleRef}
+        />
+        {/* Visibility switches at the end of the shrink, so header and body stay painted while
+          the sheet closes over them; inert keeps them out of focus and assistive technology. */}
         <section
-          id={contentId}
-          aria-labelledby={handleId}
-          inert={!expanded}
-          className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
+          aria-label={label}
+          inert={isHidden}
+          className={`flex min-h-0 flex-1 flex-col transition-[visibility] duration-320 motion-reduce:transition-none ${isHidden ? 'invisible' : 'visible'}`}
         >
-          {children}
+          {header}
+          <div id={bodyId} className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            {children}
+          </div>
         </section>
       </div>
     </div>
+  );
+}
+
+type SheetHandleProps = Pick<
+  BottomSheetProps,
+  'snap' | 'onSnapChange' | 'hideLabel' | 'collapsedLabel' | 'handleRef'
+> & { bodyId: string };
+
+// One button in both snaps, so it keeps the focus as it toggles: a bar named by `hideLabel` at
+// half, and at hidden the whole strip, named by its visible text.
+function SheetHandle({
+  snap,
+  onSnapChange,
+  hideLabel,
+  collapsedLabel,
+  bodyId,
+  handleRef,
+}: SheetHandleProps) {
+  const isHidden = snap === 'hidden';
+  return (
+    <button
+      ref={handleRef}
+      type="button"
+      aria-label={isHidden ? undefined : hideLabel}
+      aria-expanded={!isHidden}
+      aria-controls={bodyId}
+      onClick={() => onSnapChange(OTHER_SNAP[snap])}
+      style={handleStyle[snap]}
+      className="flex w-full shrink-0 flex-col items-center justify-center gap-2 px-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+    >
+      <span aria-hidden="true" className="h-1 w-10 shrink-0 rounded-full bg-handle" />
+      {isHidden ? (
+        <span className="max-w-full truncate text-sm font-semibold text-fg">{collapsedLabel}</span>
+      ) : null}
+    </button>
   );
 }

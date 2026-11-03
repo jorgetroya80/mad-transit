@@ -3,7 +3,7 @@ import { InfoIcon, OfflineIcon, WarningIcon } from '../icons';
 
 type StatusBannerVariant = 'info' | 'stale' | 'offline';
 
-// A pending action says so in its label and stays focusable, like `LocateButton`.
+// A pending action says so in its label and stays focusable (aria-disabled, not disabled).
 type StatusBannerAction = { label: string; onClick: () => void; isPending?: boolean };
 
 type BannerIcon = typeof InfoIcon;

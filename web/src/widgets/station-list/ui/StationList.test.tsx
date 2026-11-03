@@ -302,6 +302,115 @@ describe('StationList', () => {
     });
   });
 
+  describe('on mobile', () => {
+    const NO_LOCATION = 'Sin tu ubicación: cerca de la Puerta del Sol';
+
+    function renderMobileList(props: Partial<ListProps> & { isLocating?: boolean } = {}) {
+      const onLocate = vi.fn<() => void>();
+      const view = renderWithRouter(
+        <StationList {...LOCATED} {...props} layout="mobile" onLocate={onLocate} />,
+      );
+      return { view, onLocate };
+    }
+
+    it('says it is using the current location, without an action', async () => {
+      await renderMobileList().view;
+
+      expect(screen.getByText('Usando tu ubicación actual.')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Activar' })).not.toBeInTheDocument();
+      expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
+    });
+
+    it('offers to turn the location on when it has none, and asks for it', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const { view, onLocate } = renderMobileList({ isApproximateLocation: true });
+      await view;
+
+      expect(screen.getByText(NO_LOCATION)).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Activar' }));
+
+      expect(onLocate).toHaveBeenCalledOnce();
+    });
+
+    it('keeps «Activar» busy while it asks for the position', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const { view, onLocate } = renderMobileList({
+        isApproximateLocation: true,
+        isLocating: true,
+      });
+      await view;
+
+      const button = screen.getByRole('button', { name: 'Activar' });
+      expect(button).toHaveAttribute('aria-busy', 'true');
+      await user.click(button);
+
+      expect(onLocate).not.toHaveBeenCalled();
+    });
+
+    it('says the permission was not given, without offering to ask again', async () => {
+      await renderMobileList({ isApproximateLocation: true, isLocationDenied: true }).view;
+
+      expect(
+        screen.getByText(
+          'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Activar' })).not.toBeInTheDocument();
+    });
+
+    it('says nothing about the location while it is still pending', async () => {
+      await renderMobileList({ center: undefined }).view;
+
+      expect(screen.queryByText('Usando tu ubicación actual.')).not.toBeInTheDocument();
+      expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
+    });
+
+    it('lists the nearby stations under «Cercanas», without caption or update time', async () => {
+      await renderMobileList({ isApproximateLocation: true }).view;
+
+      const region = await nearbyRegion('Cercanas');
+      await within(region).findAllByRole('button', { name: /^Estación/ });
+
+      expect(within(region).getByRole('heading', { level: 3 })).toHaveTextContent('Cercanas');
+      expect(region).not.toHaveAccessibleDescription();
+      expect(region).toHaveAttribute('data-station-list', 'nearby');
+      expect(screen.queryByText('Ordenadas por distancia')).not.toBeInTheDocument();
+      expect(screen.queryByText('Bicis disponibles')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Actualizado/)).not.toBeInTheDocument();
+    });
+
+    it('folds the favorites, above «Cercanas», under an h3', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      saveFavorites(['1b']);
+      await renderMobileList().view;
+
+      const header = await screen.findByRole('button', { name: 'Favoritas · 1' });
+      const favorites = screen.getByRole('region', { name: 'Favoritas · 1' });
+      const regions = screen.getAllByRole('region');
+
+      expect(screen.getByRole('heading', { level: 3, name: 'Favoritas · 1' })).toContainElement(
+        header,
+      );
+      expect(regions.indexOf(favorites)).toBeLessThan(
+        regions.indexOf(await nearbyRegion('Cercanas')),
+      );
+      await user.click(header);
+      expect(header).toHaveAttribute('aria-expanded', 'false');
+      expect(localStorage.getItem(FAVORITES_OPEN_STORAGE_KEY)).toBe('false');
+    });
+
+    it('has no axe violations with the notice, its action and the favorites', async () => {
+      saveFavorites(['1b']);
+      const { view } = renderMobileList({ isApproximateLocation: true });
+      const { container } = await view;
+      await screen.findByRole('button', { name: 'Favoritas · 1' });
+      await within(await nearbyRegion('Cercanas')).findAllByRole('button', { name: /^Estación/ });
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+  });
+
   it('shows loading without asking for nearby stations while the location is pending', async () => {
     const all = recordAllRequests();
 

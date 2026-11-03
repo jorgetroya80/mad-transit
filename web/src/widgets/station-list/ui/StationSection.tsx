@@ -6,33 +6,44 @@ type StationSectionProps = {
   section: StationListSection;
   heading: string;
   // What the numbers in the rows count, so the filter's effect is spelled out under the heading.
-  caption: string;
+  caption?: string;
+  // 3 when the list sits under another heading, as in the mobile sheet.
+  level?: 2 | 3;
   children: ReactNode;
 };
 
 // `data-station-list` and the focusable heading (`tabIndex={-1}`, no tab stop) let the page
 // return the focus to the section a detail was opened from, or to its heading.
-export function StationSection({ section, heading, caption, children }: StationSectionProps) {
+export function StationSection({
+  section,
+  heading,
+  caption,
+  level = 2,
+  children,
+}: StationSectionProps) {
   const headingId = useId();
   const captionId = useId();
+  const Heading = level === 3 ? 'h3' : 'h2';
   return (
     <section
       aria-labelledby={headingId}
-      aria-describedby={captionId}
+      aria-describedby={caption === undefined ? undefined : captionId}
       data-station-list={section}
       className="flex flex-col gap-2"
     >
       <div>
-        <h2
+        <Heading
           id={headingId}
           tabIndex={-1}
           className="text-base font-semibold text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           {heading}
-        </h2>
-        <p id={captionId} className="text-sm text-fg-muted">
-          {caption}
-        </p>
+        </Heading>
+        {caption === undefined ? null : (
+          <p id={captionId} className="text-sm text-fg-muted">
+            {caption}
+          </p>
+        )}
       </div>
       {children}
     </section>

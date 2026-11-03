@@ -1,4 +1,5 @@
 export {
+  ArrowLeftIcon,
   BikeIcon,
   ChevronIcon,
   ClearIcon,

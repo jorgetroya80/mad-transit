@@ -1,180 +1,168 @@
+import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { expectNoAxeViolations } from '../../../../test/axe';
 import { BottomSheet } from './BottomSheet';
+import type { SheetSnap } from './sheetSize';
 
-function renderSheet(props: { defaultExpanded?: boolean } = {}) {
-  render(
-    <BottomSheet label="Estaciones" {...props}>
+const STRIP_TEXT = 'Mostrar lista · 2 estaciones con bicis';
+
+function renderSheet(snap: SheetSnap, header?: ReactNode) {
+  const onSnapChange = vi.fn<(snap: SheetSnap) => void>();
+  const view = render(
+    <BottomSheet
+      label="Estaciones"
+      snap={snap}
+      onSnapChange={onSnapChange}
+      hideLabel="Ocultar lista"
+      collapsedLabel={STRIP_TEXT}
+      header={header}
+    >
       <p>Contenido del panel</p>
     </BottomSheet>,
   );
-  const handle = screen.getByRole('button', { name: 'Estaciones' });
+  const handle = screen.getByRole('button', { name: /lista/ });
   const content = screen.getByText('Contenido del panel').parentElement;
-  return { handle, content };
+  const sheet = handle.parentElement;
+  return { ...view, handle, content, sheet, onSnapChange };
 }
 
 describe('BottomSheet', () => {
-  // jsdom and Testing Library ignore `inert`, so the tests assert the attribute itself.
-  it('starts collapsed with its content rendered but inert', () => {
-    const { handle, content } = renderSheet();
-
-    expect(handle).toHaveAttribute('type', 'button');
-    expect(handle).toHaveAttribute('aria-expanded', 'false');
-    expect(content).toHaveAttribute('inert');
-    expect(content).not.toHaveAttribute('hidden');
-  });
-
-  it('slides down to show only the handle when collapsed and up when expanded', async () => {
+  it.each([
+    ['half', 'hidden'],
+    ['hidden', 'half'],
+  ] as const)('asks the parent to go from %s to %s and waits for it', async (snap, next) => {
     const user = userEvent.setup();
-    const { handle } = renderSheet();
-    const sheet = handle.parentElement;
-
-    // One variable sets the handle height, the visible strip and the space kept in the flow.
-    expect(sheet).toHaveStyle({ height: '60dvh' });
-    expect(sheet).toHaveClass('translate-y-[calc(100%-var(--handle-height))]');
-    expect(handle).toHaveClass('h-(--handle-height)');
+    const { handle, onSnapChange } = renderSheet(snap);
 
     await user.click(handle);
-    expect(sheet).toHaveStyle({ height: '60dvh' });
-    expect(sheet).toHaveClass('translate-y-0');
-    expect(sheet).not.toHaveClass('translate-y-[calc(100%-var(--handle-height))]');
-  });
 
-  it('keeps the handle height in the page flow so it covers nothing above it', () => {
-    const { handle } = renderSheet();
-    const strip = handle.parentElement?.parentElement;
-
-    expect(strip).toHaveStyle({ '--handle-height': '44px' });
-    expect(strip).toHaveClass('h-(--handle-height)', 'shrink-0');
-  });
-
-  it('animates the slide unless the user prefers reduced motion', () => {
-    const { handle } = renderSheet();
-
-    expect(handle.parentElement).toHaveClass(
-      'transition-transform',
-      'duration-300',
-      'ease-out',
-      'motion-reduce:transition-none',
-    );
-  });
-
-  it('points the handle at the content region', () => {
-    const { handle, content } = renderSheet({ defaultExpanded: true });
-
-    expect(content).toHaveAttribute('id', handle.getAttribute('aria-controls'));
-    expect(screen.getByRole('region', { name: 'Estaciones' })).toBe(content);
-  });
-
-  it('starts expanded when asked to', () => {
-    const { handle, content } = renderSheet({ defaultExpanded: true });
-
-    expect(handle).toHaveAttribute('aria-expanded', 'true');
-    expect(content).not.toHaveAttribute('inert');
-  });
-
-  it('expands and collapses on click', async () => {
-    const user = userEvent.setup();
-    const { handle, content } = renderSheet();
-
-    await user.click(handle);
-    expect(handle).toHaveAttribute('aria-expanded', 'true');
-    expect(content).not.toHaveAttribute('inert');
-
-    await user.click(handle);
-    expect(handle).toHaveAttribute('aria-expanded', 'false');
-    expect(content).toHaveAttribute('inert');
+    expect(onSnapChange).toHaveBeenCalledExactlyOnceWith(next);
+    expect(screen.getByRole('button', { name: /lista/ })).toBe(handle);
   });
 
   it.each([
     ['Enter', '{Enter}'],
     ['Space', ' '],
-  ])('expands and collapses with %s', async (_key, keys) => {
+  ])('shows the hidden sheet with %s', async (_key, keys) => {
     const user = userEvent.setup();
-    const { handle, content } = renderSheet();
+    const { handle, onSnapChange } = renderSheet('hidden');
 
     await user.tab();
     expect(handle).toHaveFocus();
-
     await user.keyboard(keys);
-    expect(handle).toHaveAttribute('aria-expanded', 'true');
-    expect(content).not.toHaveAttribute('inert');
 
-    await user.keyboard(keys);
-    expect(handle).toHaveAttribute('aria-expanded', 'false');
-    expect(content).toHaveAttribute('inert');
+    expect(onSnapChange).toHaveBeenCalledExactlyOnceWith('half');
   });
-});
 
-describe('BottomSheet controlled', () => {
-  function renderControlled(
-    expanded: boolean,
-    onExpandedChange = vi.fn<(expanded: boolean) => void>(),
-  ) {
-    const view = render(
-      <BottomSheet label="Estaciones" expanded={expanded} onExpandedChange={onExpandedChange}>
-        <p>Contenido del panel</p>
-      </BottomSheet>,
-    );
-    const handle = screen.getByRole('button', { name: 'Estaciones' });
+  it('draws the handle at half as a full-width 44 px bar named by the parent', () => {
+    const { handle } = renderSheet('half');
+
+    expect(handle).toHaveAccessibleName('Ocultar lista');
+    expect(handle).toHaveAttribute('type', 'button');
+    expect(handle).toHaveAttribute('aria-expanded', 'true');
+    expect(handle).toHaveStyle({ height: '44px' });
+    expect(handle).toHaveClass('w-full');
+    expect(handle.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
+    expect(handle).toHaveTextContent('');
+  });
+
+  // The strip's visible text is its name: no aria-label that could drift from it.
+  it('turns the handle at hidden into a 56 px strip named by its visible text', () => {
+    const { handle } = renderSheet('hidden');
+
+    expect(handle).toHaveTextContent(STRIP_TEXT);
+    expect(handle).toHaveAccessibleName(STRIP_TEXT);
+    expect(handle).not.toHaveAttribute('aria-label');
+    expect(handle).toHaveAttribute('aria-expanded', 'false');
+    expect(handle).toHaveStyle({ height: '56px' });
+    expect(handle).toHaveClass('w-full');
+    expect(handle.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
+  });
+
+  it('keeps the strip text on one line, cut with an ellipsis', () => {
+    renderSheet('hidden');
+
+    expect(screen.getByText(STRIP_TEXT)).toHaveClass('truncate');
+  });
+
+  it.each(['half', 'hidden'] as const)('points the handle at the content at %s', (snap) => {
+    const { handle, content } = renderSheet(snap);
+
+    expect(content).toHaveAttribute('id', handle.getAttribute('aria-controls'));
+  });
+
+  // jsdom and Testing Library ignore `inert`, so the tests assert the attribute itself.
+  it('makes the header and the content inert and hides them at hidden', () => {
+    renderSheet('hidden', <h2>Cabecera</h2>);
+    const region = screen.getByText('Cabecera').closest('section');
+
+    expect(region).toHaveAttribute('inert');
+    expect(region).toHaveClass('invisible');
+    expect(region).toContainElement(screen.getByText('Contenido del panel'));
+  });
+
+  it('shows the header and the content at half', () => {
+    renderSheet('half', <h2>Cabecera</h2>);
+    const region = screen.getByRole('region', { name: 'Estaciones' });
+
+    expect(region).not.toHaveAttribute('inert');
+    expect(region).not.toHaveClass('invisible');
+  });
+
+  it('puts the header between the handle and the content, across the full width', () => {
+    renderSheet('half', <h2>Cabecera</h2>);
+    const header = screen.getByRole('heading', { name: 'Cabecera' });
+    const handle = screen.getByRole('button', { name: 'Ocultar lista' });
     const content = screen.getByText('Contenido del panel').parentElement;
-    return { ...view, handle, content, onExpandedChange };
-  }
 
-  it('asks the parent to expand and stays collapsed until the parent agrees', async () => {
-    const user = userEvent.setup();
-    const { handle, content, onExpandedChange } = renderControlled(false);
-
-    await user.click(handle);
-
-    expect(onExpandedChange).toHaveBeenCalledExactlyOnceWith(true);
-    expect(handle).toHaveAttribute('aria-expanded', 'false');
-    expect(content).toHaveAttribute('inert');
+    expect(handle.compareDocumentPosition(header)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(header.compareDocumentPosition(content as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('asks the parent to collapse when expanded', async () => {
-    const user = userEvent.setup();
-    const { handle, onExpandedChange } = renderControlled(true);
+  it('labels the sheet content as a region', () => {
+    renderSheet('half', <h2>Cabecera</h2>);
+    const region = screen.getByRole('region', { name: 'Estaciones' });
 
-    await user.click(handle);
-
-    expect(onExpandedChange).toHaveBeenCalledExactlyOnceWith(false);
-    expect(handle).toHaveAttribute('aria-expanded', 'true');
+    expect(region).toContainElement(screen.getByRole('heading', { name: 'Cabecera' }));
+    expect(region).toContainElement(screen.getByText('Contenido del panel'));
   });
 
-  it('follows the parent when it changes expanded', () => {
-    const { handle, content, rerender } = renderControlled(false);
+  it.each([
+    ['hidden', 'min(56px, 100dvh - 166px)'],
+    ['half', 'min(430px, 100dvh - 166px)'],
+  ] as const)('caps the %s height so the top 166 px stay free', (snap, height) => {
+    const { sheet } = renderSheet(snap);
 
-    rerender(
-      <BottomSheet
-        label="Estaciones"
-        expanded
-        onExpandedChange={vi.fn<(expanded: boolean) => void>()}
-      >
-        <p>Contenido del panel</p>
-      </BottomSheet>,
+    expect(sheet).toHaveStyle({ height });
+  });
+
+  it('overlays the page but keeps the hidden height in the flow, covering nothing above it', () => {
+    const { sheet } = renderSheet('half');
+    const strip = sheet?.parentElement;
+
+    expect(sheet).toHaveClass('fixed', 'inset-x-0', 'bottom-0');
+    expect(strip).toHaveStyle({ height: '56px' });
+    expect(strip).toHaveClass('shrink-0');
+  });
+
+  it('animates the height unless the user prefers reduced motion', () => {
+    const { sheet } = renderSheet('half', <h2>Cabecera</h2>);
+
+    expect(sheet).toHaveClass(
+      'transition-[height]',
+      'duration-320',
+      'ease-sheet',
+      'motion-reduce:transition-none',
     );
-
-    expect(handle).toHaveAttribute('aria-expanded', 'true');
-    expect(content).not.toHaveAttribute('inert');
+    expect(screen.getByRole('region', { name: 'Estaciones' })).toHaveClass(
+      'motion-reduce:transition-none',
+    );
   });
 
-  it('toggles by itself and notifies when only onExpandedChange is given', async () => {
-    const user = userEvent.setup();
-    const onExpandedChange = vi.fn<(expanded: boolean) => void>();
-    render(
-      <BottomSheet label="Estaciones" onExpandedChange={onExpandedChange}>
-        <p>Contenido del panel</p>
-      </BottomSheet>,
-    );
-    const handle = screen.getByRole('button', { name: 'Estaciones' });
+  it.each(['hidden', 'half'] as const)('has no axe violations at %s', async (snap) => {
+    const { container } = renderSheet(snap, <h2>Cabecera</h2>);
 
-    await user.click(handle);
-    expect(handle).toHaveAttribute('aria-expanded', 'true');
-    expect(onExpandedChange).toHaveBeenLastCalledWith(true);
-
-    await user.click(handle);
-    expect(handle).toHaveAttribute('aria-expanded', 'false');
-    expect(onExpandedChange).toHaveBeenLastCalledWith(false);
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 });
