@@ -1,7 +1,7 @@
 # Plan: web-redesign-mobile
 
 - Created: 2026-11-03
-- Status: **approved** (2026-11-03)
+- Status: **implemented** (2026-11-03)
 - Spec: [SPEC-web-redesign-mobile.md](../specs/SPEC-web-redesign-mobile.md)
 
 ## Overview
@@ -60,8 +60,8 @@ T1 BottomSheet de tres alturas
 
 ### Checkpoint: Fase 1
 
-- [ ] `pnpm check:task` en verde, salvo avisos de aserciones reescritas explicados.
-- [ ] `dev:mock` a 390 × 844 y 375 × 667: mapa completo, controles flotantes, tres alturas con el asa y el botón de centrar siguiéndolas.
+- [x] `pnpm check:task` en verde, salvo avisos de aserciones reescritas explicados.
+- [x] `dev:mock` a 390 × 844 y 375 × 667: mapa completo, controles flotantes, tres alturas con el asa y el botón de centrar siguiéndolas.
 
 ### Fase 2: Contenido del panel
 
@@ -89,8 +89,8 @@ T1 BottomSheet de tres alturas
 
 ### Checkpoint: Fase 2
 
-- [ ] `pnpm check:task` en verde, salvo avisos explicados.
-- [ ] `dev:mock` a 390 × 844: elegir en mapa, favoritas y cercanas; estrella; volver con la flecha y con Escape a la altura anterior.
+- [x] `pnpm check:task` en verde, salvo avisos explicados.
+- [x] `dev:mock` a 390 × 844: elegir en mapa, favoritas y cercanas; estrella; volver con la flecha y con Escape a la altura anterior.
 
 ### Fase 3: Cierre
 
@@ -120,9 +120,9 @@ T1 BottomSheet de tres alturas
 
 ### Checkpoint final
 
-- [ ] SC1-SC8 comprobados; CI en verde.
-- [ ] Pedir permiso antes de push, abrir el PR y hacer merge.
-- [ ] Después del despliegue: comprobar en Render en un móvil (geolocalización incluida); marcar spec, plan y capability map como **implemented**.
+- [x] SC1-SC8 comprobados; CI en verde.
+- [x] Pedir permiso antes de push, abrir el PR y hacer merge.
+- [x] Después del despliegue: comprobar en Render en un móvil (geolocalización incluida); marcar spec, plan y capability map como **implemented**.
 
 ## Riesgos y mitigaciones
 
@@ -155,3 +155,4 @@ Unas 7 h 15 min en total. Fase 1 ~3 h, fase 2 ~3 h 30 min y fase 3 ~45 min.
 - 2026-11-03: se añade T6 (panel oculto) por la decisión 8 de la spec, tras el tablero «Móvil — panel oculto» del diseñador.
 - 2026-11-03: T6 pasa a «panel de dos alturas»: el diseñador quita «Ver todas / Ver mapa» y con ello `full`.
 - 2026-11-03: T6 hecha. `SheetSnap` es `'hidden' | 'half'` (56 px y `min(430px, 100dvh − 166px)`); `BottomSheet` recibe `hideLabel` y `collapsedLabel` (un nodo, para que la página pinte el texto con sus propios *hooks* sin que `shared` importe nada) y pierde `nextSnap`, `handleLabel` y `bodyId`. El asa y la franja son el mismo `<button>`, así que el foco se queda en él al alternar y la vuelta a una lista oculta lo encuentra sin código extra. `inert` e `invisible` pasan a la `section` que envuelve cabecera y cuerpo. Sin recuento, la franja dice «Mostrar lista · Estaciones cercanas», como la cabecera. `useNearbyTitle` comparte el título entre cabecera y franja. Se quitan «Ver todas / Ver mapa», `full` y la regla de ocultar el botón de centrar. El floor guard avisa de las aserciones con `peek`, `full`, sus nombres y alturas, y del test de «Ver todas», que se va con el botón; en `DesktopMapPage.test.tsx` cambia solo el nombre del asa móvil («Ocultar lista»), como en T1. 756 tests en web; `check:task` en verde salvo esos avisos.
+- 2026-11-03: implementado; PR #103 mergeado, web 0.9.0 desplegada y comprobada por el usuario en Render con un móvil. Las revisiones manuales de los puntos de control se hicieron sobre ese despliegue.
