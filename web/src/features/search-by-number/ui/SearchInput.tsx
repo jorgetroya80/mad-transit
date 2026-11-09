@@ -14,6 +14,8 @@ type SearchInputProps = {
   placeholder?: string;
   // Disables the box and replaces both the placeholder and the help.
   unavailableText?: string;
+  // More description after the help, such as the no-results message.
+  describedBy?: string;
 };
 
 const FOCUS_RING =
@@ -59,6 +61,7 @@ export function SearchInput({
   onClear,
   placeholder,
   unavailableText,
+  describedBy,
 }: SearchInputProps) {
   const id = useId();
   const helpId = `${id}-help`;
@@ -76,7 +79,7 @@ export function SearchInput({
           ref={ref}
           id={id}
           type="search"
-          aria-describedby={helpId}
+          aria-describedby={describedBy ? `${helpId} ${describedBy}` : helpId}
           // Numbers can carry letters ('25A'), so no numeric keyboard.
           inputMode="text"
           autoComplete="off"

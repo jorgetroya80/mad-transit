@@ -513,4 +513,16 @@ describe('DesktopMapPage', () => {
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });
   });
+
+  it('suggests the nearest station when no station has the number (SC5)', async () => {
+    const { container } = await renderPage();
+    await nearbyRow('1a');
+
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar estación' }), '999');
+
+    expect(await screen.findByText('No hay ninguna estación «999»')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1a · Puerta del Sol A' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ver estaciones cercanas' })).toBeInTheDocument();
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
 });

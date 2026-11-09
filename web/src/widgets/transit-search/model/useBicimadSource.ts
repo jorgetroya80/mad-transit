@@ -1,4 +1,12 @@
-import { type DataStatus, type Station, useAllStations, useDataStatus } from '@/entities/station';
+import {
+  type Coordinates,
+  type DataStatus,
+  type Station,
+  useAllStations,
+  useDataStatus,
+  useNearbyStations,
+} from '@/entities/station';
+import { useNeed } from '@/features/filter-by-need';
 import type { SearchItem, SearchSource } from '@/features/search-by-number';
 import { useSelectedStation } from '@/features/select-station';
 import { useMemo } from 'react';
@@ -34,8 +42,16 @@ function toSearchItem({ number, name, address }: Station): SearchItem {
   return { number, title: name, subtitle: address };
 }
 
-export function useBicimadSource(): SearchSource {
+// The nearby list comes sorted by distance, so its first station is the nearest. It is the
+// same query as the list's, so it costs no request.
+function useNearestStation(center: Coordinates | undefined): Station | undefined {
+  const [need] = useNeed();
+  return useNearbyStations(center, need).data?.stations[0];
+}
+
+export function useBicimadSource(center: Coordinates | undefined): SearchSource {
   const query = useAllStations();
+  const nearest = useNearestStation(center);
   const { status: dataStatus } = useDataStatus(query);
   const { select } = useSelectedStation();
   const stations = query.data?.stations;
@@ -46,6 +62,7 @@ export function useBicimadSource(): SearchSource {
   const placeholder = hasData && dataStatus === 'offline' ? SAVED_PLACEHOLDER : undefined;
 
   const items = useMemo(() => stations?.map(toSearchItem) ?? NO_ITEMS, [stations]);
+  const suggestion = useMemo(() => nearest && toSearchItem(nearest), [nearest]);
 
   // Stable while nothing changes, so polling with identical data does not re-render the search.
   return useMemo(
@@ -58,8 +75,9 @@ export function useBicimadSource(): SearchSource {
       status,
       unavailableText,
       placeholder,
+      suggestion,
       onSelect: select,
     }),
-    [items, status, unavailableText, placeholder, select],
+    [items, status, unavailableText, placeholder, suggestion, select],
   );
 }

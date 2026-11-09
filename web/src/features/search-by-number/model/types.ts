@@ -17,6 +17,8 @@ export type SearchSource = {
   unavailableText?: string;
   /** A hint inside a searchable box, such as that only saved items are searched. */
   placeholder?: string;
+  /** Offered when nothing matches, such as the nearest station. */
+  suggestion?: SearchItem;
   onSelect: (number: string) => void;
 };
 

@@ -12,6 +12,7 @@ import { TransitSearch } from './TransitSearch';
 
 const STATIONS_URL = `${env.apiBaseUrl}/v1/bicimad/stations`;
 const UNAVAILABLE = 503;
+const SOL = { lat: 40.41702, lng: -3.70243 };
 // The app's QueryClient retries once after react-query's 1 s backoff.
 const AFTER_RETRY = { timeout: 3_000 };
 
@@ -53,7 +54,7 @@ function status() {
 
 async function renderSearch() {
   const user = userEvent.setup();
-  const view = await renderWithRouter(<TransitSearch />);
+  const view = await renderWithRouter(<TransitSearch center={SOL} />);
   return { user, ...view };
 }
 
@@ -110,7 +111,7 @@ describe('TransitSearch', () => {
     await user.type(searchBox(), 'sol');
 
     expect(resultNumbers()).toEqual([]);
-    expect(status()).toHaveTextContent('Ninguna estación con el número sol');
+    expect(screen.getByText('No hay ninguna estación «sol»')).toBeInTheDocument();
   });
 
   it('selects the clicked station in the URL', async () => {
@@ -184,10 +185,34 @@ describe('TransitSearch', () => {
     expect(resultNumbers()).toEqual(['1a']);
   });
 
+  describe('no results', () => {
+    it('suggests the nearest station, and opens it like a result (SC5)', async () => {
+      const { user, router } = await renderLoadedSearch();
+
+      await user.type(searchBox(), '999');
+      await user.click(await screen.findByRole('button', { name: '1a · Puerta del Sol A' }));
+
+      await waitFor(() => expect(router.state.location.search).toEqual({ station: '1a' }));
+    });
+
+    it('only offers the nearby stations before there is a nearby list', async () => {
+      const user = userEvent.setup();
+      await renderWithRouter(<TransitSearch center={undefined} />);
+      await waitFor(() => expect(searchBox()).toBeEnabled());
+
+      await user.type(searchBox(), '999');
+
+      expect(
+        await screen.findByRole('button', { name: 'Ver estaciones cercanas' }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /·/ })).not.toBeInTheDocument();
+    });
+  });
+
   describe('floating over the map', () => {
     async function renderFloatingSearch() {
       const user = userEvent.setup();
-      const view = await renderWithRouter(<TransitSearch variant="floating" />);
+      const view = await renderWithRouter(<TransitSearch center={SOL} variant="floating" />);
       await user.type(searchBox(), '1');
       await screen.findByRole('list');
       await user.clear(searchBox());
