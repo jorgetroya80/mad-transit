@@ -114,7 +114,7 @@ T6 ficha de estación, alternativa A (independiente)
   - Archivos: `widgets/station-card/ui/{CardBody,CardHeader,SheetCardHeader,StationMeta,StationCard,StationSheet}.tsx` y sus tests.
   - Dependencias: ninguna (tras T3 por `formatClock`).
 
-- [ ] **T7: Cierre** (S, ~45 min)
+- [x] **T7: Cierre** (S, ~45 min)
   - Descripción: test de axe por cada fila de la tabla «Estados y pantallas» en las dos pantallas; comprobar que ningún estado anuncia dos avisos (un `alert` o `status` por causa); repaso de textos contra la spec; VoiceOver en `dev:mock`.
   - Aceptación:
     - SC7: axe sin infracciones en cada estado; VoiceOver anuncia cada aviso una vez y no lee la cuenta atrás.
@@ -125,7 +125,7 @@ T6 ficha de estación, alternativa A (independiente)
 
 ### Checkpoint final
 
-- [ ] SC1-SC8 comprobados; CI en verde.
+- [ ] SC1-SC8 comprobados (falta VoiceOver de SC7); CI en verde.
 - [ ] Pedir permiso antes de push, abrir el PR y hacer merge.
 - [ ] Después del despliegue: comprobar en Render con el modo avión en un móvil; marcar spec, plan y capability map como **implemented**.
 
@@ -160,3 +160,4 @@ Unas 8 h 30 min en total. Fase 1 ~3 h, fase 2 ~2 h 30 min y fase 3 ~3 h.
 - 2026-11-09: T5 hecha. `NoResults` en `features/search-by-number`: el mensaje va en un `<output>` (solo las dos líneas) y el encabezado «Prueba con» y los botones quedan fuera, para que no se lean en cada tecla. «Prueba con» es `h2` y no `h3`: bajo el `h1` de la página un `h3` incumple `heading-order` de axe (pendiente de confirmar con el usuario). `useBicimadSource(center)` toma la sugerencia de `useNearbyStations` de `entities` con el mismo centro y modo (la misma consulta que la lista, sin petición extra), porque un widget no puede importar otro; `TransitSearch` gana `center` obligatorio. `searchStatusText` ya no anuncia «Ninguna estación…». `SearchByNumber` saca `SearchDropdown` por `max-lines-per-function`. El floor guard avisa de 3 aserciones reescritas nuevas, las de «Ninguna estación con el número…», que ahora comprueban el bloque. 862 tests en web; `check:task` en verde salvo ese aviso.
 - 2026-11-09: el usuario deja «Prueba con» como `h2`.
 - 2026-11-09: T6 hecha. `cardHeading` (`widgets/station-card/model`) da título, meta y estación a las dos cabeceras: no encontrada pone meta «Estación 999», título «Estación no encontrada» y sin estrella. `CardBody` gana `number` y `onClose`: no encontrada con su `alert` y «Volver a la lista» (el mismo cierre que «Cerrar» o la flecha, así `useListFocusReturn` no cambia; en móvil hay dos botones con ese nombre, la flecha y el del cuerpo); error de carga en el `StateMessage` compacto de hoy, no en `ErrorState`, que es el bloque grande de la lista; fuera de servicio en un `<output>` en lugar de las insignias, solo con datos confirmados. `CardFooter` nuevo: «Último dato: 10:42 · hace 12 min» (o «Datos sin confirmar») con datos sin confirmar, «Actualizado hace …» con datos al día y nada en carga, no encontrada o error. La tarjeta de escritorio, que no tenía pie, gana el mismo que el panel móvil (supuesto 14; pendiente de confirmar con el usuario). Sin conexión y sin datos del detalle sigue con los textos de error de carga: la spec no da otros. El floor guard avisa de 5 aserciones reescritas nuevas: «Estación no encontrada» pasa del `alert` al título y el botón «Volver a la lista» aparece dos veces en móvil. 877 tests en web; `check:task` en verde salvo ese aviso.
+- 2026-11-09: T7 hecha. `DesktopMapPage.test.tsx` y `MobileMapPage.test.tsx` ganan un `it.each` por estado (error sin datos, sin conexión sin datos, `stale`, sin conexión con datos, búsqueda sin resultados) que reúne todos los `alert` y `status` no vacíos de la página y los compara con la lista exacta, así un aviso duplicado en cualquier sitio falla; otro test comprueba que la cuenta atrás y el aviso del mapa no están en ninguna región viva. Sin conexión hay un `alert` (bloque de la lista o barra) y el `status` de la capa del mapa, que dice otra cosa (supuesto 12). Cada fila de la tabla ya tenía su axe desde T1-T6. Repaso de textos: todos coinciden con la spec salvo el pie de la ficha, que dice «Actualizado hace 30 segundos» (el `UpdatedAt` de toda la app) y no «hace 30 s» (pendiente de decidir con el usuario). Sin fallos nuevos. El floor guard sigue con las mismas 27 aserciones de T1-T6. 889 tests en web; `check:task` en verde salvo ese aviso. Falta la pasada con VoiceOver.

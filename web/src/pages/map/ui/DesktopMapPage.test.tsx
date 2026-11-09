@@ -540,4 +540,111 @@ describe('DesktopMapPage', () => {
       expect(within(panel()).getByRole('heading', { name: 'Cerca de ti' })).toHaveFocus(),
     );
   });
+  describe('live regions per state (SC7)', () => {
+    const STATIONS = `${env.apiBaseUrl}/v1/bicimad/stations`;
+
+    // Every live region on the whole page with something to say, by role, in DOM order.
+    function liveRegions() {
+      const texts = (role: 'alert' | 'status') =>
+        screen
+          .queryAllByRole(role)
+          .map((region) => region.textContent?.trim() ?? '')
+          .filter(Boolean);
+      return { alerts: texts('alert'), statuses: texts('status') };
+    }
+
+    // Settles the connection inside act, as the regions react to it.
+    afterEach(() => act(() => onlineManager.setOnline(true)));
+
+    // The location notice is its own cause: it is there in every state.
+    const LOCATION = 'Usando tu ubicación actual.';
+
+    it.each([
+      {
+        state: 'error without data',
+        arrange: async () => {
+          server.use(http.get(STATIONS, () => HttpResponse.json({ status: 503 }, { status: 503 })));
+          await renderPage();
+          await screen.findByText(/Volveremos a intentarlo/);
+        },
+        alerts: [expect.stringMatching(/^No podemos cargar las estaciones/)],
+        statuses: [LOCATION],
+      },
+      {
+        state: 'offline without data',
+        arrange: async () => {
+          onlineManager.setOnline(false);
+          await renderPage();
+          await screen.findByRole('alert');
+        },
+        alerts: [expect.stringMatching(/^Sin conexión a internetNecesitas conexión/)],
+        statuses: [LOCATION, 'El mapa no se puede cargar sin conexión'],
+      },
+      {
+        state: 'stale',
+        arrange: async () => {
+          server.use(http.get(STATIONS, () => HttpResponse.json(staleStationsFixture)));
+          await renderPage();
+          await findStaleNotice();
+        },
+        alerts: [],
+        statuses: [
+          LOCATION,
+          expect.stringMatching(
+            /^No hemos podido actualizar\. Mostramos los datos de las \d\d:\d\d;/,
+          ),
+        ],
+      },
+      {
+        state: 'offline with data',
+        arrange: async () => {
+          await renderPage();
+          await screen.findAllByRole('button', { name: /^Estación 1a/ });
+          act(() => onlineManager.setOnline(false));
+          await screen.findByRole('alert');
+        },
+        alerts: [
+          expect.stringMatching(
+            /^Sin conexión a internet\. Mostramos los últimos datos guardados;/,
+          ),
+        ],
+        statuses: [
+          LOCATION,
+          'El mapa no se puede cargar sin conexiónPuedes seguir consultando la lista de la izquierda.',
+        ],
+      },
+      {
+        state: 'search without results',
+        arrange: async () => {
+          await renderPage();
+          await screen.findAllByRole('button', { name: /^Estación 1a/ });
+          await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar estación' }), '999');
+          await screen.findByText('No hay ninguna estación «999»');
+        },
+        alerts: [],
+        statuses: [
+          'No hay ninguna estación «999» Revisa el número que aparece en la estación.',
+          LOCATION,
+        ],
+      },
+    ])('announces $state once, by its own cause', async ({ arrange, alerts, statuses }) => {
+      await arrange();
+
+      expect(liveRegions()).toEqual({ alerts, statuses });
+    });
+
+    it('keeps the countdown and the map notice out of every live region', async () => {
+      server.use(http.get(STATIONS, () => HttpResponse.json({ status: 503 }, { status: 503 })));
+      await renderPage();
+
+      const LIVE =
+        '[role="alert"], [role="status"], output, [aria-live="polite"], [aria-live="assertive"]';
+      expect((await screen.findByText(/Volveremos a intentarlo/)).closest(LIVE)).toBeNull();
+      expect(
+        screen
+          .getByText('Las estaciones aparecerán aquí cuando se recupere el servicio')
+          .closest(LIVE),
+      ).toBeNull();
+    });
+  });
 });
