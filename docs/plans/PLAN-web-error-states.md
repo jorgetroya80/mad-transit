@@ -1,7 +1,7 @@
 # Plan: web-error-states
 
 - Created: 2026-11-09
-- Status: **approved** (2026-11-09)
+- Status: **implemented** (2026-11-09)
 - Spec: [SPEC-web-error-states.md](../specs/SPEC-web-error-states.md)
 
 ## Overview
@@ -125,9 +125,9 @@ T6 ficha de estación, alternativa A (independiente)
 
 ### Checkpoint final
 
-- [ ] SC1-SC8 comprobados (VoiceOver de SC7 hecho por el usuario); CI en verde.
-- [ ] Pedir permiso antes de push, abrir el PR y hacer merge.
-- [ ] Después del despliegue: comprobar en Render con el modo avión en un móvil; marcar spec, plan y capability map como **implemented**.
+- [x] SC1-SC8 comprobados (VoiceOver de SC7 hecho por el usuario); CI en verde.
+- [x] Pedir permiso antes de push, abrir el PR y hacer merge.
+- [x] Después del despliegue: comprobar en Render con el modo avión en un móvil; marcar spec, plan y capability map como **implemented**.
 
 ## Riesgos y mitigaciones
 
@@ -163,3 +163,4 @@ Unas 8 h 30 min en total. Fase 1 ~3 h, fase 2 ~2 h 30 min y fase 3 ~3 h.
 - 2026-11-09: T7 hecha. `DesktopMapPage.test.tsx` y `MobileMapPage.test.tsx` ganan un `it.each` por estado (error sin datos, sin conexión sin datos, `stale`, sin conexión con datos, búsqueda sin resultados) que reúne todos los `alert` y `status` no vacíos de la página y los compara con la lista exacta, así un aviso duplicado en cualquier sitio falla; otro test comprueba que la cuenta atrás y el aviso del mapa no están en ninguna región viva. Sin conexión hay un `alert` (bloque de la lista o barra) y el `status` de la capa del mapa, que dice otra cosa (supuesto 12). Cada fila de la tabla ya tenía su axe desde T1-T6. Repaso de textos: todos coinciden con la spec salvo el pie de la ficha, que dice «Actualizado hace 30 segundos» (el `UpdatedAt` de toda la app) y no «hace 30 s» (pendiente de decidir con el usuario). Sin fallos nuevos. El floor guard sigue con las mismas 27 aserciones de T1-T6. 889 tests en web; `check:task` en verde salvo ese aviso. Falta la pasada con VoiceOver.
 - 2026-11-09: el usuario deja el pie de la ficha con «Actualizado hace 30 segundos» y el pie nuevo en la tarjeta de escritorio; la spec (supuesto 14) se corrige.
 - 2026-11-09: pasada con VoiceOver del usuario sin problemas (SC7).
+- 2026-11-09: implementado; en `main` con el PR #107 y desplegado como web 0.10.0 (release #108).

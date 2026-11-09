@@ -1,7 +1,7 @@
 # Spec: web-error-states
 
 - Created: 2026-11-09
-- Status: **approved** (2026-11-09)
+- Status: **implemented** (2026-11-09)
 - Plan: [PLAN-web-error-states.md](../plans/PLAN-web-error-states.md)
 
 Módulo `web-error-states` del [Capability Map](CAPABILITY-MAP.md), el sexto del rediseño de la UI. Es la fase 6 («Estados de error») del documento «Mad Transit — Especificación de UI» (revisión 32), con su tabla «Estados de error», y los tableros «Error · …», «Escritorio · …», «Búsqueda sin resultados» y «Ficha de estación — 3 alternativas por estado» del lienzo «Mad Transit · rediseño», que son privados. Da a los estados de [web-data-state](SPEC-web-data-state.md) los textos y pantallas del diseño en las dos composiciones de [web-redesign-desktop](SPEC-web-redesign-desktop.md) y [web-redesign-mobile](SPEC-web-redesign-mobile.md).
@@ -156,3 +156,4 @@ Ninguna.
 - 2026-11-09: decisión 5 del usuario: cuenta atrás real, sin `Retry-After`, tras comprobar en el API que esa cabecera solo llega con el cupo agotado y el límite por IP.
 - 2026-11-09: aprobada por el usuario.
 - 2026-11-09: tras T7, el pie de la ficha con datos al día se queda con la forma larga de toda la app («Actualizado hace 30 segundos») en lugar del «30 s» del lienzo; la tarjeta de escritorio gana el pie del panel móvil.
+- 2026-11-09: implementada; en `main` con el PR #107 y desplegada como web 0.10.0.
