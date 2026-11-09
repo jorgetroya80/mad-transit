@@ -1,19 +1,38 @@
 import type { DataStatus, Need } from '@/entities/station';
 import { NEARBY_RADIUS_M } from '@/shared/config';
 import { useCountdown } from '@/shared/lib';
-import { ErrorState, StateMessage, UpdatedAt, WarningIcon } from '@/shared/ui';
+import { ErrorState, OfflineIcon, StateMessage, UpdatedAt, WarningIcon } from '@/shared/ui';
 import type { NearbyList } from '../model/useNearbyList';
 import { StationRows } from './StationRows';
 
-type BlockingStatus = Extract<DataStatus, 'error'>;
+type BlockingStatus = Extract<DataStatus, 'error' | 'offline'>;
 
+// Offline needs no retry: the query asks again by itself when the connection returns.
 const BLOCKING_TEXT = {
   error: {
+    tone: 'error',
+    icon: WarningIcon,
     title: 'No podemos cargar las estaciones',
     body: 'El servicio de BiciMAD no está respondiendo. Suele ser temporal; no es un problema de tu conexión.',
     canRetry: true,
   },
-} as const satisfies Record<BlockingStatus, { title: string; body: string; canRetry: boolean }>;
+  offline: {
+    tone: 'neutral',
+    icon: OfflineIcon,
+    title: 'Sin conexión a internet',
+    body: 'Necesitas conexión para ver las estaciones la primera vez. Se cargarán solas al volver a conectarte.',
+    canRetry: false,
+  },
+} as const satisfies Record<
+  BlockingStatus,
+  {
+    tone: 'error' | 'neutral';
+    icon: typeof WarningIcon;
+    title: string;
+    body: string;
+    canRetry: boolean;
+  }
+>;
 
 const RETRYING_TEXT = 'Intentándolo de nuevo…';
 
@@ -37,17 +56,13 @@ export function NearbyStations({
   if (list.status === 'loading') {
     return <StateMessage variant="loading" title="Cargando estaciones cercanas…" />;
   }
-  // Offline without data shows the error block until it gets its own texts.
   if (stations === undefined) {
-    const { title, body, canRetry } = BLOCKING_TEXT.error;
+    const { canRetry, ...text } = BLOCKING_TEXT[list.status === 'offline' ? 'offline' : 'error'];
     return (
       <ErrorState
-        tone="error"
-        icon={WarningIcon}
-        title={title}
-        body={body}
+        {...text}
         action={canRetry ? { label: 'Reintentar', onAction: list.retry } : undefined}
-        footer={retryFooter(list)}
+        footer={canRetry ? retryFooter(list) : undefined}
       />
     );
   }

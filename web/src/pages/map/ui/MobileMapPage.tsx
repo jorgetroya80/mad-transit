@@ -56,6 +56,7 @@ export function MobileMapPage() {
         selectedStation={number}
       />
       <StationsMap
+        layout="mobile"
         center={location.mapCenter}
         userLocation={location.userLocation}
         focusPadding={focusPadding}

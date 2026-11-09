@@ -67,6 +67,8 @@ async function renderLoadedSearch() {
 }
 
 describe('TransitSearch', () => {
+  afterEach(() => onlineManager.setOnline(true));
+
   it('searches BiciMAD stations without a service picker', async () => {
     await renderSearch();
 
@@ -147,32 +149,39 @@ describe('TransitSearch', () => {
     expect(await screen.findByRole('list')).toBeInTheDocument();
   });
 
-  it('says the stations could not be loaded when the request fails', async () => {
+  it('disables the box until the service answers when the request fails without data', async () => {
     respondAll(() =>
       HttpResponse.json(
         { title: 'Service Unavailable', status: UNAVAILABLE },
         { status: UNAVAILABLE },
       ),
     );
-    const { user } = await renderSearch();
+    await renderSearch();
 
-    await user.type(searchBox(), '1');
-
-    expect(
-      await screen.findByText('No se pudieron cargar las estaciones', {}, AFTER_RETRY),
-    ).toBeInTheDocument();
-    expect(resultNumbers()).toEqual([]);
+    await waitFor(() => expect(searchBox()).toBeDisabled(), AFTER_RETRY);
+    expect(searchBox()).toHaveAttribute('placeholder', 'No disponible hasta recuperar los datos');
+    expect(searchBox()).toHaveAccessibleDescription('No disponible hasta recuperar los datos');
   });
 
-  it('says the stations could not be loaded when offline without data', async () => {
+  it('disables the box until the connection returns when offline without data', async () => {
     onlineManager.setOnline(false);
-    const { user } = await renderSearch();
+    await renderSearch();
 
-    await user.type(searchBox(), '1');
+    expect(searchBox()).toBeDisabled();
+    expect(searchBox()).toHaveAttribute('placeholder', 'Disponible al volver a conectarte');
 
-    expect(screen.getByText('No se pudieron cargar las estaciones')).toBeInTheDocument();
-    expect(resultNumbers()).toEqual([]);
     act(() => onlineManager.setOnline(true));
+    await waitFor(() => expect(searchBox()).toBeEnabled());
+  });
+
+  it('searches the saved stations offline, and says so in the box', async () => {
+    const { user } = await renderLoadedSearch();
+
+    act(() => onlineManager.setOnline(false));
+    await user.type(searchBox(), '1a');
+
+    expect(searchBox()).toHaveAttribute('placeholder', 'Busca entre las estaciones guardadas');
+    expect(resultNumbers()).toEqual(['1a']);
   });
 
   describe('floating over the map', () => {

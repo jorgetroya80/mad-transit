@@ -1,6 +1,9 @@
+import { onlineManager } from '@tanstack/react-query';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/shared/api/mocks/node';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FAVORITES_STORAGE_KEY } from '@/shared/config';
+import { env, FAVORITES_STORAGE_KEY } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { stubMatchMedia } from '../../../../test/matchMedia';
@@ -220,7 +223,8 @@ describe('DesktopMapPage', () => {
 
     const card = await screen.findByRole('region', { name: 'Puerta del Sol B' });
     const map = screen.getByRole('region', { name: 'Mapa de estaciones' });
-    expect(map.parentElement).toContainElement(card);
+    // The map sits in StationsMap's own box, next to its notices; the card shares the area above.
+    expect(map.parentElement?.parentElement).toContainElement(card);
     expect(panel()).not.toContainElement(card);
     expect(row).toHaveFocus();
   });
@@ -397,5 +401,48 @@ describe('DesktopMapPage', () => {
     await screen.findByRole('region', { name: 'Puerta del Sol A' });
 
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+  describe('without data', () => {
+    afterEach(() => onlineManager.setOnline(true));
+
+    it('says it needs the connection, with the search off and the map covered (SC2)', async () => {
+      onlineManager.setOnline(false);
+      const { container } = await renderPage();
+
+      const [alert, ...otherAlerts] = await screen.findAllByRole('alert');
+      expect(otherAlerts).toEqual([]);
+      expect(alert).toHaveTextContent('Sin conexión a internet');
+      expect(screen.getByRole('searchbox', { name: 'Buscar estación' })).toBeDisabled();
+      expect(screen.getByRole('searchbox', { name: 'Buscar estación' })).toHaveAttribute(
+        'placeholder',
+        'Disponible al volver a conectarte',
+      );
+      expect(
+        screen.getByText('El mapa no se puede cargar sin conexión').closest('output'),
+      ).toHaveRole('status');
+      expect(within(panel()).queryByRole('button', { name: 'Reintentar' })).toBeNull();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+
+    it('says the service fails, with the search off and a notice over the map (SC1)', async () => {
+      server.use(
+        http.get(`${env.apiBaseUrl}/v1/bicimad/stations`, () =>
+          HttpResponse.json({ title: 'Service Unavailable', status: 503 }, { status: 503 }),
+        ),
+      );
+      const { container } = await renderPage();
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'No podemos cargar las estaciones',
+      );
+      expect(screen.getByRole('searchbox', { name: 'Buscar estación' })).toHaveAttribute(
+        'placeholder',
+        'No disponible hasta recuperar los datos',
+      );
+      expect(
+        screen.getByText('Las estaciones aparecerán aquí cuando se recupere el servicio'),
+      ).toBeInTheDocument();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
   });
 });

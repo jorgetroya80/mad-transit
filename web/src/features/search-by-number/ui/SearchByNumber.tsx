@@ -56,6 +56,8 @@ export function SearchByNumber({ sources, variant = 'inline' }: SearchByNumberPr
         onQueryChange={search.setQuery}
         onKeyDown={onInputKeyDown}
         onClear={clearAndFocusInput}
+        placeholder={source.placeholder}
+        unavailableText={source.unavailableText}
       />
       {/* Floating, the results open over what follows (the map) instead of pushing it down. */}
       {variant === 'floating' ? (

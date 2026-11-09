@@ -34,6 +34,7 @@ export function DesktopMapPage() {
         </SidePanel>
         <div className="relative min-w-0 flex-1">
           <StationsMap
+            layout="desktop"
             label="Mapa de estaciones"
             center={location.mapCenter}
             userLocation={location.userLocation}

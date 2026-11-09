@@ -649,15 +649,32 @@ describe('StationList', () => {
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
   });
 
-  it('shows the error with a retry when offline without data', async () => {
+  it('says it needs the connection when offline without data, with no retry or countdown (SC2)', async () => {
     onlineManager.setOnline(false);
 
-    await renderList();
+    const { container } = await renderList();
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent(SERVICE_ERROR_TITLE);
-    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(within(alert).getByRole('heading', { level: 2 })).toHaveTextContent(
+      'Sin conexión a internet',
+    );
+    expect(alert).toHaveTextContent(
+      'Necesitas conexión para ver las estaciones la primera vez. Se cargarán solas al volver a conectarte.',
+    );
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Volveremos a intentarlo/)).not.toBeInTheDocument();
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+
+  it('loads the stations by itself when the connection returns', async () => {
+    onlineManager.setOnline(false);
+    await renderList();
+    await screen.findByText('Sin conexión a internet');
+
+    act(() => onlineManager.setOnline(true));
+
+    expect(await screen.findByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('shows the saved nearby list while the location is pending', async () => {

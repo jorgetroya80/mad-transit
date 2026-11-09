@@ -341,6 +341,49 @@ describe('SearchByNumber', () => {
     });
   });
 
+  describe('unavailable source', () => {
+    const UNAVAILABLE = 'No disponible hasta recuperar los datos';
+
+    function unavailableSource() {
+      return bicimadSource({ items: [], status: 'error', unavailableText: UNAVAILABLE });
+    }
+
+    it('disables the box and says why in it, instead of the help', () => {
+      render(<SearchByNumber sources={[unavailableSource()]} />);
+
+      expect(searchBox()).toBeDisabled();
+      expect(searchBox()).toHaveAttribute('placeholder', UNAVAILABLE);
+      expect(searchBox()).toHaveAccessibleDescription(UNAVAILABLE);
+      expect(screen.queryByText('Busca por número de estación.')).not.toBeInTheDocument();
+    });
+
+    it('drops the clear button when the source stops being searchable', async () => {
+      const { rerender } = render(<SearchByNumber sources={[bicimadSource()]} />);
+      await userEvent.type(searchBox(), '1');
+
+      rerender(<SearchByNumber sources={[unavailableSource()]} />);
+
+      expect(clearButton()).not.toBeInTheDocument();
+    });
+
+    it('has no axe violations', async () => {
+      const { container } = render(<SearchByNumber sources={[unavailableSource()]} />);
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+  });
+
+  it('shows the source placeholder in a searchable box, keeping the help', async () => {
+    const placeholder = 'Busca entre las estaciones guardadas';
+    render(<SearchByNumber sources={[bicimadSource({ placeholder })]} />);
+
+    expect(searchBox()).toBeEnabled();
+    expect(searchBox()).toHaveAttribute('placeholder', placeholder);
+    expect(searchBox()).toHaveAccessibleDescription('Busca por número de estación.');
+    await userEvent.type(searchBox(), '1a');
+    expect(resultNumbers()).toEqual(['1a']);
+  });
+
   describe('with two sources', () => {
     it('shows the service selector with the first source chosen', () => {
       render(<SearchByNumber sources={[bicimadSource(), busSource()]} />);

@@ -9,6 +9,20 @@ const STATION_LABEL = 'estación';
 const STATION_LABEL_PLURAL = 'estaciones';
 const NO_ITEMS: readonly SearchItem[] = [];
 
+type UnavailableStatus = Extract<DataStatus, 'error' | 'offline'>;
+
+// Without stations there is nothing to search, so the box says when there will be.
+const UNAVAILABLE_TEXT = {
+  error: 'No disponible hasta recuperar los datos',
+  offline: 'Disponible al volver a conectarte',
+} as const satisfies Record<UnavailableStatus, string>;
+
+const SAVED_PLACEHOLDER = 'Busca entre las estaciones guardadas';
+
+function isUnavailableStatus(status: DataStatus): status is UnavailableStatus {
+  return status in UNAVAILABLE_TEXT;
+}
+
 // Stations from an earlier success or the saved list stay searchable whatever the status.
 // Without them, offline reads as an error like a failed request.
 function sourceStatus(hasData: boolean, status: DataStatus): SearchSource['status'] {
@@ -25,7 +39,11 @@ export function useBicimadSource(): SearchSource {
   const { status: dataStatus } = useDataStatus(query);
   const { select } = useSelectedStation();
   const stations = query.data?.stations;
-  const status = sourceStatus(stations !== undefined, dataStatus);
+  const hasData = stations !== undefined;
+  const status = sourceStatus(hasData, dataStatus);
+  const unavailableText =
+    !hasData && isUnavailableStatus(dataStatus) ? UNAVAILABLE_TEXT[dataStatus] : undefined;
+  const placeholder = hasData && dataStatus === 'offline' ? SAVED_PLACEHOLDER : undefined;
 
   const items = useMemo(() => stations?.map(toSearchItem) ?? NO_ITEMS, [stations]);
 
@@ -38,8 +56,10 @@ export function useBicimadSource(): SearchSource {
       itemLabelPlural: STATION_LABEL_PLURAL,
       items,
       status,
+      unavailableText,
+      placeholder,
       onSelect: select,
     }),
-    [items, status, select],
+    [items, status, unavailableText, placeholder, select],
   );
 }
