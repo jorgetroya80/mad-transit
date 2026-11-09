@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { NOW_TICK_MS } from '@/shared/config';
-import { isJustNow, useNow } from '@/shared/lib';
+import { isJustNow, useNow, usePendingAction } from '@/shared/lib';
 import { RefreshIcon } from '../icons';
 import { RelativeTime } from '../relative-time';
 
@@ -65,21 +64,13 @@ function FreshnessText({ status, updatedAt }: FreshnessTextProps) {
 type RetryButtonProps = { label: string; onRetry: Retry };
 
 function RetryButton({ label, onRetry }: RetryButtonProps) {
-  const [isBusy, setIsBusy] = useState(false);
-
-  function retry() {
-    const pending = onRetry();
-    if (!(pending instanceof Promise)) return;
-    setIsBusy(true);
-    const stopBusy = () => setIsBusy(false);
-    void pending.then(stopBusy, stopBusy);
-  }
+  const { isPending, run } = usePendingAction(onRetry);
 
   return (
     <button
       type="button"
-      aria-busy={isBusy}
-      onClick={retry}
+      aria-busy={isPending}
+      onClick={run}
       className="flex min-h-11 min-w-11 items-center gap-2 rounded-control px-3 font-medium text-primary hover:bg-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       <RefreshIcon className="size-4" />

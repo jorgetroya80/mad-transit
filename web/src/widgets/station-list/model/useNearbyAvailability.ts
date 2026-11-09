@@ -5,6 +5,7 @@ export type NearbyAvailability = {
   // Undefined without data, so the header does not say «0» before the list arrives.
   count: number | undefined;
   updatedAt: Date | undefined;
+  isSaved: boolean;
 };
 
 function hasAvailable(station: Station, need: Need): boolean {
@@ -17,6 +18,7 @@ export function useNearbyAvailability(
   center: Coordinates | undefined,
   need: Need,
 ): NearbyAvailability {
-  const { stations, updatedAt } = useNearbyList(center, need);
-  return { count: stations?.filter((station) => hasAvailable(station, need)).length, updatedAt };
+  const { stations, updatedAt, isSaved } = useNearbyList(center, need);
+  const count = stations?.filter((station) => hasAvailable(station, need)).length;
+  return { count, updatedAt, isSaved };
 }

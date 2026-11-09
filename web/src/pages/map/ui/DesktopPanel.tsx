@@ -10,7 +10,7 @@ type DesktopPanelProps = { location: MapLocation };
 export function DesktopPanel({ location }: DesktopPanelProps) {
   return (
     <div className="flex min-h-full flex-col gap-4">
-      <TransitSearch />
+      <TransitSearch center={location.center} />
       <NeedToggle variant="cards" />
       <StationList
         center={location.center}

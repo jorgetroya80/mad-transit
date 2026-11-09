@@ -3,6 +3,9 @@ import { InfoIcon, OfflineIcon, WarningIcon } from '../icons';
 
 type StatusBannerVariant = 'info' | 'stale' | 'offline';
 
+// `bar`: edge to edge under the app header, for a notice about the whole page.
+type StatusBannerShape = 'card' | 'bar';
+
 // A pending action says so in its label and stays focusable (aria-disabled, not disabled).
 type StatusBannerAction = { label: string; onClick: () => void; isPending?: boolean };
 
@@ -14,7 +17,13 @@ type StatusBannerProps = {
   action?: StatusBannerAction;
   // Replaces the variant's icon when the notice is about something more specific.
   icon?: BannerIcon;
+  shape?: StatusBannerShape;
 };
+
+const SHAPES = {
+  card: 'rounded-card p-3',
+  bar: 'w-full px-4 py-2',
+} as const satisfies Record<StatusBannerShape, string>;
 
 // `status` is announced politely when it appears; losing the connection interrupts (`alert`).
 // Info reuses the primary tokens, as the design canvas does.
@@ -56,11 +65,17 @@ function ActionButton({ label, onClick, isPending = false }: StatusBannerAction)
   );
 }
 
-export function StatusBanner({ variant, children, action, icon }: StatusBannerProps) {
+export function StatusBanner({
+  variant,
+  children,
+  action,
+  icon,
+  shape = 'card',
+}: StatusBannerProps) {
   const { role, Icon: variantIcon, className, iconClassName } = VARIANTS[variant];
   const Icon = icon ?? variantIcon;
   return (
-    <div role={role} className={`flex items-center gap-2 rounded-card p-3 text-sm ${className}`}>
+    <div role={role} className={`flex items-center gap-2 text-sm ${SHAPES[shape]} ${className}`}>
       <Icon className={`size-5 shrink-0 ${iconClassName}`} />
       <p>{children}</p>
       {action ? <ActionButton {...action} /> : null}

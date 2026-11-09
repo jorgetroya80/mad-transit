@@ -18,3 +18,10 @@ export function formatRelative(date: Date, now: Date): string {
   if (seconds < SECONDS_PER_MINUTE) return rtf.format(-seconds, 'second');
   return rtf.format(-Math.round(seconds / SECONDS_PER_MINUTE), 'minute');
 }
+
+// «hace 12 min»: the age in rounded minutes, as the stale notices give it.
+export function formatMinutesAgo(date: Date, now: Date): string {
+  const seconds = secondsAgo(date, now);
+  if (seconds < SECONDS_PER_MINUTE) return 'hace menos de 1 min';
+  return `hace ${Math.round(seconds / SECONDS_PER_MINUTE)} min`;
+}

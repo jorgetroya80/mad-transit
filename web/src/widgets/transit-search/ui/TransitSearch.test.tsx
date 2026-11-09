@@ -12,6 +12,7 @@ import { TransitSearch } from './TransitSearch';
 
 const STATIONS_URL = `${env.apiBaseUrl}/v1/bicimad/stations`;
 const UNAVAILABLE = 503;
+const SOL = { lat: 40.41702, lng: -3.70243 };
 // The app's QueryClient retries once after react-query's 1 s backoff.
 const AFTER_RETRY = { timeout: 3_000 };
 
@@ -53,7 +54,7 @@ function status() {
 
 async function renderSearch() {
   const user = userEvent.setup();
-  const view = await renderWithRouter(<TransitSearch />);
+  const view = await renderWithRouter(<TransitSearch center={SOL} />);
   return { user, ...view };
 }
 
@@ -67,6 +68,8 @@ async function renderLoadedSearch() {
 }
 
 describe('TransitSearch', () => {
+  afterEach(() => onlineManager.setOnline(true));
+
   it('searches BiciMAD stations without a service picker', async () => {
     await renderSearch();
 
@@ -108,7 +111,7 @@ describe('TransitSearch', () => {
     await user.type(searchBox(), 'sol');
 
     expect(resultNumbers()).toEqual([]);
-    expect(status()).toHaveTextContent('Ninguna estación con el número sol');
+    expect(screen.getByText('No hay ninguna estación «sol»')).toBeInTheDocument();
   });
 
   it('selects the clicked station in the URL', async () => {
@@ -147,38 +150,69 @@ describe('TransitSearch', () => {
     expect(await screen.findByRole('list')).toBeInTheDocument();
   });
 
-  it('says the stations could not be loaded when the request fails', async () => {
+  it('disables the box until the service answers when the request fails without data', async () => {
     respondAll(() =>
       HttpResponse.json(
         { title: 'Service Unavailable', status: UNAVAILABLE },
         { status: UNAVAILABLE },
       ),
     );
-    const { user } = await renderSearch();
+    await renderSearch();
 
-    await user.type(searchBox(), '1');
-
-    expect(
-      await screen.findByText('No se pudieron cargar las estaciones', {}, AFTER_RETRY),
-    ).toBeInTheDocument();
-    expect(resultNumbers()).toEqual([]);
+    await waitFor(() => expect(searchBox()).toBeDisabled(), AFTER_RETRY);
+    expect(searchBox()).toHaveAttribute('placeholder', 'No disponible hasta recuperar los datos');
+    expect(searchBox()).toHaveAccessibleDescription('No disponible hasta recuperar los datos');
   });
 
-  it('says the stations could not be loaded when offline without data', async () => {
+  it('disables the box until the connection returns when offline without data', async () => {
     onlineManager.setOnline(false);
-    const { user } = await renderSearch();
+    await renderSearch();
 
-    await user.type(searchBox(), '1');
+    expect(searchBox()).toBeDisabled();
+    expect(searchBox()).toHaveAttribute('placeholder', 'Disponible al volver a conectarte');
 
-    expect(screen.getByText('No se pudieron cargar las estaciones')).toBeInTheDocument();
-    expect(resultNumbers()).toEqual([]);
     act(() => onlineManager.setOnline(true));
+    await waitFor(() => expect(searchBox()).toBeEnabled());
+  });
+
+  it('searches the saved stations offline, and says so in the box', async () => {
+    const { user } = await renderLoadedSearch();
+
+    act(() => onlineManager.setOnline(false));
+    await user.type(searchBox(), '1a');
+
+    expect(searchBox()).toHaveAttribute('placeholder', 'Busca entre las estaciones guardadas');
+    expect(resultNumbers()).toEqual(['1a']);
+  });
+
+  describe('no results', () => {
+    it('suggests the nearest station, and opens it like a result (SC5)', async () => {
+      const { user, router } = await renderLoadedSearch();
+
+      await user.type(searchBox(), '999');
+      await user.click(await screen.findByRole('button', { name: '1a · Puerta del Sol A' }));
+
+      await waitFor(() => expect(router.state.location.search).toEqual({ station: '1a' }));
+    });
+
+    it('only offers the nearby stations before there is a nearby list', async () => {
+      const user = userEvent.setup();
+      await renderWithRouter(<TransitSearch center={undefined} />);
+      await waitFor(() => expect(searchBox()).toBeEnabled());
+
+      await user.type(searchBox(), '999');
+
+      expect(
+        await screen.findByRole('button', { name: 'Ver estaciones cercanas' }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /·/ })).not.toBeInTheDocument();
+    });
   });
 
   describe('floating over the map', () => {
     async function renderFloatingSearch() {
       const user = userEvent.setup();
-      const view = await renderWithRouter(<TransitSearch variant="floating" />);
+      const view = await renderWithRouter(<TransitSearch center={SOL} variant="floating" />);
       await user.type(searchBox(), '1');
       await screen.findByRole('list');
       await user.clear(searchBox());

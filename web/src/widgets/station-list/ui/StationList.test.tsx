@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import type { StationsResponse } from '@jorgetroya80/mad-transit-client';
 import type { Coordinates } from '@/entities/station';
 import {
@@ -16,7 +16,9 @@ import {
   FAVORITES_STORAGE_KEY,
   NEARBY_STORAGE_KEYS,
   POLL_INTERVAL_MS,
+  RETRY_DELAYS_MS,
 } from '@/shared/config';
+import { formatClock } from '@/shared/lib';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { findStaleNotice } from '../../../../test/staleNotice';
@@ -30,6 +32,11 @@ const NOW = new Date('2026-10-13T10:20:00Z');
 // fake clock that `shouldAdvanceTime` moves along with real time.
 const AFTER_RETRY = { timeout: 3_000 };
 const UNAVAILABLE = 503;
+const SAVED_TITLE = 'Últimos datos guardados';
+const SAVED_CAPTION = `De las ${formatClock(new Date(nearbyStationsFixture.updatedAt))} · pueden no estar al día`;
+const SERVICE_ERROR_TITLE = 'No podemos cargar las estaciones';
+const SERVICE_ERROR_BODY =
+  'El servicio de BiciMAD no está respondiendo. Suele ser temporal; no es un problema de tu conexión.';
 
 function respondNearby(resolver: () => Response) {
   server.use(
@@ -190,6 +197,16 @@ describe('StationList', () => {
       );
     }
 
+    it('heads the saved list with its time instead of the update line when offline', async () => {
+      await renderDesktopList();
+      await screen.findByRole('button', { name: /^Estación 1a/ });
+
+      act(() => onlineManager.setOnline(false));
+
+      expect(await nearbyRegion(SAVED_TITLE)).toHaveAccessibleDescription(SAVED_CAPTION);
+      expect(screen.queryByText(/^Actualizado/)).not.toBeInTheDocument();
+    });
+
     it('says it is using the current location, under «Cerca de ti» sorted by distance', async () => {
       await renderDesktopList();
 
@@ -312,6 +329,29 @@ describe('StationList', () => {
       );
       return { view, onLocate };
     }
+
+    it('leads the stale notice with the age of the data', async () => {
+      nearbyJson({
+        ...nearbyStationsFixture,
+        updatedAt: staleStationsFixture.updatedAt,
+        stale: true,
+      });
+      await renderMobileList().view;
+
+      expect(await findStaleNotice()).toHaveTextContent(
+        'Datos de hace 35 min. No hemos podido actualizar; puede que ya no sean exactos.',
+      );
+    });
+
+    it('keeps «Cercanas» offline: the sheet header says the list is the saved one', async () => {
+      await renderMobileList().view;
+      await screen.findByRole('button', { name: /^Estación 1a/ });
+
+      act(() => onlineManager.setOnline(false));
+
+      expect(await nearbyRegion('Cercanas')).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: SAVED_TITLE })).not.toBeInTheDocument();
+    });
 
     it('says it is using the current location, without an action', async () => {
       await renderMobileList().view;
@@ -437,15 +477,101 @@ describe('StationList', () => {
     await renderList();
 
     const alert = await screen.findByRole('alert', {}, AFTER_RETRY);
-    expect(alert).toHaveTextContent('No se pudieron cargar las estaciones cercanas');
+    expect(alert).toHaveTextContent(SERVICE_ERROR_TITLE);
+    expect(alert).toHaveTextContent(SERVICE_ERROR_BODY);
     const attemptsBeforeRetry = requests.length;
 
     nearbyJson(nearbyStationsFixture);
-    await user.click(within(alert).getByRole('button', { name: 'Reintentar' }));
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
 
     expect(await screen.findByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
     expect(requests.length).toBeGreaterThan(attemptsBeforeRetry);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  describe('countdown to the next automatic retry (SC1)', () => {
+    const [FIRST_RETRY_MS, SECOND_RETRY_MS, LAST_RETRY_MS] = RETRY_DELAYS_MS;
+    const SECOND_MS = 1000;
+
+    function countdown(seconds: number) {
+      return `Volveremos a intentarlo solos en ${seconds} s.`;
+    }
+
+    async function showsCountdown(seconds: number) {
+      return screen.findByText(countdown(seconds), {}, AFTER_RETRY);
+    }
+
+    // The footer says one second is left until the request goes out, and not before.
+    async function expectRetryWhenCountdownEnds(requests: URL[], waitMs: number) {
+      const before = requests.length;
+      await vi.advanceTimersByTimeAsync(waitMs - SECOND_MS);
+      expect(screen.getByText(countdown(1))).toBeInTheDocument();
+      expect(requests).toHaveLength(before);
+      await vi.advanceTimersByTimeAsync(SECOND_MS);
+      await waitFor(() => expect(requests).toHaveLength(before + 1));
+    }
+
+    it('counts down 30, 60 and then 120 s after one, two and three failures', async () => {
+      const requests = recordNearbyRequests();
+      failNearby();
+
+      await renderList();
+
+      for (const [waitMs, nextWaitMs] of [
+        [FIRST_RETRY_MS, SECOND_RETRY_MS],
+        [SECOND_RETRY_MS, LAST_RETRY_MS],
+      ] as const) {
+        expect(await showsCountdown(waitMs / SECOND_MS)).toBeInTheDocument();
+        await expectRetryWhenCountdownEnds(requests, waitMs);
+        expect(await showsCountdown(nextWaitMs / SECOND_MS)).toBeInTheDocument();
+      }
+    });
+
+    it('says it is trying again while a request is in flight', async () => {
+      failNearby();
+      await renderList();
+      await showsCountdown(FIRST_RETRY_MS / SECOND_MS);
+      server.use(http.get(STATIONS_URL, () => delay('infinite')));
+
+      await vi.advanceTimersByTimeAsync(FIRST_RETRY_MS);
+
+      expect(await screen.findByText('Intentándolo de nuevo…')).toBeInTheDocument();
+      expect(screen.queryByText(/Volveremos a intentarlo/)).not.toBeInTheDocument();
+    });
+
+    it('keeps the countdown out of the alert', async () => {
+      failNearby();
+      await renderList();
+
+      const footer = await showsCountdown(FIRST_RETRY_MS / SECOND_MS);
+
+      expect(screen.getByRole('alert')).not.toContainElement(footer);
+      expect(footer).toHaveAttribute('aria-live', 'off');
+    });
+
+    it('asks at once on «Reintentar» and restarts the wait at 30 s', async () => {
+      const requests = recordNearbyRequests();
+      failNearby();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await renderList();
+      await showsCountdown(FIRST_RETRY_MS / SECOND_MS);
+      await expectRetryWhenCountdownEnds(requests, FIRST_RETRY_MS);
+      await showsCountdown(SECOND_RETRY_MS / SECOND_MS);
+      const before = requests.length;
+
+      await user.click(screen.getByRole('button', { name: 'Reintentar' }));
+
+      await waitFor(() => expect(requests).toHaveLength(before + 1));
+      expect(await showsCountdown(FIRST_RETRY_MS / SECOND_MS)).toBeInTheDocument();
+    });
+
+    it('has no axe violations', async () => {
+      failNearby();
+      const { container } = await renderList();
+      await showsCountdown(FIRST_RETRY_MS / SECOND_MS);
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
   });
 
   it('keeps the rows when a later refresh fails', async () => {
@@ -470,15 +596,67 @@ describe('StationList', () => {
 
     await renderList();
 
-    expect(await findStaleNotice()).toHaveTextContent('Sin confirmar: datos de hace 35 minutos');
+    expect(await findStaleNotice()).toHaveTextContent(
+      `Mostramos los datos de las ${formatClock(new Date(staleStationsFixture.updatedAt))}`,
+    );
   });
 
-  it('warns without a time about stale data that just arrived with an invalid updatedAt', async () => {
+  it('dates stale data with an invalid updatedAt by the full list, the older one', async () => {
     nearbyJson({ ...nearbyStationsFixture, updatedAt: 'nope', stale: true });
 
     await renderList();
 
-    expect(await findStaleNotice()).toHaveTextContent(/^Sin confirmar$/);
+    expect(await findStaleNotice()).toHaveTextContent(
+      `Mostramos los datos de las ${formatClock(new Date(stationsFixture.updatedAt))}`,
+    );
+  });
+
+  it('warns when only the full list is stale, by the time of its data (SC3)', async () => {
+    server.use(
+      http.get(STATIONS_URL, ({ request }) =>
+        HttpResponse.json(
+          new URL(request.url).searchParams.has('near')
+            ? nearbyStationsFixture
+            : staleStationsFixture,
+        ),
+      ),
+    );
+
+    await renderList();
+
+    expect(await findStaleNotice()).toHaveTextContent(
+      `Mostramos los datos de las ${formatClock(new Date(staleStationsFixture.updatedAt))}`,
+    );
+  });
+
+  it('asks for both lists again from the stale notice, busy until they answer', async () => {
+    nearbyJson({ ...nearbyStationsFixture, stale: true });
+    await renderList();
+    const notice = await findStaleNotice();
+    const requests = recordAllRequests();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    await user.click(within(notice).getByRole('button', { name: 'Reintentar' }));
+
+    await waitFor(() =>
+      expect(requests.map((url) => url.searchParams.has('near')).sort()).toEqual([false, true]),
+    );
+    await waitFor(() =>
+      expect(within(notice).getByRole('button', { name: 'Reintentar' })).not.toHaveAttribute(
+        'aria-busy',
+      ),
+    );
+  });
+
+  it('leaves stale data to the offline notice once the connection drops', async () => {
+    nearbyJson({ ...nearbyStationsFixture, stale: true });
+    await renderList();
+    await findStaleNotice();
+
+    act(() => onlineManager.setOnline(false));
+
+    await nearbyRegion(SAVED_TITLE);
+    expect(screen.queryByText(/No hemos podido actualizar/)).not.toBeInTheDocument();
   });
 
   it('greys out the counts of unconfirmed data', async () => {
@@ -512,6 +690,7 @@ describe('StationList', () => {
     await screen.findByRole('button', { name: /^Estación 1a/ });
 
     expect(screen.queryByText(/Sin confirmar/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No hemos podido actualizar/)).not.toBeInTheDocument();
   });
 
   it('marks the list unconfirmed once the data is over 5 min old', async () => {
@@ -525,7 +704,7 @@ describe('StationList', () => {
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
   });
 
-  it('keeps the rows and says so when the connection drops', async () => {
+  it('keeps the rows as the last saved data when the connection drops (SC4)', async () => {
     await renderList();
     await screen.findByRole('button', { name: /^Estación 1a/ });
 
@@ -533,19 +712,21 @@ describe('StationList', () => {
       window.dispatchEvent(new Event('offline'));
     });
 
-    expect(await screen.findByText('Sin conexión')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent(/^Sin conexión$/);
+    const saved = await nearbyRegion(SAVED_TITLE);
+    expect(saved).toHaveAccessibleDescription(SAVED_CAPTION);
+    expect(within(saved).getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
+    // The page says the connection is gone, once, in its own bar or banner.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('asks again and drops the notice when the connection returns', async () => {
+  it('asks again and goes back to the nearby heading when the connection returns', async () => {
     const requests = recordNearbyRequests();
     await renderList();
     await screen.findByRole('button', { name: /^Estación 1a/ });
     act(() => {
       window.dispatchEvent(new Event('offline'));
     });
-    await screen.findByText('Sin conexión');
+    await nearbyRegion(SAVED_TITLE);
     // The poll that falls due while offline waits for the connection.
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
     const requestsWhileOffline = requests.length;
@@ -555,18 +736,37 @@ describe('StationList', () => {
     });
 
     await waitFor(() => expect(requests.length).toBeGreaterThan(requestsWhileOffline));
-    await waitFor(() => expect(screen.queryByText('Sin conexión')).not.toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
+    const nearby = await nearbyRegion();
+    expect(screen.queryByRole('region', { name: SAVED_TITLE })).not.toBeInTheDocument();
+    expect(within(nearby).getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
   });
 
-  it('shows the error with a retry when offline without data', async () => {
+  it('says it needs the connection when offline without data, with no retry or countdown (SC2)', async () => {
     onlineManager.setOnline(false);
 
-    await renderList();
+    const { container } = await renderList();
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('No se pudieron cargar las estaciones cercanas');
-    expect(within(alert).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(within(alert).getByRole('heading', { level: 2 })).toHaveTextContent(
+      'Sin conexión a internet',
+    );
+    expect(alert).toHaveTextContent(
+      'Necesitas conexión para ver las estaciones la primera vez. Se cargarán solas al volver a conectarte.',
+    );
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Volveremos a intentarlo/)).not.toBeInTheDocument();
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+
+  it('loads the stations by itself when the connection returns', async () => {
+    onlineManager.setOnline(false);
+    await renderList();
+    await screen.findByText('Sin conexión a internet');
+
+    act(() => onlineManager.setOnline(true));
+
+    expect(await screen.findByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('shows the saved nearby list while the location is pending', async () => {

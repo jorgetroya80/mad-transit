@@ -1,6 +1,16 @@
+import {
+  nearbyStationsFixture,
+  staleStationsFixture,
+  stationsFixture,
+} from '@/shared/api/mocks/fixtures';
+import { formatClock } from '@/shared/lib';
+import { findStaleNotice } from '../../../../test/staleNotice';
+import { onlineManager } from '@tanstack/react-query';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/shared/api/mocks/node';
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FAVORITES_STORAGE_KEY } from '@/shared/config';
+import { env, FAVORITES_STORAGE_KEY } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
@@ -146,5 +156,248 @@ describe('MobileMapPage', () => {
       screen.getByRole('button', { name: 'Mostrar detalle · Puerta del Sol B' }),
     ).toBeInTheDocument();
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+  describe('without data', () => {
+    afterEach(() => onlineManager.setOnline(true));
+
+    it('says it needs the connection, with the search off and the map covered (SC2)', async () => {
+      onlineManager.setOnline(false);
+      const { container } = await renderPage();
+
+      const [alert, ...otherAlerts] = await screen.findAllByRole('alert');
+      expect(otherAlerts).toEqual([]);
+      expect(alert).toHaveTextContent('Sin conexión a internet');
+      expect(screen.getByRole('searchbox', { name: 'Buscar estación' })).toBeDisabled();
+      expect(screen.getByRole('searchbox', { name: 'Buscar estación' })).toHaveAttribute(
+        'placeholder',
+        'Disponible al volver a conectarte',
+      );
+      expect(
+        screen.getByText('El mapa no se puede cargar sin conexión').closest('output'),
+      ).toHaveRole('status');
+      expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+
+    it('says the service fails, with the search off and a notice over the map (SC1)', async () => {
+      server.use(
+        http.get(`${env.apiBaseUrl}/v1/bicimad/stations`, () =>
+          HttpResponse.json({ title: 'Service Unavailable', status: 503 }, { status: 503 }),
+        ),
+      );
+      const { container } = await renderPage();
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'No podemos cargar las estaciones',
+      );
+      expect(screen.getByRole('searchbox', { name: 'Buscar estación' })).toHaveAttribute(
+        'placeholder',
+        'No disponible hasta recuperar los datos',
+      );
+      expect(
+        screen.getByText('Las estaciones aparecerán aquí cuando se recupere el servicio'),
+      ).toBeInTheDocument();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+  });
+  describe('offline with data', () => {
+    afterEach(() => onlineManager.setOnline(true));
+
+    async function goOffline() {
+      const view = await renderPage();
+      await nearbyRows();
+      act(() => onlineManager.setOnline(false));
+      return view;
+    }
+
+    it('says so once, under the mode, and heads the sheet with the saved list (SC4)', async () => {
+      const { container } = await goOffline();
+
+      // findByRole fails on more than one alert.
+      const banner = await screen.findByRole('alert');
+      expect(banner).toHaveTextContent(
+        'Sin conexión a internet. Se actualizará solo al volver a conectarte.',
+      );
+      const controls = screen
+        .getByRole('searchbox', { name: 'Buscar estación' })
+        .closest('.absolute');
+      expect(controls).toContainElement(banner);
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Últimos datos guardados' }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/· pueden no estar al día$/)).toBeInTheDocument();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+
+    it('names the hidden strip after the saved list', async () => {
+      await goOffline();
+      await screen.findByRole('alert');
+
+      await userEvent.click(sheetHandle());
+
+      expect(
+        screen.getByRole('button', { name: 'Mostrar lista · Últimos datos guardados' }),
+      ).toBeInTheDocument();
+    });
+
+    it('drops the banner and the saved heading when the connection returns', async () => {
+      await goOffline();
+      await screen.findByRole('alert');
+
+      act(() => onlineManager.setOnline(true));
+
+      await screen.findByRole('heading', { level: 2, name: /estaciones con bicis$/ });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
+  describe('stale', () => {
+    it('warns with the age, and turns the sheet subtitle amber with the time (SC3)', async () => {
+      server.use(
+        http.get(`${env.apiBaseUrl}/v1/bicimad/stations`, ({ request }) =>
+          HttpResponse.json(
+            new URL(request.url).searchParams.has('near')
+              ? { ...nearbyStationsFixture, updatedAt: staleStationsFixture.updatedAt, stale: true }
+              : stationsFixture,
+          ),
+        ),
+      );
+      const { container } = await renderPage();
+      const updatedAt = new Date(staleStationsFixture.updatedAt);
+
+      expect(await findStaleNotice()).toHaveTextContent(
+        'Datos de hace 35 min. No hemos podido actualizar; puede que ya no sean exactos.',
+      );
+      expect(
+        screen.getByText(`Última actualización: ${formatClock(updatedAt)} · hace 35 min`),
+      ).toHaveClass('text-notice-stale-foreground');
+      expect(screen.queryByText('Gris = dato sin confirmar')).not.toBeInTheDocument();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+  });
+
+  it('suggests the nearest station when no station has the number (SC5)', async () => {
+    const { container } = await renderPage();
+    await nearbyRows();
+
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar estación' }), '999');
+
+    expect(await screen.findByText('No hay ninguna estación «999»')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1a · Puerta del Sol A' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ver estaciones cercanas' })).toBeInTheDocument();
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+  it('leaves a missing station from its body, focusing the list as the arrow does (SC6)', async () => {
+    await renderPage('/?station=999');
+    const body = (await screen.findByRole('alert')).closest('div');
+    if (!body) throw new Error('The alert has no body around it');
+
+    await userEvent.click(within(body).getByRole('button', { name: 'Volver a la lista' }));
+
+    expect(await screen.findByRole('heading', { name: 'Cercanas' })).toHaveFocus();
+  });
+  describe('live regions per state (SC7)', () => {
+    const STATIONS = `${env.apiBaseUrl}/v1/bicimad/stations`;
+
+    // Every live region on the whole page with something to say, by role, in DOM order.
+    function liveRegions() {
+      const texts = (role: 'alert' | 'status') =>
+        screen
+          .queryAllByRole(role)
+          .map((region) => region.textContent?.trim() ?? '')
+          .filter(Boolean);
+      return { alerts: texts('alert'), statuses: texts('status') };
+    }
+
+    // Settles the connection inside act, as the regions react to it.
+    afterEach(() => act(() => onlineManager.setOnline(true)));
+
+    // The location notice is its own cause: it is there in every state.
+    const LOCATION = expect.stringMatching(/^Sin tu ubicación/);
+
+    it.each([
+      {
+        state: 'error without data',
+        arrange: async () => {
+          server.use(http.get(STATIONS, () => HttpResponse.json({ status: 503 }, { status: 503 })));
+          await renderPage();
+          await screen.findByText(/Volveremos a intentarlo/);
+        },
+        alerts: [expect.stringMatching(/^No podemos cargar las estaciones/)],
+        statuses: [LOCATION],
+      },
+      {
+        state: 'offline without data',
+        arrange: async () => {
+          onlineManager.setOnline(false);
+          await renderPage();
+          await screen.findByRole('alert');
+        },
+        alerts: [expect.stringMatching(/^Sin conexión a internetNecesitas conexión/)],
+        statuses: [LOCATION, 'El mapa no se puede cargar sin conexión'],
+      },
+      {
+        state: 'stale',
+        arrange: async () => {
+          server.use(http.get(STATIONS, () => HttpResponse.json(staleStationsFixture)));
+          await renderPage();
+          await findStaleNotice();
+        },
+        alerts: [],
+        statuses: [
+          LOCATION,
+          expect.stringMatching(/^Datos de hace 35 min\. No hemos podido actualizar;/),
+        ],
+      },
+      {
+        state: 'offline with data',
+        arrange: async () => {
+          await renderPage();
+          await screen.findAllByRole('button', { name: /^Estación 1a/ });
+          act(() => onlineManager.setOnline(false));
+          await screen.findByRole('alert');
+        },
+        alerts: [
+          expect.stringMatching(
+            /^Sin conexión a internet\. Se actualizará solo al volver a conectarte\.$/,
+          ),
+        ],
+        statuses: [
+          LOCATION,
+          'El mapa no se puede cargar sin conexiónPuedes seguir consultando la lista de abajo.',
+        ],
+      },
+      {
+        state: 'search without results',
+        arrange: async () => {
+          await renderPage();
+          await screen.findAllByRole('button', { name: /^Estación 1a/ });
+          await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar estación' }), '999');
+          await screen.findByText('No hay ninguna estación «999»');
+        },
+        alerts: [],
+        statuses: [
+          'No hay ninguna estación «999» Revisa el número que aparece en la estación.',
+          LOCATION,
+        ],
+      },
+    ])('announces $state once, by its own cause', async ({ arrange, alerts, statuses }) => {
+      await arrange();
+
+      expect(liveRegions()).toEqual({ alerts, statuses });
+    });
+
+    it('keeps the countdown and the map notice out of every live region', async () => {
+      server.use(http.get(STATIONS, () => HttpResponse.json({ status: 503 }, { status: 503 })));
+      await renderPage();
+
+      const LIVE =
+        '[role="alert"], [role="status"], output, [aria-live="polite"], [aria-live="assertive"]';
+      expect((await screen.findByText(/Volveremos a intentarlo/)).closest(LIVE)).toBeNull();
+      expect(
+        screen
+          .getByText('Las estaciones aparecerán aquí cuando se recupere el servicio')
+          .closest(LIVE),
+      ).toBeNull();
+    });
   });
 });

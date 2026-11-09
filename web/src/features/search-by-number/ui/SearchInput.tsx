@@ -11,6 +11,11 @@ type SearchInputProps = {
   onQueryChange: (query: string) => void;
   onKeyDown: (event: KeyboardEvent) => void;
   onClear: () => void;
+  placeholder?: string;
+  // Disables the box and replaces both the placeholder and the help.
+  unavailableText?: string;
+  // More description after the help, such as the no-results message.
+  describedBy?: string;
 };
 
 const FOCUS_RING =
@@ -54,10 +59,14 @@ export function SearchInput({
   onQueryChange,
   onKeyDown,
   onClear,
+  placeholder,
+  unavailableText,
+  describedBy,
 }: SearchInputProps) {
   const id = useId();
   const helpId = `${id}-help`;
   const styles = VARIANTS[variant];
+  const disabled = unavailableText !== undefined;
 
   return (
     <>
@@ -70,19 +79,23 @@ export function SearchInput({
           ref={ref}
           id={id}
           type="search"
-          aria-describedby={helpId}
+          aria-describedby={describedBy ? `${helpId} ${describedBy}` : helpId}
           // Numbers can carry letters ('25A'), so no numeric keyboard.
           inputMode="text"
           autoComplete="off"
           value={query}
+          disabled={disabled}
+          placeholder={unavailableText ?? placeholder}
           onChange={(event) => onQueryChange(event.target.value)}
           onKeyDown={onKeyDown}
-          className={`w-full bg-surface pr-11 text-fg [&::-webkit-search-cancel-button]:appearance-none ${styles.input} ${FOCUS_RING}`}
+          className={`w-full bg-surface pr-11 text-fg placeholder:text-fg-muted disabled:cursor-not-allowed disabled:bg-chip [&::-webkit-search-cancel-button]:appearance-none ${styles.input} ${FOCUS_RING}`}
         />
-        {query ? <ClearButton onClear={onClear} className={styles.clear} /> : null}
+        {query && !disabled ? <ClearButton onClear={onClear} className={styles.clear} /> : null}
       </div>
-      <p id={helpId} className={styles.help}>
-        {`Busca por número de ${itemLabel}.`}
+      {/* The placeholder already shows why it is disabled: the help repeats it only for
+          assistive technology, which does not reliably read a placeholder as a description. */}
+      <p id={helpId} className={disabled ? 'sr-only' : styles.help}>
+        {unavailableText ?? `Busca por número de ${itemLabel}.`}
       </p>
     </>
   );

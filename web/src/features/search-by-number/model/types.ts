@@ -13,6 +13,12 @@ export type SearchSource = {
   itemLabelPlural: string;
   items: readonly SearchItem[];
   status: 'loading' | 'ready' | 'error';
+  /** Set while the source cannot be searched at all: the box is disabled and says why. */
+  unavailableText?: string;
+  /** A hint inside a searchable box, such as that only saved items are searched. */
+  placeholder?: string;
+  /** Offered when nothing matches, such as the nearest station. */
+  suggestion?: SearchItem;
   onSelect: (number: string) => void;
 };
 

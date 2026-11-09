@@ -113,7 +113,7 @@ describe('SearchByNumber', () => {
       await userEvent.type(searchBox(), 'sol');
 
       expect(screen.queryByRole('list')).not.toBeInTheDocument();
-      expect(status()).toHaveTextContent('Ninguna estación con el número sol');
+      expect(screen.getByText('No hay ninguna estación «sol»')).toBeInTheDocument();
     });
   });
 
@@ -329,7 +329,9 @@ describe('SearchByNumber', () => {
 
       await userEvent.type(searchBox(), ' 99Z ');
 
-      expect(status()).toHaveTextContent('Ninguna estación con el número 99Z');
+      expect(screen.getByText('No hay ninguna estación «99Z»').closest('output')).toHaveRole(
+        'status',
+      );
     });
 
     it('shows no message for a blank query, even while loading', async () => {
@@ -339,6 +341,145 @@ describe('SearchByNumber', () => {
 
       expect(status()).toBeEmptyDOMElement();
     });
+  });
+
+  describe('no results', () => {
+    const SUGGESTION = { number: '33', title: 'Puerta del Sol' };
+    const MESSAGE = 'No hay ninguna estación «99Z» Revisa el número que aparece en la estación.';
+
+    function noResultsMessage() {
+      return screen.getByText('No hay ninguna estación «99Z»').closest('output');
+    }
+
+    async function searchNothing(overrides: Partial<SearchSource> = {}) {
+      const source = bicimadSource({ suggestion: SUGGESTION, ...overrides });
+      const view = render(<SearchByNumber sources={[source]} />);
+      await userEvent.type(searchBox(), ' 99Z ');
+      return { source, ...view };
+    }
+
+    it('says so with the query as typed, trimmed, in a live region (SC5)', async () => {
+      await searchNothing();
+
+      expect(noResultsMessage()).toHaveRole('status');
+      expect(noResultsMessage()).toHaveTextContent(MESSAGE);
+      expect(screen.getByRole('heading', { level: 2, name: 'Prueba con' })).toBeInTheDocument();
+    });
+
+    it('announces it once: in its block, not in the results count', async () => {
+      await searchNothing();
+
+      const announced = screen.getAllByRole('status').map((region) => region.textContent);
+      expect(announced.filter((text) => text?.includes('99Z'))).toHaveLength(1);
+    });
+
+    it('keeps the suggestions out of the live region', async () => {
+      await searchNothing();
+
+      expect(noResultsMessage()).not.toContainElement(
+        screen.getByRole('button', { name: 'Ver estaciones cercanas' }),
+      );
+    });
+
+    it('describes the box with the help and the message', async () => {
+      await searchNothing();
+
+      expect(searchBox()).toHaveAccessibleDescription(`Busca por número de estación. ${MESSAGE}`);
+    });
+
+    it('opens the suggestion like a result, clearing the box', async () => {
+      const { source } = await searchNothing();
+
+      await userEvent.click(screen.getByRole('button', { name: '33 · Puerta del Sol' }));
+
+      expect(source.onSelect).toHaveBeenCalledExactlyOnceWith('33');
+      expect(searchBox()).toHaveValue('');
+    });
+
+    it('clears the box and keeps the focus in it with «Ver estaciones cercanas»', async () => {
+      await searchNothing();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Ver estaciones cercanas' }));
+
+      expect(searchBox()).toHaveValue('');
+      expect(searchBox()).toHaveFocus();
+      expect(screen.queryByText(/No hay ninguna/)).not.toBeInTheDocument();
+    });
+
+    it('offers only the nearby stations without a suggestion', async () => {
+      await searchNothing({ suggestion: undefined });
+
+      expect(screen.queryByRole('button', { name: /·/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Ver estaciones cercanas' })).toBeInTheDocument();
+    });
+
+    it('reaches both suggestions with Tab after the box', async () => {
+      await searchNothing();
+
+      await userEvent.tab();
+      expect(screen.getByRole('button', { name: 'Borrar búsqueda' })).toHaveFocus();
+      await userEvent.tab();
+      expect(screen.getByRole('button', { name: '33 · Puerta del Sol' })).toHaveFocus();
+      await userEvent.tab();
+      expect(screen.getByRole('button', { name: 'Ver estaciones cercanas' })).toHaveFocus();
+    });
+
+    it.each(['loading', 'error'] as const)('shows nothing of it while %s', async (state) => {
+      await searchNothing({ items: [], status: state });
+
+      expect(screen.queryByText(/No hay ninguna/)).not.toBeInTheDocument();
+    });
+
+    it.each(['inline', 'floating'] as const)('has no axe violations %s', async (variant) => {
+      const source = bicimadSource({ suggestion: SUGGESTION });
+      const { container } = render(<SearchByNumber sources={[source]} variant={variant} />);
+      await userEvent.type(searchBox(), '99Z');
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+  });
+
+  describe('unavailable source', () => {
+    const UNAVAILABLE = 'No disponible hasta recuperar los datos';
+
+    function unavailableSource() {
+      return bicimadSource({ items: [], status: 'error', unavailableText: UNAVAILABLE });
+    }
+
+    it('disables the box and says why in it, instead of the help', () => {
+      render(<SearchByNumber sources={[unavailableSource()]} />);
+
+      expect(searchBox()).toBeDisabled();
+      expect(searchBox()).toHaveAttribute('placeholder', UNAVAILABLE);
+      expect(searchBox()).toHaveAccessibleDescription(UNAVAILABLE);
+      expect(screen.queryByText('Busca por número de estación.')).not.toBeInTheDocument();
+    });
+
+    it('drops the clear button when the source stops being searchable', async () => {
+      const { rerender } = render(<SearchByNumber sources={[bicimadSource()]} />);
+      await userEvent.type(searchBox(), '1');
+
+      rerender(<SearchByNumber sources={[unavailableSource()]} />);
+
+      expect(clearButton()).not.toBeInTheDocument();
+    });
+
+    it('has no axe violations', async () => {
+      const { container } = render(<SearchByNumber sources={[unavailableSource()]} />);
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+  });
+
+  it('shows the source placeholder in a searchable box, keeping the help', async () => {
+    const placeholder = 'Busca entre las estaciones guardadas';
+    render(<SearchByNumber sources={[bicimadSource({ placeholder })]} />);
+
+    expect(searchBox()).toBeEnabled();
+    expect(searchBox()).toHaveAttribute('placeholder', placeholder);
+    expect(searchBox()).toHaveAccessibleDescription('Busca por número de estación.');
+    await userEvent.type(searchBox(), '1a');
+    expect(resultNumbers()).toEqual(['1a']);
   });
 
   describe('with two sources', () => {

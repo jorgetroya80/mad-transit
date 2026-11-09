@@ -10,8 +10,11 @@ import { useNeed } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
 import { BaseMap, type FocusPadding, type MapControlsOptions } from '@/shared/ui';
 import { toMapPoints } from '../lib/toMapPoints';
+import { type MapLayout, MapNotice } from './MapNotice';
 
 type StationsMapProps = {
+  // Where the list is, so the offline layer can point to it.
+  layout: MapLayout;
   center: Coordinates | undefined;
   userLocation: Coordinates | undefined;
   label?: string;
@@ -31,8 +34,10 @@ function findStation(stations: readonly Station[], number: string | undefined) {
   return stations.find((station) => isSameStationNumber(station.number, number));
 }
 
-// The map never blocks on the stations: the list shows loading and errors.
+// The map never blocks on the stations: the list shows loading and errors, and the notices lie
+// over the map as its siblings, so MapLibre stays mounted whatever the status.
 export function StationsMap({
+  layout,
   center,
   userLocation,
   label,
@@ -54,19 +59,22 @@ export function StationsMap({
   const selected = findStation(stations, number);
 
   return (
-    <BaseMap
-      className={className}
-      label={label}
-      points={points}
-      selectedId={selected?.number}
-      onSelectPoint={(id) => {
-        onSelect?.(id);
-        select(id);
-      }}
-      focus={selected && focusSelected ? { lng: selected.lon, lat: selected.lat } : center}
-      focusPadding={focusPadding}
-      userLocation={userLocation}
-      controls={controls}
-    />
+    <div className={['relative isolate', className].filter(Boolean).join(' ')}>
+      <BaseMap
+        className="h-full w-full"
+        label={label}
+        points={points}
+        selectedId={selected?.number}
+        onSelectPoint={(id) => {
+          onSelect?.(id);
+          select(id);
+        }}
+        focus={selected && focusSelected ? { lng: selected.lon, lat: selected.lat } : center}
+        focusPadding={focusPadding}
+        userLocation={userLocation}
+        controls={controls}
+      />
+      <MapNotice status={status} hasData={data !== undefined} layout={layout} />
+    </div>
   );
 }

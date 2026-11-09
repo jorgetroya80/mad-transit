@@ -9,6 +9,7 @@ export { BottomSheet, type SheetSnap, useBottomSheetOverlap } from './bottom-she
 export { CollapsibleSection } from './collapsible-section';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
+export { ErrorState } from './error-state';
 export {
   ArrowLeftIcon,
   BikeIcon,
