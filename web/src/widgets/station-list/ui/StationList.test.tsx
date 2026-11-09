@@ -18,6 +18,7 @@ import {
   POLL_INTERVAL_MS,
   RETRY_DELAYS_MS,
 } from '@/shared/config';
+import { formatClock } from '@/shared/lib';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { findStaleNotice } from '../../../../test/staleNotice';
@@ -31,6 +32,8 @@ const NOW = new Date('2026-10-13T10:20:00Z');
 // fake clock that `shouldAdvanceTime` moves along with real time.
 const AFTER_RETRY = { timeout: 3_000 };
 const UNAVAILABLE = 503;
+const SAVED_TITLE = 'Últimos datos guardados';
+const SAVED_CAPTION = `De las ${formatClock(new Date(nearbyStationsFixture.updatedAt))} · pueden no estar al día`;
 const SERVICE_ERROR_TITLE = 'No podemos cargar las estaciones';
 const SERVICE_ERROR_BODY =
   'El servicio de BiciMAD no está respondiendo. Suele ser temporal; no es un problema de tu conexión.';
@@ -194,6 +197,16 @@ describe('StationList', () => {
       );
     }
 
+    it('heads the saved list with its time instead of the update line when offline', async () => {
+      await renderDesktopList();
+      await screen.findByRole('button', { name: /^Estación 1a/ });
+
+      act(() => onlineManager.setOnline(false));
+
+      expect(await nearbyRegion(SAVED_TITLE)).toHaveAccessibleDescription(SAVED_CAPTION);
+      expect(screen.queryByText(/^Actualizado/)).not.toBeInTheDocument();
+    });
+
     it('says it is using the current location, under «Cerca de ti» sorted by distance', async () => {
       await renderDesktopList();
 
@@ -316,6 +329,16 @@ describe('StationList', () => {
       );
       return { view, onLocate };
     }
+
+    it('keeps «Cercanas» offline: the sheet header says the list is the saved one', async () => {
+      await renderMobileList().view;
+      await screen.findByRole('button', { name: /^Estación 1a/ });
+
+      act(() => onlineManager.setOnline(false));
+
+      expect(await nearbyRegion('Cercanas')).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: SAVED_TITLE })).not.toBeInTheDocument();
+    });
 
     it('says it is using the current location, without an action', async () => {
       await renderMobileList().view;
@@ -615,7 +638,7 @@ describe('StationList', () => {
     expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
   });
 
-  it('keeps the rows and says so when the connection drops', async () => {
+  it('keeps the rows as the last saved data when the connection drops (SC4)', async () => {
     await renderList();
     await screen.findByRole('button', { name: /^Estación 1a/ });
 
@@ -623,19 +646,21 @@ describe('StationList', () => {
       window.dispatchEvent(new Event('offline'));
     });
 
-    expect(await screen.findByText('Sin conexión')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent(/^Sin conexión$/);
+    const saved = await nearbyRegion(SAVED_TITLE);
+    expect(saved).toHaveAccessibleDescription(SAVED_CAPTION);
+    expect(within(saved).getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
+    // The page says the connection is gone, once, in its own bar or banner.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('asks again and drops the notice when the connection returns', async () => {
+  it('asks again and goes back to the nearby heading when the connection returns', async () => {
     const requests = recordNearbyRequests();
     await renderList();
     await screen.findByRole('button', { name: /^Estación 1a/ });
     act(() => {
       window.dispatchEvent(new Event('offline'));
     });
-    await screen.findByText('Sin conexión');
+    await nearbyRegion(SAVED_TITLE);
     // The poll that falls due while offline waits for the connection.
     await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
     const requestsWhileOffline = requests.length;
@@ -645,8 +670,9 @@ describe('StationList', () => {
     });
 
     await waitFor(() => expect(requests.length).toBeGreaterThan(requestsWhileOffline));
-    await waitFor(() => expect(screen.queryByText('Sin conexión')).not.toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
+    const nearby = await nearbyRegion();
+    expect(screen.queryByRole('region', { name: SAVED_TITLE })).not.toBeInTheDocument();
+    expect(within(nearby).getByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
   });
 
   it('says it needs the connection when offline without data, with no retry or countdown (SC2)', async () => {

@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import type { StationsResponse } from '@jorgetroya80/mad-transit-client';
@@ -29,6 +29,7 @@ function nearbyJson(body: StationsResponse) {
 describe('useNearbyAvailability', () => {
   afterEach(() => {
     localStorage.clear();
+    onlineManager.setOnline(true);
   });
 
   // Fixtures: 1a has 12 bikes, 1b has 2, and station 2 is out of service.
@@ -63,6 +64,29 @@ describe('useNearbyAvailability', () => {
       wrapper: createWrapper(),
     });
 
-    expect(result.current).toEqual({ count: undefined, updatedAt: undefined });
+    expect(result.current).toEqual({ count: undefined, updatedAt: undefined, isSaved: false });
+  });
+
+  it('tells when the list is the saved one, offline with data', async () => {
+    const { result } = renderHook(() => useNearbyAvailability(SOL, 'bikes'), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => expect(result.current.count).toBe(2));
+    expect(result.current.isSaved).toBe(false);
+
+    act(() => onlineManager.setOnline(false));
+
+    expect(result.current.isSaved).toBe(true);
+    act(() => onlineManager.setOnline(true));
+    expect(result.current.isSaved).toBe(false);
+  });
+
+  it('is not the saved list offline without data', () => {
+    onlineManager.setOnline(false);
+    const { result } = renderHook(() => useNearbyAvailability(SOL, 'bikes'), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isSaved).toBe(false);
   });
 });

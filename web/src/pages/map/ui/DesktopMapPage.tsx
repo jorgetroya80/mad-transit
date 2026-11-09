@@ -7,6 +7,7 @@ import { useListFocusReturn } from '../model/useListFocusReturn';
 import { useMapLocation } from '../model/useMapLocation';
 import { useUserFocus } from '../model/useUserFocus';
 import { DesktopPanel } from './DesktopPanel';
+import { OfflineBar } from './OfflineNotice';
 
 // The station card (320 px wide, 16 px from each side) covers the right of the map; the side
 // panel sits beside it and covers nothing.
@@ -28,6 +29,7 @@ export function DesktopMapPage() {
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <AppHeader />
+      <OfflineBar center={location.center} />
       <main className="flex min-h-0 flex-1">
         <SidePanel ref={panelRef} label="Estaciones" className="p-4">
           <DesktopPanel location={{ ...location, locate }} />

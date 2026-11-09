@@ -445,4 +445,42 @@ describe('DesktopMapPage', () => {
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });
   });
+  describe('offline with data', () => {
+    afterEach(() => onlineManager.setOnline(true));
+
+    async function goOffline() {
+      const view = await renderPage();
+      await nearbyRow('1a');
+      act(() => onlineManager.setOnline(false));
+      return view;
+    }
+
+    it('says so once, in a bar across the page under the header (SC4)', async () => {
+      const { container } = await goOffline();
+
+      // findByRole fails on more than one alert.
+      const bar = await screen.findByRole('alert');
+      expect(bar).toHaveTextContent(
+        'Sin conexión a internet. Mostramos los últimos datos guardados; se actualizará solo al volver a conectarte.',
+      );
+      expect(within(bar).getByText('Sin conexión a internet.').tagName).toBe('STRONG');
+      expect(screen.getByRole('banner').nextElementSibling).toBe(bar);
+      expect(screen.getByRole('main')).not.toContainElement(bar);
+      expect(
+        within(panel()).getByRole('region', { name: 'Últimos datos guardados' }),
+      ).toBeInTheDocument();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+
+    it('drops the bar and the saved heading when the connection returns', async () => {
+      await goOffline();
+      await screen.findByRole('alert');
+
+      act(() => onlineManager.setOnline(true));
+
+      expect(await nearbyRow('1a')).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Últimos datos guardados' })).toBeNull();
+    });
+  });
 });

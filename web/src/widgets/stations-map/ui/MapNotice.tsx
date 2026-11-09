@@ -6,10 +6,11 @@ export type MapLayout = 'desktop' | 'mobile';
 type MapNoticeProps = { status: DataStatus; hasData: boolean; layout: MapLayout };
 
 // On mobile the floating search and mode take the top of the map and the sheet its bottom
-// half, so the notices sit just below the mode.
+// half, so the notices sit just below the mode; offline, the layer's text also clears the
+// offline banner under it.
 const PLACEMENT = {
   desktop: { notice: 'top-4', layer: 'justify-center' },
-  mobile: { notice: 'top-40', layer: 'justify-start pt-40' },
+  mobile: { notice: 'top-40', layer: 'justify-start pt-60' },
 } as const satisfies Record<MapLayout, { notice: string; layer: string }>;
 
 const LIST_HINT = {

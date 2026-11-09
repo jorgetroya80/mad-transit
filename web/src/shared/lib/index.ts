@@ -5,6 +5,7 @@ export { useMediaQuery } from './media/useMediaQuery';
 export { useViewportHeight } from './media/useViewportHeight';
 export { useOnline } from './network/useOnline';
 export { readRaw, useLocalStorage, writeRaw } from './storage/useLocalStorage';
+export { formatClock } from './time/formatClock';
 export { formatRelative, isJustNow } from './time/formatRelative';
 export { useCountdown } from './time/useCountdown';
 export { useNow } from './time/useNow';

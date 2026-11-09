@@ -13,6 +13,8 @@ export type NearbyList = {
   // Undefined without data, which is not the same as an empty list within the radius.
   stations: readonly Station[] | undefined;
   updatedAt: Date | undefined;
+  // Offline with data: the rows are the last saved ones and may be out of date.
+  isSaved: boolean;
   nextRetryAt: Date | undefined;
   isRetrying: boolean;
   // Returns the refetch promise, so «Reintentar» can show the request as busy.
@@ -35,5 +37,6 @@ export function useNearbyList(center: Coordinates | undefined, need: Need): Near
     retryDelayMs: query.retryDelayMs,
     refetch: query.refetch,
   });
-  return { status, stations: data?.stations, updatedAt, nextRetryAt, isRetrying, retry };
+  const isSaved = status === 'offline' && data !== undefined;
+  return { status, stations: data?.stations, updatedAt, isSaved, nextRetryAt, isRetrying, retry };
 }

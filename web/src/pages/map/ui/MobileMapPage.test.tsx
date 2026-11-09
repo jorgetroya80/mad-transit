@@ -193,4 +193,54 @@ describe('MobileMapPage', () => {
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });
   });
+  describe('offline with data', () => {
+    afterEach(() => onlineManager.setOnline(true));
+
+    async function goOffline() {
+      const view = await renderPage();
+      await nearbyRows();
+      act(() => onlineManager.setOnline(false));
+      return view;
+    }
+
+    it('says so once, under the mode, and heads the sheet with the saved list (SC4)', async () => {
+      const { container } = await goOffline();
+
+      // findByRole fails on more than one alert.
+      const banner = await screen.findByRole('alert');
+      expect(banner).toHaveTextContent(
+        'Sin conexión a internet. Se actualizará solo al volver a conectarte.',
+      );
+      const controls = screen
+        .getByRole('searchbox', { name: 'Buscar estación' })
+        .closest('.absolute');
+      expect(controls).toContainElement(banner);
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Últimos datos guardados' }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/· pueden no estar al día$/)).toBeInTheDocument();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+
+    it('names the hidden strip after the saved list', async () => {
+      await goOffline();
+      await screen.findByRole('alert');
+
+      await userEvent.click(sheetHandle());
+
+      expect(
+        screen.getByRole('button', { name: 'Mostrar lista · Últimos datos guardados' }),
+      ).toBeInTheDocument();
+    });
+
+    it('drops the banner and the saved heading when the connection returns', async () => {
+      await goOffline();
+      await screen.findByRole('alert');
+
+      act(() => onlineManager.setOnline(true));
+
+      await screen.findByRole('heading', { level: 2, name: /estaciones con bicis$/ });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
 });

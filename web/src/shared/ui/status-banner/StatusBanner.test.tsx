@@ -103,6 +103,24 @@ describe('StatusBanner', () => {
     expect(button).not.toHaveAttribute('aria-disabled');
   });
 
+  it('is a card by default', () => {
+    render(<StatusBanner variant="offline">Sin conexión</StatusBanner>);
+
+    expect(screen.getByRole('alert')).toHaveClass('rounded-card');
+  });
+
+  it('spans the whole width, square, as a bar', () => {
+    render(
+      <StatusBanner variant="offline" shape="bar">
+        Sin conexión
+      </StatusBanner>,
+    );
+
+    const bar = screen.getByRole('alert');
+    expect(bar).toHaveClass('w-full', 'bg-notice-offline');
+    expect(bar).not.toHaveClass('rounded-card');
+  });
+
   it.each(['info', 'stale', 'offline'] as const)('has no axe violations as %s', async (variant) => {
     const { container } = render(
       <StatusBanner variant={variant} action={{ label: 'Reintentar', onClick: () => {} }}>

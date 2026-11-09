@@ -1,9 +1,10 @@
 import type { Coordinates, Need } from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
-import { StaleNotice, StatusBanner } from '@/shared/ui';
+import { StaleNotice } from '@/shared/ui';
 import { needCaption } from '../lib/needCaption';
-import { useNearbyList } from '../model/useNearbyList';
+import { SAVED_LIST_TITLE, savedListCaption } from '../lib/savedList';
+import { type NearbyList, useNearbyList } from '../model/useNearbyList';
 import { FavoriteStations } from './FavoriteStations';
 import { ApproximateLocationNotice, type LocatingLayout, LocatingNotice } from './LocationNotice';
 import { NearbyStations } from './NearbyStations';
@@ -27,12 +28,24 @@ type StationListProps = {
 
 type NearbyHeading = { heading: string; caption?: string; level: 2 | 3 };
 
-function nearbyHeading(
-  layout: LocatingLayout | undefined,
-  isApproximateLocation: boolean,
-  need: Need,
-): NearbyHeading {
+type HeadingInput = {
+  layout: LocatingLayout | undefined;
+  isApproximateLocation: boolean;
+  need: Need;
+  nearby: Pick<NearbyList, 'isSaved' | 'updatedAt'>;
+};
+
+// The saved list (offline with data) says how old it is; on mobile the sheet header does.
+function nearbyHeading({
+  layout,
+  isApproximateLocation,
+  need,
+  nearby,
+}: HeadingInput): NearbyHeading {
   if (layout === 'mobile') return { heading: 'Cercanas', level: 3 };
+  if (nearby.isSaved) {
+    return { heading: SAVED_LIST_TITLE, caption: savedListCaption(nearby.updatedAt), level: 2 };
+  }
   const heading = isApproximateLocation ? 'Cerca de la Puerta del Sol' : 'Cerca de ti';
   const caption = layout === 'desktop' ? 'Ordenadas por distancia' : needCaption(need);
   return { heading, caption, level: 2 };
@@ -69,15 +82,17 @@ export function StationList(props: StationListProps) {
   const [need] = useNeed();
   const { number: selectedNumber, select } = useSelectedStation();
   const nearby = useNearbyList(center, need);
-  const { level, ...heading } = nearbyHeading(layout, isApproximateLocation, need);
+  const { level, ...heading } = nearbyHeading({
+    layout,
+    isApproximateLocation,
+    need,
+    nearby,
+  });
 
   return (
     <div className="flex flex-col gap-4">
       <LocationNotice {...props} />
       {nearby.status === 'stale' ? <StaleNotice updatedAt={nearby.updatedAt} /> : null}
-      {nearby.status === 'offline' && nearby.stations ? (
-        <StatusBanner variant="offline">Sin conexión</StatusBanner>
-      ) : null}
       <FavoriteStations
         need={need}
         selectedNumber={selectedNumber}
@@ -91,7 +106,7 @@ export function StationList(props: StationListProps) {
           need={need}
           selectedNumber={selectedNumber}
           onSelect={select}
-          showUpdatedAt={layout !== 'mobile'}
+          showUpdatedAt={layout !== 'mobile' && !nearby.isSaved}
         />
       </StationSection>
     </div>
