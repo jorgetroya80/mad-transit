@@ -1,7 +1,9 @@
 import { useId } from 'react';
 import { type Coordinates, useStationDetail } from '@/entities/station';
+import { cardHeading } from '../model/cardHeading';
 import { useCloseOnEscape } from '../model/useCloseOnEscape';
 import { CardBody } from './CardBody';
+import { CardFooter } from './CardFooter';
 import { CardHeader } from './CardHeader';
 
 type SelectedStationCardProps = {
@@ -14,7 +16,6 @@ type SelectedStationCardProps = {
 export function SelectedStationCard({ number, center, onClose }: SelectedStationCardProps) {
   const detail = useStationDetail(number);
   const headingId = useId();
-  const station = detail.status === 'not-found' ? undefined : detail.station;
   const cardRef = useCloseOnEscape(onClose);
 
   return (
@@ -25,12 +26,12 @@ export function SelectedStationCard({ number, center, onClose }: SelectedStation
     >
       <CardHeader
         headingId={headingId}
-        number={number}
-        station={station}
+        heading={cardHeading(number, detail)}
         center={center}
         onClose={onClose}
       />
-      <CardBody detail={detail} />
+      <CardBody number={number} detail={detail} onClose={onClose} />
+      <CardFooter detail={detail} />
     </section>
   );
 }

@@ -1,10 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import type { Coordinates } from '@/entities/station';
 import { stationsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env } from '@/shared/config';
+import { formatClock } from '@/shared/lib';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { StationCard } from './StationCard';
@@ -16,6 +17,10 @@ const SOL: Coordinates = { lat: 40.41702, lng: -3.70243 };
 const NOW = new Date('2026-10-13T10:20:00Z');
 const SERVER_ERROR = 500;
 const [puertaDelSolA] = stationsFixture.stations;
+const NOT_FOUND_TEXT =
+  'No hay ninguna estación de BiciMAD con el número 999. Puede que el enlace sea antiguo o que la estación se haya retirado.';
+// Both footers: «Actualizado hace …» and «Último dato: …».
+const FOOTER = /^(Actualizado|Último dato)/;
 
 type AppRouter = Awaited<ReturnType<typeof renderWithRouter>>['router'];
 
@@ -174,12 +179,56 @@ describe('StationCard', () => {
     expect(document.body).toHaveFocus();
   });
 
-  it('says when the station does not exist, and still closes', async () => {
+  it('says when the station does not exist, and still closes (SC6)', async () => {
     await renderCard('/?station=999');
 
-    const region = await card('Estación 999');
-    expect(await within(region).findByRole('alert')).toHaveTextContent('Estación no encontrada');
+    const region = await card('Estación no encontrada');
+    expect(within(region).getByText('Estación 999')).toBeInTheDocument();
+    expect(await within(region).findByRole('alert')).toHaveTextContent(NOT_FOUND_TEXT);
     expect(within(region).getByRole('button', { name: 'Cerrar' })).toBeInTheDocument();
+    expect(within(region).queryByRole('button', { name: 'Favorita' })).not.toBeInTheDocument();
+    expect(within(region).queryByText(FOOTER)).not.toBeInTheDocument();
+  });
+
+  it('goes back to the list from a missing station, as «Cerrar» does', async () => {
+    const { router } = await renderCard('/?station=999');
+
+    await userEvent.click(
+      within(await card('Estación no encontrada')).getByRole('button', {
+        name: 'Volver a la lista',
+      }),
+    );
+
+    expect(searchOf(router).station).toBeUndefined();
+  });
+
+  it('says a station out of service cannot be used, instead of its counts (SC6)', async () => {
+    await renderCard('/?station=2');
+
+    const region = await card('Miguel Moya');
+    const notice = within(region).getByRole('status');
+    expect(notice).toHaveTextContent('Fuera de servicio No se pueden sacar ni dejar bicis.');
+    expect(within(region).queryByText('bicis disponibles')).not.toBeInTheDocument();
+    expect(within(region).getByText(FOOTER)).toHaveTextContent('Actualizado hace 5 minutos');
+  });
+
+  it('dates the station at its foot', async () => {
+    await renderCard();
+
+    const region = await card('Puerta del Sol A');
+    expect(within(region).getByText(FOOTER)).toHaveTextContent('Actualizado hace 5 minutos');
+  });
+
+  it('gives the time and age of unconfirmed data at its foot', async () => {
+    respondStaleStation();
+    await renderCard();
+
+    const region = await card('Puerta del Sol A');
+    expect(
+      await within(region).findByText(
+        `Último dato: ${formatClock(new Date(stationsFixture.updatedAt))} · hace 5 min`,
+      ),
+    ).toBeInTheDocument();
   });
 
   it('offers a retry when the station cannot be loaded', async () => {
@@ -192,12 +241,39 @@ describe('StationCard', () => {
     );
     expect(within(region).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
     expect(within(region).getByRole('button', { name: 'Cerrar' })).toBeInTheDocument();
+    expect(within(region).getByRole('alert')).toHaveTextContent(
+      'El servicio de BiciMAD no está respondiendo. Suele ser temporal.',
+    );
+    expect(within(region).queryByText(FOOTER)).not.toBeInTheDocument();
+  });
+
+  it('keeps «Reintentar» busy while it asks again', async () => {
+    failEverything();
+    await renderCard();
+    const region = await card('Estación 1a');
+    await within(region).findByRole('alert');
+    server.use(http.get(STATION_URL, () => delay('infinite')));
+
+    const retry = within(region).getByRole('button', { name: 'Reintentar' });
+    await userEvent.click(retry);
+
+    expect(retry).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('has no axe violations when the station cannot be loaded', async () => {
+    failEverything();
+    const { container } = await renderCard();
+    await within(await card('Estación 1a')).findByRole('alert');
+    vi.useRealTimers();
+
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 
   it.each([
     { state: 'normal', entry: '/?station=1a', name: 'Puerta del Sol A', stale: false },
     { state: 'unconfirmed', entry: '/?station=1a', name: 'Puerta del Sol A', stale: true },
-    { state: 'not found', entry: '/?station=999', name: 'Estación 999', stale: false },
+    { state: 'not found', entry: '/?station=999', name: 'Estación no encontrada', stale: false },
+    { state: 'out of service', entry: '/?station=2', name: 'Miguel Moya', stale: false },
   ])('has no axe violations when $state', async ({ entry, name, stale }) => {
     if (stale) respondStaleStation();
     const { container } = await renderCard(entry);

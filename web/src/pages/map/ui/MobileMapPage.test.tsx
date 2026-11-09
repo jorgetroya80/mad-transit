@@ -286,4 +286,13 @@ describe('MobileMapPage', () => {
     expect(screen.getByRole('button', { name: 'Ver estaciones cercanas' })).toBeInTheDocument();
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
+  it('leaves a missing station from its body, focusing the list as the arrow does (SC6)', async () => {
+    await renderPage('/?station=999');
+    const body = (await screen.findByRole('alert')).closest('div');
+    if (!body) throw new Error('The alert has no body around it');
+
+    await userEvent.click(within(body).getByRole('button', { name: 'Volver a la lista' }));
+
+    expect(await screen.findByRole('heading', { name: 'Cercanas' })).toHaveFocus();
+  });
 });

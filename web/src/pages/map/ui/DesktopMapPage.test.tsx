@@ -525,4 +525,19 @@ describe('DesktopMapPage', () => {
     expect(screen.getByRole('button', { name: 'Ver estaciones cercanas' })).toBeInTheDocument();
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
+  it.each([
+    { how: '«Cerrar»', name: 'Cerrar' },
+    { how: '«Volver a la lista»', name: 'Volver a la lista' },
+  ])('leaves a missing station with $how, focusing the list (SC6)', async ({ name }) => {
+    const { router } = await renderPage('/?station=999');
+    const card = await screen.findByRole('region', { name: 'Estación no encontrada' });
+    await within(card).findByRole('alert');
+
+    await userEvent.click(within(card).getByRole('button', { name }));
+
+    expect(router.state.location.search.station).toBeUndefined();
+    await waitFor(() =>
+      expect(within(panel()).getByRole('heading', { name: 'Cerca de ti' })).toHaveFocus(),
+    );
+  });
 });

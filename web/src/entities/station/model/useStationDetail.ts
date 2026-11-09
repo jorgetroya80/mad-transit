@@ -11,7 +11,8 @@ export type StationDetailState =
       // Undefined without data from the detail or the full list.
       station: Station | undefined;
       updatedAt: Date | undefined;
-      retry: () => void;
+      // Returns the refetch promise, so «Reintentar» can show the request as busy.
+      retry: () => unknown;
     };
 
 function findStation(stations: readonly Station[] | undefined, number: string) {

@@ -7,6 +7,7 @@ import { useSelectedStation } from '@/features/select-station';
 import { stationsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env, STATIONS_STORAGE_KEY } from '@/shared/config';
+import { formatClock } from '@/shared/lib';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { StationSheetBody, StationSheetHeader } from './StationSheet';
@@ -236,17 +237,30 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(screen.getByText(/^Actualizado/)).toHaveTextContent('Actualizado ahora');
   });
 
-  it('says the station does not exist after a single request, and still goes back', async () => {
+  it('says the station does not exist after a single request, and still goes back (SC6)', async () => {
     const requests = recordDetailRequests();
     await renderSheet('/?station=999');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Estación no encontrada');
-    expect(await title('Estación 999')).toBeInTheDocument();
-    expect(backButton()).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No hay ninguna estación de BiciMAD con el número 999. Puede que el enlace sea antiguo o que la estación se haya retirado.',
+    );
+    expect(await title('Estación no encontrada')).toBeInTheDocument();
+    expect(within(sheet()).getByText('Estación 999')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Volver a la lista' })).toHaveLength(2);
     expect(screen.queryByRole('button', { name: 'Favorita' })).not.toBeInTheDocument();
     expect(screen.queryByText(/^Actualizado/)).not.toBeInTheDocument();
     await vi.advanceTimersByTimeAsync(RETRY_WINDOW_MS);
     expect(requests).toHaveLength(1);
+  });
+
+  it('goes back to the list from the body of a missing station', async () => {
+    const { router } = await renderSheet('/?station=999');
+    const body = (await screen.findByRole('alert')).closest('div');
+    if (!body) throw new Error('The alert has no body around it');
+
+    await user.click(within(body).getByRole('button', { name: 'Volver a la lista' }));
+
+    expect(searchOf(router).station).toBeUndefined();
   });
 
   it('says a station is missing even when the full list still has it', async () => {
@@ -259,7 +273,36 @@ describe('StationSheetHeader and StationSheetBody', () => {
 
     await renderSheet();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Estación no encontrada');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No hay ninguna estación de BiciMAD con el número 1a.',
+    );
+    expect(await title('Estación no encontrada')).toBeInTheDocument();
+  });
+
+  it('says a station out of service cannot be used, and dates it (SC6)', async () => {
+    await renderSheet('/?station=2');
+    await title('Miguel Moya');
+
+    expect(within(sheet()).getByRole('status')).toHaveTextContent(
+      'Fuera de servicio No se pueden sacar ni dejar bicis.',
+    );
+    expect(within(sheet()).queryByText('bicis disponibles')).not.toBeInTheDocument();
+    expect(within(sheet()).getByText(/^Actualizado/)).toHaveTextContent(
+      'Actualizado hace 5 minutos',
+    );
+  });
+
+  it('gives the time and age of unconfirmed data instead of the update time', async () => {
+    stationJson({ stale: true });
+    await renderSheet();
+    await title();
+
+    expect(
+      await within(sheet()).findByText(
+        `Último dato: ${formatClock(new Date(stationsFixture.updatedAt))} · hace 5 min`,
+      ),
+    ).toBeInTheDocument();
+    expect(within(sheet()).queryByText(/^Actualizado/)).not.toBeInTheDocument();
   });
 
   it('shows an error and retries on demand', async () => {
@@ -269,6 +312,10 @@ describe('StationSheetHeader and StationSheetBody', () => {
 
     const alert = await screen.findByRole('alert', {}, AFTER_RETRY);
     expect(alert).toHaveTextContent('No se pudo cargar la estación');
+    expect(alert).toHaveTextContent(
+      'El servicio de BiciMAD no está respondiendo. Suele ser temporal.',
+    );
+    expect(screen.queryByText(/^(Actualizado|Último dato)/)).not.toBeInTheDocument();
     expect(await title('Estación 1a')).toBeInTheDocument();
     expect(backButton()).toBeInTheDocument();
 
@@ -320,10 +367,21 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(within(alert).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
   });
 
+  it('has no axe violations when the station cannot be loaded', async () => {
+    failStation();
+    failAllStations();
+    const { container } = await renderSheet();
+    await screen.findByRole('alert', {}, AFTER_RETRY);
+    vi.useRealTimers();
+
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+
   it.each([
     { state: 'normal', entry: '/?station=1a', name: 'Puerta del Sol A', stale: false },
     { state: 'unconfirmed', entry: '/?station=1a', name: 'Puerta del Sol A', stale: true },
-    { state: 'not found', entry: '/?station=999', name: 'Estación 999', stale: false },
+    { state: 'not found', entry: '/?station=999', name: 'Estación no encontrada', stale: false },
+    { state: 'out of service', entry: '/?station=2', name: 'Miguel Moya', stale: false },
   ])('has no axe violations when $state', async ({ entry, name, stale }) => {
     if (stale) stationJson({ stale: true });
     const { container } = await renderSheet(entry);

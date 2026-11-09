@@ -1,9 +1,11 @@
 import type { Ref } from 'react';
 import { type Coordinates, useStationDetail } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
-import { DataAttribution, UpdatedAt } from '@/shared/ui';
+import { DataAttribution } from '@/shared/ui';
+import { cardHeading } from '../model/cardHeading';
 import { useCloseOnEscape } from '../model/useCloseOnEscape';
 import { CardBody } from './CardBody';
+import { CardFooter } from './CardFooter';
 import { SheetCardHeader } from './SheetCardHeader';
 
 // The station card inside the mobile sheet, in two pieces: the header row goes in the sheet's
@@ -22,13 +24,11 @@ export function StationSheetHeader({ number, center, headingRef }: StationSheetH
   const detail = useStationDetail(number);
   const { clear } = useSelectedStation();
   const escapeRef = useCloseOnEscape(clear);
-  const station = detail.status === 'not-found' ? undefined : detail.station;
 
   return (
     <div ref={escapeRef} className="px-4 pb-3">
       <SheetCardHeader
-        number={number}
-        station={station}
+        heading={cardHeading(number, detail)}
         center={center}
         onBack={clear}
         headingRef={headingRef}
@@ -45,12 +45,11 @@ export function StationSheetBody({ number }: StationSheetBodyProps) {
   const detail = useStationDetail(number);
   const { clear } = useSelectedStation();
   const escapeRef = useCloseOnEscape(clear);
-  const updatedAt = detail.status !== 'not-found' && detail.station ? detail.updatedAt : undefined;
 
   return (
     <div ref={escapeRef} className="flex min-h-full flex-col gap-3">
-      <CardBody detail={detail} />
-      {updatedAt ? <UpdatedAt date={updatedAt} /> : null}
+      <CardBody number={number} detail={detail} onClose={clear} />
+      <CardFooter detail={detail} />
       <footer className="mt-auto">
         <DataAttribution />
       </footer>

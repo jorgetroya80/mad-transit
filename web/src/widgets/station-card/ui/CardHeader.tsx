@@ -1,32 +1,32 @@
-import type { Coordinates, Station } from '@/entities/station';
+import type { Coordinates } from '@/entities/station';
 import { FavoriteButton } from '@/features/toggle-favorite';
 import { CloseIcon } from '@/shared/ui';
+import type { CardHeading } from '../model/cardHeading';
 import { StationMeta } from './StationMeta';
 
 type CardHeaderProps = {
   headingId: string;
-  number: string;
-  // Undefined while loading, when not found and on error: the heading falls back to the number.
-  station: Station | undefined;
+  heading: CardHeading;
   center: Coordinates | undefined;
   onClose: () => void;
 };
 
 // Two rows: meta and «Cerrar» on top, the name and its star below. The DOM order (meta, name,
 // Cerrar, star) keeps the reading order and makes Tab follow the buttons top to bottom.
-export function CardHeader({ headingId, number, station, center, onClose }: CardHeaderProps) {
+export function CardHeader({ headingId, heading, center, onClose }: CardHeaderProps) {
+  const { title, metaNumber, station } = heading;
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2">
-      {station ? (
+      {metaNumber ? (
         <div className="col-start-1 row-start-1 self-center">
-          <StationMeta number={station.number} center={center} />
+          <StationMeta number={metaNumber} center={station ? center : undefined} />
         </div>
       ) : null}
       <h2
         id={headingId}
-        className={`col-start-1 self-center text-lg leading-tight font-bold break-words text-fg ${station ? 'row-start-2' : 'row-start-1'}`}
+        className={`col-start-1 self-center text-lg leading-tight font-bold break-words text-fg ${metaNumber ? 'row-start-2' : 'row-start-1'}`}
       >
-        {station?.name ?? `Estación ${number}`}
+        {title}
       </h2>
       <button
         type="button"
