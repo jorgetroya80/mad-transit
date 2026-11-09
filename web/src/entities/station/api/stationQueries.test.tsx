@@ -334,6 +334,27 @@ describe('polling and retries', () => {
     await expectNextRequestAfter(urls, FIRST_RETRY_MS ?? 0);
   });
 
+  it('exposes the wait it applies, so a countdown can show it', async () => {
+    const urls = recordRequests();
+    const { result } = renderHook(() => useAllStations(), { wrapper: createWrapper() });
+    await vi.waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.retryDelayMs).toBe(POLL_INTERVAL_MS);
+    failStations();
+
+    let waitMs = POLL_INTERVAL_MS;
+    for (const nextWaitMs of [FIRST_RETRY_MS, SECOND_RETRY_MS, LAST_RETRY_MS]) {
+      await expectNextRequestAfter(urls, waitMs);
+      await settled(result);
+      expect(result.current.retryDelayMs).toBe(nextWaitMs);
+      waitMs = nextWaitMs;
+    }
+
+    await act(async () => {
+      await result.current.refetch();
+    });
+    expect(result.current.retryDelayMs).toBe(FIRST_RETRY_MS);
+  });
+
   it('does not poll while the tab is hidden', async () => {
     const urls = recordRequests();
     const { result } = renderHook(() => useAllStations(), { wrapper: createWrapper() });

@@ -34,31 +34,44 @@ function consecutiveFailures(query: PacedQuery): number {
 
 // Every 30 s while the requests succeed; after a failure, 30, 60 and then 120 s until one succeeds.
 // The interval restarts on every query update, so each wait counts from the last answer.
-function pollInterval(query: PacedQuery): number {
+function retryDelayMs(query: PacedQuery): number {
   const failures = consecutiveFailures(query);
   if (failures === 0) return POLL_INTERVAL_MS;
   return RETRY_DELAYS_MS[Math.min(failures, RETRY_DELAYS_MS.length) - 1] ?? POLL_INTERVAL_MS;
 }
 
+// retryDelayMs is the wait before the next automatic request, the same one refetchInterval uses,
+// so a countdown cannot drift from the real retry.
+type PacedQueryResult<TData> = UseQueryResult<TData> & { retryDelayMs: number };
+
 // «Reintentar» asks at once and restarts the wait at 30 s even if that request fails too. A Proxy
-// swaps refetch without reading every field, which would defeat TanStack's tracked re-renders.
+// swaps refetch and adds retryDelayMs without reading every field, which would defeat TanStack's
+// tracked re-renders.
 function useRestartingRefetch<TData>(
   result: UseQueryResult<TData>,
   queryKey: QueryKey,
-): UseQueryResult<TData> {
+): PacedQueryResult<TData> {
   const queryClient = useQueryClient();
+  const findQuery = () => queryClient.getQueryCache().find({ queryKey, exact: true });
   const refetch: typeof result.refetch = (options) => {
-    const query = queryClient.getQueryCache().find({ queryKey, exact: true });
+    const query = findQuery();
     if (query) waitStart.set(query, query.state.errorUpdateCount);
     return result.refetch(options);
   };
-  return new Proxy(result, {
-    get: (target, property, receiver) =>
-      property === 'refetch' ? refetch : Reflect.get(target, property, receiver),
+  const currentDelayMs = () => {
+    const query = findQuery();
+    return query ? retryDelayMs(query) : POLL_INTERVAL_MS;
+  };
+  return new Proxy(result as PacedQueryResult<TData>, {
+    get: (target, property, receiver) => {
+      if (property === 'refetch') return refetch;
+      if (property === 'retryDelayMs') return currentDelayMs();
+      return Reflect.get(target, property, receiver);
+    },
   });
 }
 
-// Failures are not retried at once: pollInterval paces the next attempt. A missing station
+// Failures are not retried at once: retryDelayMs paces the next attempt. A missing station
 // follows the same pace, so it is asked for again slower and slower.
 export function useAllStations() {
   const queryKey = stationKeys.all();
@@ -74,7 +87,7 @@ export function useAllStations() {
     initialData: () => readAllStations()?.response,
     initialDataUpdatedAt: () => readAllStations()?.savedAt,
     retry: 0,
-    refetchInterval: pollInterval,
+    refetchInterval: retryDelayMs,
   });
   return useRestartingRefetch(result, queryKey);
 }
@@ -112,7 +125,7 @@ export function useNearbyStations(center: Coordinates | undefined, need: Need) {
     queryFn: center ? ({ signal }) => fetchAndSaveNearby(center, need, signal) : skipToken,
     placeholderData: nearbyPlaceholders[need],
     retry: 0,
-    refetchInterval: pollInterval,
+    refetchInterval: retryDelayMs,
   });
   return useRestartingRefetch(result, queryKey);
 }
@@ -123,7 +136,7 @@ export function useStation(number: string | undefined) {
     queryKey,
     queryFn: number ? ({ signal }) => fetchStation({ number, signal }) : skipToken,
     retry: 0,
-    refetchInterval: pollInterval,
+    refetchInterval: retryDelayMs,
   });
   return useRestartingRefetch(result, queryKey);
 }

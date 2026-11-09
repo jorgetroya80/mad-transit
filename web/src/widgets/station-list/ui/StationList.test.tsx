@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import type { StationsResponse } from '@jorgetroya80/mad-transit-client';
 import type { Coordinates } from '@/entities/station';
 import {
@@ -16,6 +16,7 @@ import {
   FAVORITES_STORAGE_KEY,
   NEARBY_STORAGE_KEYS,
   POLL_INTERVAL_MS,
+  RETRY_DELAYS_MS,
 } from '@/shared/config';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
@@ -30,6 +31,9 @@ const NOW = new Date('2026-10-13T10:20:00Z');
 // fake clock that `shouldAdvanceTime` moves along with real time.
 const AFTER_RETRY = { timeout: 3_000 };
 const UNAVAILABLE = 503;
+const SERVICE_ERROR_TITLE = 'No podemos cargar las estaciones';
+const SERVICE_ERROR_BODY =
+  'El servicio de BiciMAD no está respondiendo. Suele ser temporal; no es un problema de tu conexión.';
 
 function respondNearby(resolver: () => Response) {
   server.use(
@@ -437,15 +441,101 @@ describe('StationList', () => {
     await renderList();
 
     const alert = await screen.findByRole('alert', {}, AFTER_RETRY);
-    expect(alert).toHaveTextContent('No se pudieron cargar las estaciones cercanas');
+    expect(alert).toHaveTextContent(SERVICE_ERROR_TITLE);
+    expect(alert).toHaveTextContent(SERVICE_ERROR_BODY);
     const attemptsBeforeRetry = requests.length;
 
     nearbyJson(nearbyStationsFixture);
-    await user.click(within(alert).getByRole('button', { name: 'Reintentar' }));
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
 
     expect(await screen.findByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
     expect(requests.length).toBeGreaterThan(attemptsBeforeRetry);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  describe('countdown to the next automatic retry (SC1)', () => {
+    const [FIRST_RETRY_MS, SECOND_RETRY_MS, LAST_RETRY_MS] = RETRY_DELAYS_MS;
+    const SECOND_MS = 1000;
+
+    function countdown(seconds: number) {
+      return `Volveremos a intentarlo solos en ${seconds} s.`;
+    }
+
+    async function showsCountdown(seconds: number) {
+      return screen.findByText(countdown(seconds), {}, AFTER_RETRY);
+    }
+
+    // The footer says one second is left until the request goes out, and not before.
+    async function expectRetryWhenCountdownEnds(requests: URL[], waitMs: number) {
+      const before = requests.length;
+      await vi.advanceTimersByTimeAsync(waitMs - SECOND_MS);
+      expect(screen.getByText(countdown(1))).toBeInTheDocument();
+      expect(requests).toHaveLength(before);
+      await vi.advanceTimersByTimeAsync(SECOND_MS);
+      await waitFor(() => expect(requests).toHaveLength(before + 1));
+    }
+
+    it('counts down 30, 60 and then 120 s after one, two and three failures', async () => {
+      const requests = recordNearbyRequests();
+      failNearby();
+
+      await renderList();
+
+      for (const [waitMs, nextWaitMs] of [
+        [FIRST_RETRY_MS, SECOND_RETRY_MS],
+        [SECOND_RETRY_MS, LAST_RETRY_MS],
+      ] as const) {
+        expect(await showsCountdown(waitMs / SECOND_MS)).toBeInTheDocument();
+        await expectRetryWhenCountdownEnds(requests, waitMs);
+        expect(await showsCountdown(nextWaitMs / SECOND_MS)).toBeInTheDocument();
+      }
+    });
+
+    it('says it is trying again while a request is in flight', async () => {
+      failNearby();
+      await renderList();
+      await showsCountdown(FIRST_RETRY_MS / SECOND_MS);
+      server.use(http.get(STATIONS_URL, () => delay('infinite')));
+
+      await vi.advanceTimersByTimeAsync(FIRST_RETRY_MS);
+
+      expect(await screen.findByText('Intentándolo de nuevo…')).toBeInTheDocument();
+      expect(screen.queryByText(/Volveremos a intentarlo/)).not.toBeInTheDocument();
+    });
+
+    it('keeps the countdown out of the alert', async () => {
+      failNearby();
+      await renderList();
+
+      const footer = await showsCountdown(FIRST_RETRY_MS / SECOND_MS);
+
+      expect(screen.getByRole('alert')).not.toContainElement(footer);
+      expect(footer).toHaveAttribute('aria-live', 'off');
+    });
+
+    it('asks at once on «Reintentar» and restarts the wait at 30 s', async () => {
+      const requests = recordNearbyRequests();
+      failNearby();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await renderList();
+      await showsCountdown(FIRST_RETRY_MS / SECOND_MS);
+      await expectRetryWhenCountdownEnds(requests, FIRST_RETRY_MS);
+      await showsCountdown(SECOND_RETRY_MS / SECOND_MS);
+      const before = requests.length;
+
+      await user.click(screen.getByRole('button', { name: 'Reintentar' }));
+
+      await waitFor(() => expect(requests).toHaveLength(before + 1));
+      expect(await showsCountdown(FIRST_RETRY_MS / SECOND_MS)).toBeInTheDocument();
+    });
+
+    it('has no axe violations', async () => {
+      failNearby();
+      const { container } = await renderList();
+      await showsCountdown(FIRST_RETRY_MS / SECOND_MS);
+
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
   });
 
   it('keeps the rows when a later refresh fails', async () => {
@@ -565,8 +655,9 @@ describe('StationList', () => {
     await renderList();
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('No se pudieron cargar las estaciones cercanas');
-    expect(within(alert).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(alert).toHaveTextContent(SERVICE_ERROR_TITLE);
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(screen.queryByText(/Volveremos a intentarlo/)).not.toBeInTheDocument();
   });
 
   it('shows the saved nearby list while the location is pending', async () => {

@@ -21,9 +21,10 @@ Fuente: [docs/ideas/bicimad-now.md](../ideas/bicimad-now.md). Cada módulo tiene
 | `web-redesign-components` | Piezas del rediseño que ya existen, evolucionadas en su sitio: insignia con etiqueta, fila de estación, selector de modo «Sacar bici / Dejar bici», buscador con ayuda y botón de borrar, avisos y puntos del mapa de 40 px; tests de accesibilidad con `vitest-axe` | web-design-tokens, web-data-state | [SPEC-web-redesign-components.md](SPEC-web-redesign-components.md) | implemented |
 | `web-redesign-desktop` | Pantalla de escritorio (≥ 768 px): cabecera con indicador de actualización, panel lateral de 420 px con la lista siempre visible, tarjeta de estación sobre el mapa, favoritas plegables, leyenda y controles del mapa | web-redesign-components | [SPEC-web-redesign-desktop.md](SPEC-web-redesign-desktop.md) | implemented |
 | `web-redesign-mobile` | Pantalla móvil (< 768 px): buscador flotante, modo en píldora, botón de centrar y bottom sheet con tres alturas por toques | web-redesign-desktop | [SPEC-web-redesign-mobile.md](SPEC-web-redesign-mobile.md) | implemented |
-| `web-error-states` | Estados `error`, `stale`, `offline` y búsqueda sin resultados en las dos pantallas | web-redesign-desktop, web-redesign-mobile | — | — |
+| `web-error-states` | Estados `error`, `stale`, `offline` y búsqueda sin resultados en las dos pantallas | web-redesign-desktop, web-redesign-mobile | [SPEC-web-error-states.md](SPEC-web-error-states.md) | approved |
 | `web-sheet-drag` | Arrastre del bottom sheet con imantado a la altura más cercana (opcional) | web-redesign-mobile | — | — |
 | `web-offline-shell` | Service worker propio (plugin de Vite, sin dependencias) que guarda la app para abrirla sin conexión con la caché de estaciones | web-data-state | — | — |
+| `web-crash-screen` | Pantalla «Algo ha fallado» con «Recargar» en el `errorComponent` de TanStack Router, para que un error de render (un bug, no un fallo de datos) no deje la página en blanco; sin dependencias (pendiente de revisar, 2026-11-09) | web-design-tokens | — | — |
 
 ## Orden de construcción
 
@@ -32,6 +33,7 @@ foundation -> api-core -> api-bicimad -> web-shell -> web-bicimad -> deploy
 web-bicimad -> web-design-tokens -> web-data-state -> web-redesign-components -> web-redesign-desktop -> web-redesign-mobile -> web-error-states -> web-bus
 web-redesign-mobile -> web-sheet-drag
 web-data-state -> web-offline-shell
+web-design-tokens -> web-crash-screen
 api-core -> api-bus -> (release del cliente) -> web-bus
 ```
 

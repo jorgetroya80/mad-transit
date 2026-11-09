@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
-import { NOW_TICK_MS, STALE_AFTER_MS } from '@/shared/config';
+import { NOW_TICK_MS, POLL_INTERVAL_MS, RETRY_DELAYS_MS, STALE_AFTER_MS } from '@/shared/config';
 import { useDataStatus } from './useDataStatus';
 
 const START = new Date('2026-10-31T10:00:00Z');
@@ -12,6 +12,9 @@ function query(overrides: Partial<Query> = {}): Query {
     data: { updatedAt: START.toISOString(), stale: false },
     isError: false,
     dataUpdatedAt: START.getTime(),
+    errorUpdatedAt: 0,
+    isFetching: false,
+    retryDelayMs: POLL_INTERVAL_MS,
     refetch: vi.fn<() => void>(),
     ...overrides,
   };
@@ -112,5 +115,50 @@ describe('useDataStatus', () => {
     const { result } = renderHook(() => useDataStatus(query({ refetch: () => pending })));
 
     expect(result.current.retry()).toBe(pending);
+  });
+
+  it.each(RETRY_DELAYS_MS.map((retryDelayMs, index) => ({ failures: index + 1, retryDelayMs })))(
+    'retries $retryDelayMs ms after the last failure, after $failures failures',
+    ({ retryDelayMs }) => {
+      const failedAt = START.getTime() - 1000;
+      const { result } = renderHook(() =>
+        useDataStatus(query({ isError: true, errorUpdatedAt: failedAt, retryDelayMs })),
+      );
+
+      expect(result.current.nextRetryAt).toEqual(new Date(failedAt + retryDelayMs));
+    },
+  );
+
+  it('has no retry time once the last request succeeded', () => {
+    const { result } = renderHook(() =>
+      useDataStatus(query({ errorUpdatedAt: START.getTime() - 60_000 })),
+    );
+
+    expect(result.current.nextRetryAt).toBeUndefined();
+  });
+
+  it('keeps the failure while it asks again without data, though TanStack is pending again', () => {
+    const failedAt = START.getTime() - 1000;
+    const { result } = renderHook(() =>
+      useDataStatus(
+        query({ data: undefined, dataUpdatedAt: 0, errorUpdatedAt: failedAt, isFetching: true }),
+      ),
+    );
+
+    expect(result.current.status).toBe('error');
+    expect(result.current.isRetrying).toBe(true);
+  });
+
+  it.each([
+    { case: 'after a failure', isError: true, isFetching: true, isRetrying: true },
+    { case: 'between retries', isError: true, isFetching: false, isRetrying: false },
+    { case: 'after a success', isError: false, isFetching: true, isRetrying: false },
+  ])('is retrying $isRetrying while asking $case', ({ isError, isFetching, isRetrying }) => {
+    const errorUpdatedAt = isError ? START.getTime() : 0;
+    const { result } = renderHook(() =>
+      useDataStatus(query({ isError, isFetching, errorUpdatedAt })),
+    );
+
+    expect(result.current.isRetrying).toBe(isRetrying);
   });
 });
