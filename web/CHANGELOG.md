@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.9.0...web-v0.10.0) (2026-11-09)
+
+
+### Features
+
+* **web:** show the design's error states ([#107](https://github.com/jorgetroya80/mad-transit/issues/107)) ([5bc6bab](https://github.com/jorgetroya80/mad-transit/commit/5bc6babb74774357abcd03c578082f83c454b1eb))
+
 ## [0.9.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.8.1...web-v0.9.0) (2026-11-03)
 
 
