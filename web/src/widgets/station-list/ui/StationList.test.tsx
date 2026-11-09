@@ -330,6 +330,19 @@ describe('StationList', () => {
       return { view, onLocate };
     }
 
+    it('leads the stale notice with the age of the data', async () => {
+      nearbyJson({
+        ...nearbyStationsFixture,
+        updatedAt: staleStationsFixture.updatedAt,
+        stale: true,
+      });
+      await renderMobileList().view;
+
+      expect(await findStaleNotice()).toHaveTextContent(
+        'Datos de hace 35 min. No hemos podido actualizar; puede que ya no sean exactos.',
+      );
+    });
+
     it('keeps «Cercanas» offline: the sheet header says the list is the saved one', async () => {
       await renderMobileList().view;
       await screen.findByRole('button', { name: /^Estación 1a/ });
@@ -583,15 +596,67 @@ describe('StationList', () => {
 
     await renderList();
 
-    expect(await findStaleNotice()).toHaveTextContent('Sin confirmar: datos de hace 35 minutos');
+    expect(await findStaleNotice()).toHaveTextContent(
+      `Mostramos los datos de las ${formatClock(new Date(staleStationsFixture.updatedAt))}`,
+    );
   });
 
-  it('warns without a time about stale data that just arrived with an invalid updatedAt', async () => {
+  it('dates stale data with an invalid updatedAt by the full list, the older one', async () => {
     nearbyJson({ ...nearbyStationsFixture, updatedAt: 'nope', stale: true });
 
     await renderList();
 
-    expect(await findStaleNotice()).toHaveTextContent(/^Sin confirmar$/);
+    expect(await findStaleNotice()).toHaveTextContent(
+      `Mostramos los datos de las ${formatClock(new Date(stationsFixture.updatedAt))}`,
+    );
+  });
+
+  it('warns when only the full list is stale, by the time of its data (SC3)', async () => {
+    server.use(
+      http.get(STATIONS_URL, ({ request }) =>
+        HttpResponse.json(
+          new URL(request.url).searchParams.has('near')
+            ? nearbyStationsFixture
+            : staleStationsFixture,
+        ),
+      ),
+    );
+
+    await renderList();
+
+    expect(await findStaleNotice()).toHaveTextContent(
+      `Mostramos los datos de las ${formatClock(new Date(staleStationsFixture.updatedAt))}`,
+    );
+  });
+
+  it('asks for both lists again from the stale notice, busy until they answer', async () => {
+    nearbyJson({ ...nearbyStationsFixture, stale: true });
+    await renderList();
+    const notice = await findStaleNotice();
+    const requests = recordAllRequests();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    await user.click(within(notice).getByRole('button', { name: 'Reintentar' }));
+
+    await waitFor(() =>
+      expect(requests.map((url) => url.searchParams.has('near')).sort()).toEqual([false, true]),
+    );
+    await waitFor(() =>
+      expect(within(notice).getByRole('button', { name: 'Reintentar' })).not.toHaveAttribute(
+        'aria-busy',
+      ),
+    );
+  });
+
+  it('leaves stale data to the offline notice once the connection drops', async () => {
+    nearbyJson({ ...nearbyStationsFixture, stale: true });
+    await renderList();
+    await findStaleNotice();
+
+    act(() => onlineManager.setOnline(false));
+
+    await nearbyRegion(SAVED_TITLE);
+    expect(screen.queryByText(/No hemos podido actualizar/)).not.toBeInTheDocument();
   });
 
   it('greys out the counts of unconfirmed data', async () => {
@@ -625,6 +690,7 @@ describe('StationList', () => {
     await screen.findByRole('button', { name: /^Estación 1a/ });
 
     expect(screen.queryByText(/Sin confirmar/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No hemos podido actualizar/)).not.toBeInTheDocument();
   });
 
   it('marks the list unconfirmed once the data is over 5 min old', async () => {

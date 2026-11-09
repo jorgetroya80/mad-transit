@@ -302,4 +302,40 @@ describe('StationsMap', () => {
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });
   });
+
+  describe('unconfirmed legend', () => {
+    const LEGEND = 'Gris = dato sin confirmar';
+
+    function serveStale() {
+      server.use(http.get(STATIONS_URL, () => HttpResponse.json(staleStationsFixture)));
+    }
+
+    it('explains the grey points on desktop when the data is unconfirmed, hidden from assistive technology (SC3)', async () => {
+      serveStale();
+      await renderMap();
+      await waitForPoints();
+
+      const legend = screen.getByText(LEGEND).parentElement;
+      expect(legend).toHaveAttribute('aria-hidden', 'true');
+      expect(legend).toHaveClass('pointer-events-none', 'bottom-4', 'left-4');
+    });
+
+    it('has no legend on mobile, where the list says it', async () => {
+      serveStale();
+      await renderWithRouter(<StationsMap layout="mobile" center={SOL} userLocation={USER} />);
+      await waitForPoints();
+
+      expect(screen.queryByText(LEGEND)).not.toBeInTheDocument();
+    });
+
+    it('has no legend with confirmed data, nor offline, where the layer covers the map', async () => {
+      await renderMap();
+      await waitForPoints();
+      expect(screen.queryByText(LEGEND)).not.toBeInTheDocument();
+
+      act(() => onlineManager.setOnline(false));
+
+      expect(screen.queryByText(LEGEND)).not.toBeInTheDocument();
+    });
+  });
 });

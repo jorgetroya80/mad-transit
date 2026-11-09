@@ -1,3 +1,6 @@
+import { nearbyStationsFixture, staleStationsFixture } from '@/shared/api/mocks/fixtures';
+import { formatClock } from '@/shared/lib';
+import { findStaleNotice } from '../../../../test/staleNotice';
 import { onlineManager } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/shared/api/mocks/node';
@@ -481,6 +484,33 @@ describe('DesktopMapPage', () => {
       expect(await nearbyRow('1a')).toBeInTheDocument();
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
       expect(screen.queryByRole('region', { name: 'Últimos datos guardados' })).toBeNull();
+    });
+  });
+  describe('stale', () => {
+    function serveStaleFullList() {
+      server.use(
+        http.get(`${env.apiBaseUrl}/v1/bicimad/stations`, ({ request }) =>
+          HttpResponse.json(
+            new URL(request.url).searchParams.has('near')
+              ? nearbyStationsFixture
+              : staleStationsFixture,
+          ),
+        ),
+      );
+    }
+
+    it('warns in the panel with the time and a retry, and explains the grey points (SC3)', async () => {
+      serveStaleFullList();
+      const { container } = await renderPage();
+
+      const notice = await findStaleNotice();
+      expect(panel()).toContainElement(notice);
+      expect(notice).toHaveTextContent(
+        `No hemos podido actualizar. Mostramos los datos de las ${formatClock(new Date(staleStationsFixture.updatedAt))}; puede que ya no sean exactos.`,
+      );
+      expect(within(notice).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+      expect(screen.getByText('Gris = dato sin confirmar')).toBeInTheDocument();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });
   });
 });

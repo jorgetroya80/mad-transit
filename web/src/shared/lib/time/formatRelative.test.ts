@@ -1,4 +1,4 @@
-import { formatRelative, isJustNow } from './formatRelative';
+import { formatMinutesAgo, formatRelative, isJustNow } from './formatRelative';
 
 const NOW = new Date('2026-10-13T10:00:00Z');
 
@@ -41,5 +41,18 @@ describe('isJustNow', () => {
 
   it('is false one second ago', () => {
     expect(isJustNow(secondsAgo(1), NOW)).toBe(false);
+  });
+});
+
+describe('formatMinutesAgo', () => {
+  it.each([
+    { seconds: 0, text: 'hace menos de 1 min' },
+    { seconds: 59, text: 'hace menos de 1 min' },
+    { seconds: -10, text: 'hace menos de 1 min' },
+    { seconds: 60, text: 'hace 1 min' },
+    { seconds: 12 * 60 + 29, text: 'hace 12 min' },
+    { seconds: 12 * 60 + 30, text: 'hace 13 min' },
+  ])('says «$text» $seconds s ago', ({ seconds, text }) => {
+    expect(formatMinutesAgo(secondsAgo(seconds), NOW)).toBe(text);
   });
 });

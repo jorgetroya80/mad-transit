@@ -46,9 +46,25 @@ function OfflineLayer({ hasData, layout }: Omit<MapNoticeProps, 'status'>) {
   );
 }
 
+// Bottom left, clear of the attribution and the controls on the right. The rows already say
+// «sin confirmar» in words, so this is for sighted users only.
+function UnconfirmedLegend() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 text-sm text-fg shadow-float"
+    >
+      <span className="size-3 rounded-full border border-availability-unconfirmed-line bg-availability-unconfirmed" />
+      <span>Gris = dato sin confirmar</span>
+    </div>
+  );
+}
+
+// Offline, the layer hides the grey points, so the legend only comes with stale data.
 export function MapNotice({ status, hasData, layout }: MapNoticeProps) {
   if (status === 'offline') return <OfflineLayer hasData={hasData} layout={layout} />;
   // With data a failure reads as stale, not error: error always means an empty map.
   if (status === 'error') return <ServiceNotice layout={layout} />;
+  if (status === 'stale' && layout === 'desktop') return <UnconfirmedLegend />;
   return null;
 }

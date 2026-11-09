@@ -1,3 +1,10 @@
+import {
+  nearbyStationsFixture,
+  staleStationsFixture,
+  stationsFixture,
+} from '@/shared/api/mocks/fixtures';
+import { formatClock } from '@/shared/lib';
+import { findStaleNotice } from '../../../../test/staleNotice';
 import { onlineManager } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/shared/api/mocks/node';
@@ -241,6 +248,30 @@ describe('MobileMapPage', () => {
 
       await screen.findByRole('heading', { level: 2, name: /estaciones con bicis$/ });
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
+  describe('stale', () => {
+    it('warns with the age, and turns the sheet subtitle amber with the time (SC3)', async () => {
+      server.use(
+        http.get(`${env.apiBaseUrl}/v1/bicimad/stations`, ({ request }) =>
+          HttpResponse.json(
+            new URL(request.url).searchParams.has('near')
+              ? { ...nearbyStationsFixture, updatedAt: staleStationsFixture.updatedAt, stale: true }
+              : stationsFixture,
+          ),
+        ),
+      );
+      const { container } = await renderPage();
+      const updatedAt = new Date(staleStationsFixture.updatedAt);
+
+      expect(await findStaleNotice()).toHaveTextContent(
+        'Datos de hace 35 min. No hemos podido actualizar; puede que ya no sean exactos.',
+      );
+      expect(
+        screen.getByText(`Última actualización: ${formatClock(updatedAt)} · hace 35 min`),
+      ).toHaveClass('text-notice-stale-foreground');
+      expect(screen.queryByText('Gris = dato sin confirmar')).not.toBeInTheDocument();
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });
   });
 });

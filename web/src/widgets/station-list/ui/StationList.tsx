@@ -4,6 +4,7 @@ import { useSelectedStation } from '@/features/select-station';
 import { StaleNotice } from '@/shared/ui';
 import { needCaption } from '../lib/needCaption';
 import { SAVED_LIST_TITLE, savedListCaption } from '../lib/savedList';
+import { useCombinedDataStatus } from '../model/useCombinedDataStatus';
 import { type NearbyList, useNearbyList } from '../model/useNearbyList';
 import { FavoriteStations } from './FavoriteStations';
 import { ApproximateLocationNotice, type LocatingLayout, LocatingNotice } from './LocationNotice';
@@ -82,6 +83,7 @@ export function StationList(props: StationListProps) {
   const [need] = useNeed();
   const { number: selectedNumber, select } = useSelectedStation();
   const nearby = useNearbyList(center, need);
+  const panel = useCombinedDataStatus(center, need);
   const { level, ...heading } = nearbyHeading({
     layout,
     isApproximateLocation,
@@ -92,7 +94,13 @@ export function StationList(props: StationListProps) {
   return (
     <div className="flex flex-col gap-4">
       <LocationNotice {...props} />
-      {nearby.status === 'stale' ? <StaleNotice updatedAt={nearby.updatedAt} /> : null}
+      {panel.status === 'stale' ? (
+        <StaleNotice
+          layout={layout ?? 'desktop'}
+          updatedAt={panel.updatedAt}
+          onRetry={panel.retry}
+        />
+      ) : null}
       <FavoriteStations
         need={need}
         selectedNumber={selectedNumber}
