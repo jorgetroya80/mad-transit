@@ -79,8 +79,8 @@ Todo es secuencial.
 
 ### Checkpoint final
 
-- [ ] PR 2 fusionado sin crear release de web (es `refactor`).
-- [ ] El build de la web en Render instala el paquete nuevo en el siguiente deploy (SC2), y la lista de estaciones se ve como antes (SC5).
+- [x] PR 2 fusionado sin crear release de web (es `refactor`).
+- [x] El build de la web en Render instala el paquete nuevo en el siguiente deploy (SC2), y la lista de estaciones se ve como antes (SC5).
 
 ## Riesgos y mitigaciones
 
@@ -104,3 +104,4 @@ Unos 60 min de trabajo en dos sesiones, más la espera de la release entre ellas
 - 2026-10-30: checkpoint del PR 1 superado. #84 y la release #85 fusionados; `publish-api-client` publicó `@jorgetroya80/mad-transit-client@0.8.0`, público y enlazado a `jorgetroya80/mad-transit` sin pasos manuales (SC1, supuestos 2 y 3). El CI de #85 falló una vez sin ejecutar nada: dos runs sobre el mismo commit y `cancel-in-progress` canceló los dos; bastó con relanzar el último.
 - 2026-10-30: T3 implementada. El nombre viejo no puede salir de `minimumReleaseAgeExclude` en el mismo `pnpm install` que lo quita del lockfile: pnpm valida antes el lockfile existente y rechaza `bicimad-client@0.6.0` por edad. Se instala con los dos nombres y después se quita el viejo; `pnpm install --frozen-lockfile` pasa. `pnpm check:task` (368 tests de web) y el build de web en verde.
 - 2026-10-30: T4 implementada. Nombre nuevo en `AGENTS.md`, `README.md`, `web/AGENTS.md`, `web/README.md` y `CAPABILITY-MAP.md` (filas y enfoque de contrato, que recuerda el nombre viejo hasta la 0.7.1). SC3 comprobado: el nombre viejo solo queda en specs y planes ya cerrados, en `SPEC-rename-mad-transit.md` (su fuera de alcance) y en esta spec y este plan. Plan implementado; queda el checkpoint final.
+- 2026-11-10: checkpoint final superado. #86 se fusionó sin release de web. La primera release de web después, `web-v0.5.0` (2026-10-31), se construyó con `@jorgetroya80/mad-transit-client@0.8.0` y se desplegó en Render (SC2), y la lista de estaciones se ha visto bien en cada deploy hasta `web-v0.10.0` (SC5).
