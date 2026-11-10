@@ -25,4 +25,30 @@ describe('DevComponentsPage', () => {
 
     expect(icon.querySelectorAll('svg')).toHaveLength(ICON_SIZES.length);
   });
+
+  it('shows every Button look in its three states and the three sizes', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'Button' });
+
+    expect(within(section).getAllByRole('button', { name: 'Reintentar' })).toHaveLength(10);
+    expect(within(section).getAllByRole('button', { name: 'Ver horarios' })).toHaveLength(3);
+    expect(within(section).getByRole('button', { name: 'Activar' })).toHaveClass('h-10');
+  });
+
+  it('shows the IconButton toggled on and off under the same name', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'IconButton' });
+    const stars = within(section).getAllByRole('button', { name: 'Favorita' });
+
+    expect(stars.map((star) => star.getAttribute('aria-pressed'))).toEqual([
+      'false',
+      'true',
+      'false',
+      'true',
+    ]);
+    expect(within(section).getByTitle('Quitar de favoritas')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
 });

@@ -6,10 +6,12 @@ export {
   type MapPointTone,
 } from './base-map';
 export { BottomSheet, type SheetSnap, useBottomSheetOverlap } from './bottom-sheet';
+export { Button } from './button';
 export { CollapsibleSection } from './collapsible-section';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
 export { ErrorState } from './error-state';
+export { IconButton } from './icon-button';
 export {
   ArrowLeftIcon,
   ICON_NAMES,

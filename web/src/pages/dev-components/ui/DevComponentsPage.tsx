@@ -1,3 +1,5 @@
+import { ButtonSection } from './ButtonSection';
+import { IconButtonSection } from './IconButtonSection';
 import { IconSection } from './IconSection';
 import { ToneSection } from './ToneSection';
 
@@ -9,6 +11,8 @@ export function DevComponentsPage() {
       <h1 className="text-title-lg text-fg">Librería de componentes</h1>
       <ToneSection />
       <IconSection />
+      <IconButtonSection />
+      <ButtonSection />
     </main>
   );
 }
