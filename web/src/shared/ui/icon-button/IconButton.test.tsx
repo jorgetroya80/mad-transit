@@ -57,6 +57,10 @@ describe('IconButton', () => {
     expect(svgOf(renderIconButton({ ...FAVORITE, icon }).button)).toHaveAttribute('width', '24');
   });
 
+  it('draws its icon at the size it is given', () => {
+    expect(svgOf(renderIconButton({ iconSize: 18 }).button)).toHaveAttribute('width', '18');
+  });
+
   it('calls onClick when pressed with Enter or Space', async () => {
     const { button, onClick } = renderIconButton();
 

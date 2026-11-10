@@ -173,10 +173,11 @@
 }
 
 /* The one focus ring of the library: 2 px at 2 px. A piece on a dark surface sets
-   --focus-ring-color, since primary on tone-inverse falls below 3:1. */
+   --focus-ring-color, since primary on tone-inverse falls below 3:1; a control that touches
+   an edge sets --focus-ring-offset to draw the ring inside itself. */
 @utility focus-ring {
   &:focus-visible {
     outline: 2px solid var(--focus-ring-color, var(--color-primary));
-    outline-offset: 2px;
+    outline-offset: var(--focus-ring-offset, 2px);
   }
 }

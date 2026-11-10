@@ -12,6 +12,7 @@ type IconButtonProps = {
   onClick: () => void;
   pressed?: boolean;
   pressedIcon?: IconName;
+  iconSize?: IconSize;
   variant?: IconButtonVariant;
   iconTone?: IconTone;
   size?: IconButtonSize;
@@ -85,12 +86,13 @@ function classesOf(
 function ButtonIcon({
   icon,
   pressedIcon = icon,
+  iconSize,
   isPressed,
   isBusy,
 }: IconButtonProps & ButtonState) {
   if (isBusy) return <Spinner className="text-primary" />;
   const shownIcon = isPressed ? pressedIcon : icon;
-  return <Icon name={shownIcon} size={iconSizeOf(shownIcon)} />;
+  return <Icon name={shownIcon} size={iconSize ?? iconSizeOf(shownIcon)} />;
 }
 
 // The label names the action and never changes: aria-pressed says the state, and the

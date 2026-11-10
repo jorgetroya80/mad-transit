@@ -177,6 +177,16 @@ describe('SearchField', () => {
       expect(input()).toHaveClass('pr-13');
     });
 
+    it('draws the close icon at 18 px', () => {
+      renderField({ value: 'Sol' });
+      expect(clearButton()?.querySelector('svg')).toHaveAttribute('width', '18');
+    });
+
+    it('keeps its focus ring inside the box', () => {
+      renderField({ value: 'Sol' });
+      expect(clearButton()?.parentElement).toHaveClass('[--focus-ring-offset:-4px]');
+    });
+
     it('is hidden while disabled', () => {
       renderField({ value: 'Sol', disabled: true });
       expect(clearButton()).toBeNull();
