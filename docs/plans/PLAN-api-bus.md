@@ -1,7 +1,7 @@
 # Plan: api-bus
 
 - Created: 2026-10-30
-- Status: **in review** (2026-10-30)
+- Status: **implemented** (2026-11-10)
 - Spec: [SPEC-api-bus.md](../specs/SPEC-api-bus.md)
 
 ## Overview
@@ -58,8 +58,8 @@ T1 fixtures ──► T2 EmtHttpClient (POST + code 80) ──┬─► T3 lista
 
 ### Checkpoint: Fase 1
 
-- [ ] `pnpm check:task` en verde; JaCoCo de `shared` ≥ 80 %.
-- [ ] Revisión humana de `post` antes de seguir: `shared/emt` lo usa también BiciMAD.
+- [x] `pnpm check:task` en verde; JaCoCo de `shared` ≥ 80 %.
+- [x] Revisión humana de `post` antes de seguir: `shared/emt` lo usa también BiciMAD.
 
 ### Fase 2: Paradas
 
@@ -95,8 +95,8 @@ T1 fixtures ──► T2 EmtHttpClient (POST + code 80) ──┬─► T3 lista
 
 ### Checkpoint: Fase 2
 
-- [ ] `pnpm check:task` en verde; JaCoCo de `modules/bus` ≥ 80 %.
-- [ ] `bootRun` con la EMT real: lista cerca de Sol y detalle de 2768 coinciden con las capturas.
+- [x] `pnpm check:task` en verde; JaCoCo de `modules/bus` ≥ 80 %.
+- [x] `bootRun` con la EMT real: lista cerca de Sol y detalle de 2768 coinciden con las capturas.
 
 ### Fase 3: Llegadas y cierre
 
@@ -131,8 +131,8 @@ T1 fixtures ──► T2 EmtHttpClient (POST + code 80) ──┬─► T3 lista
 
 ### Checkpoint final
 
-- [ ] SC1-SC7 comprobados; `pnpm check:task` y CI en verde.
-- [ ] Pedir permiso antes de push, abrir el PR y hacer merge. Después del merge, release del API y del cliente: requisito de [PLAN-web-bus.md](PLAN-web-bus.md).
+- [x] SC1-SC7 comprobados; `pnpm check:task` y CI en verde.
+- [x] Pedir permiso antes de push, abrir el PR y hacer merge. Después del merge, release del API y del cliente: requisito de [PLAN-web-bus.md](PLAN-web-bus.md).
 
 ## Riesgos y mitigaciones
 
@@ -168,3 +168,4 @@ Unas 10 h en total. Fase 1 ~2 h, fase 2 ~4 h 30 min y fase 3 ~3 h 30 min.
 - 2026-10-30: `smokeTest` contra la EMT real. `BusSmokeTest` 4/4 en verde tras un arreglo: en Jackson 3, `JsonNode.map` aplica la función al nodo entero y no a sus elementos, así que se pasa por `values()`. Hay 41 paradas a ≤ 500 m de Sol y 2 llegadas en la 2768. La lista completa ocupa 604.926 bytes, que con gzip se quedan en 159.792. `EmtSmokeTest > translates more than 600 valid BiciMAD stations` falla: da 150 válidas de 678, aunque `GET /v1/bicimad/stations` en `bootRun` devuelve las 678. El fallo ya estaba (el test no cambia en esta rama) y se investiga en un `fix` aparte.
 - 2026-10-30: revisión del PR #87 (R1, opción 1 del usuario). Cupos: global 225.000, `bus-arrivals` 150.000 y `bus-stop-detail` 20.000. Se reescriben 3 aserciones de configuración con los valores nuevos.
 - 2026-10-30: revisión del PR #87, hallazgos opcionales O1-O4 hechos. O1: la caché pasa a 20.000 entradas. O2: índice por número, construido una vez por recarga de la lista. O3: `description` vuelve a ser `String?`; la lista de traducciones se une con " / ". O4: una parada con `code` 80 tras el login se recuerda 30 s y da `502` sin llamar a la EMT ni repetir el login. Esto sustituye a las últimas llegadas buenas, que ya no se sirven como `stale`: la EMT dice que la parada no está disponible, y mostrar llegadas viejas engañaría.
+- 2026-11-10: implementado. PR #87 mergeado el 2026-10-30 (`b7d2cdb`), con CI en verde (`ci-ok`; el aviso del floor guard es solo un aviso en CI) y los gates de JaCoCo de `shared`, `bicimad` y `bus` dentro de `./gradlew build`. Release api 0.9.0 (#88), que publica el cliente 0.9.0 con `listBusStops`, `getBusStop` y `getBusStopArrivals`. En Render, `GET /v1/bus/stops/2768` responde 200 con las líneas 73 y N3. El usuario confirma la revisión humana de `post` del checkpoint de la fase 1. La web sigue con el cliente 0.8.0; subirlo es requisito de [PLAN-web-bus.md](PLAN-web-bus.md).
