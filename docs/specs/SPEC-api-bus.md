@@ -1,7 +1,7 @@
 # Spec: api-bus
 
 - Created: 2026-10-30
-- Status: **approved** (2026-10-30)
+- Status: **implemented** (2026-11-10)
 - Plan: [PLAN-api-bus.md](../plans/PLAN-api-bus.md)
 
 Módulo `api-bus` del [Capability Map](CAPABILITY-MAP.md). Añade el módulo de dominio `modules/bus` sobre la infraestructura de [api-core](SPEC-api-core.md), con la misma forma que [api-bicimad](SPEC-api-bicimad.md): paradas de autobús EMT cercanas, su detalle y las próximas llegadas. Lo consume [web-bus](SPEC-web-bus.md). Fuente: [docs/ideas/bicimad-now.md](../ideas/bicimad-now.md) ("Diferencias previstas para el módulo Bus").
@@ -317,3 +317,4 @@ Capturas reales del 2026-10-30 con las credenciales de la app (`X-ClientId` + `p
 - 2026-10-30: aprobada por el usuario.
 - 2026-10-30: comprobado el `code` `80` en el bus: con un token inválido, la lista, el catálogo y el detalle responden HTTP 200, así que el HTTP no sirve para distinguirlo. Se quita `inService` y `EmtHttpClient` no cambia: un `80` que se repite tras el login da el error estándar `502` (decisión del usuario).
 - 2026-10-30: revisión del PR #87 (R1). Un solo cliente rotando paradas agotaba el cupo de llegadas (10.000) en unas 3 h y el de detalle (2.000) en unos 33 min, y después todos recibían `503`. Los cupos pasan a 150.000 y 20.000, y el global a 225.000 (el 90 % de las 250.000 llamadas reales de la app).
+- 2026-11-10: implementada en `main` con el PR #87 y publicada en la release api 0.9.0 (#88), junto con el cliente 0.9.0.
