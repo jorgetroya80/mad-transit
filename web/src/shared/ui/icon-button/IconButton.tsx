@@ -16,6 +16,8 @@ type IconButtonProps = {
   variant?: IconButtonVariant;
   iconTone?: IconTone;
   size?: IconButtonSize;
+  // Round whatever its size, to sit inside a rounded end.
+  round?: boolean;
   tooltip?: string;
   busy?: boolean;
   disabled?: boolean;
@@ -23,9 +25,15 @@ type IconButtonProps = {
 
 // sm is drawn at 40 px for tight spots and keeps a 44 px hit area.
 const SIZE_CLASSES = {
-  sm: 'size-10 rounded-control after:absolute after:-inset-0.5',
-  md: 'size-11 rounded-control',
-  lg: 'size-12 rounded-full',
+  sm: 'size-10 after:absolute after:-inset-0.5',
+  md: 'size-11',
+  lg: 'size-12',
+} as const satisfies Record<IconButtonSize, string>;
+
+const RADIUS_CLASSES = {
+  sm: 'rounded-control',
+  md: 'rounded-control',
+  lg: 'rounded-full',
 } as const satisfies Record<IconButtonSize, string>;
 
 const SURFACE_CLASSES = {
@@ -73,12 +81,13 @@ function surfaceOf(variant: IconButtonVariant, { isBusy, isDisabled }: ButtonSta
 }
 
 function classesOf(
-  { variant = 'ghost', iconTone = 'neutral', size = 'md' }: IconButtonProps,
+  { variant = 'ghost', iconTone = 'neutral', size = 'md', round = false }: IconButtonProps,
   state: ButtonState,
 ) {
   return [
     'focus-ring relative inline-flex shrink-0 items-center justify-center',
     SIZE_CLASSES[size],
+    round ? 'rounded-full' : RADIUS_CLASSES[size],
     shadowOf(variant, size),
     surfaceOf(variant, state),
     iconColorOf(iconTone, state),

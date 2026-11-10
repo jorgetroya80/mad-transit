@@ -99,6 +99,13 @@ describe('IconButton', () => {
     expect(renderIconButton({ size }).button).toHaveClass(...classes);
   });
 
+  it('can be round at any size', () => {
+    const { button } = renderIconButton({ size: 'sm', round: true });
+
+    expect(button).toHaveClass('size-10', 'rounded-full');
+    expect(button).not.toHaveClass('rounded-control');
+  });
+
   it.each([
     ['neutral', 'text-fg-muted'],
     ['primary', 'text-primary'],

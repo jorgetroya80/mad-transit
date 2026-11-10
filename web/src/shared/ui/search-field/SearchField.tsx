@@ -28,6 +28,12 @@ const SHAPE_CLASSES = {
   pill: 'h-11 rounded-full shadow-pill',
 } as const satisfies Record<SearchFieldShape, string>;
 
+// In the 44 px pill, 2 px from the edge puts the 40 px button's center on the end's center.
+const CLEAR_POSITION_CLASSES = {
+  box: 'right-1',
+  pill: 'right-0.5',
+} as const satisfies Record<SearchFieldShape, string>;
+
 // The 1 px border plus a 1 px inner ring draws the 2 px border without moving the text.
 const BOX_STATE_CLASSES = {
   normal:
@@ -133,9 +139,19 @@ function SearchBox(props: SearchBoxProps) {
         className={inputClassesOf(shape, state, canClear)}
       />
       {canClear && (
-        // Drawn inset from the box's edges so its hover and its focus ring stay inside the box.
-        <span className="absolute top-1/2 right-1 -translate-y-1/2 [--focus-ring-offset:-4px]">
-          <IconButton label={clearLabel} icon="close" iconSize={18} size="sm" onClick={clear} />
+        // Inset from the box's edges so its hover and its focus ring stay inside the box; in the
+        // pill it is round and centered on the rounded end.
+        <span
+          className={`absolute top-1/2 -translate-y-1/2 [--focus-ring-offset:-4px] ${CLEAR_POSITION_CLASSES[shape]}`}
+        >
+          <IconButton
+            label={clearLabel}
+            icon="close"
+            iconSize={18}
+            size="sm"
+            round={shape === 'pill'}
+            onClick={clear}
+          />
         </span>
       )}
     </div>

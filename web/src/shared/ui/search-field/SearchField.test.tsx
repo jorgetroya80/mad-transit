@@ -178,6 +178,14 @@ describe('SearchField', () => {
       expect(input()).toHaveClass('pr-13');
     });
 
+    it('is round and centered on the pill end, so its hover follows the curve', () => {
+      renderField({ value: 'Sol', shape: 'pill' });
+      const button = clearButton();
+
+      expect(button).toHaveClass('rounded-full');
+      expect(button?.parentElement).toHaveClass('right-0.5');
+    });
+
     it('draws the close icon at 18 px', () => {
       renderField({ value: 'Sol' });
       expect(clearButton()?.querySelector('svg')).toHaveAttribute('width', '18');
