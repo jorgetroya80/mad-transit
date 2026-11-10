@@ -51,4 +51,28 @@ describe('DevComponentsPage', () => {
       'true',
     );
   });
+
+  it('shows every SegmentedControl variant with its chosen option pressed', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'SegmentedControl' });
+    const services = within(section).getAllByRole('group', { name: 'Servicio' });
+    const needs = within(section).getAllByRole('group', { name: '¿Qué quieres hacer?' });
+
+    expect(services).toHaveLength(6);
+    expect(needs).toHaveLength(6);
+    expect(within(section).getAllByRole('group', { name: 'Sentido' })).toHaveLength(2);
+    expect(
+      within(needs[0] as HTMLElement).getByRole('button', { name: 'Sacar bici' }),
+    ).toHaveAccessibleDescription('Bicis disponibles');
+  });
+
+  it('shows the SearchField for stations and for stops, with the stop error', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'SearchField' });
+
+    expect(within(section).getAllByRole('searchbox', { name: 'Buscar estación' })).toHaveLength(7);
+    const stops = within(section).getAllByRole('searchbox', { name: 'Buscar parada por número' });
+    expect(stops.map((stop) => stop.getAttribute('inputmode'))).toEqual(['numeric', 'numeric']);
+    expect(stops[1]).toHaveAccessibleDescription('El número de parada tiene de 1 a 4 cifras.');
+  });
 });

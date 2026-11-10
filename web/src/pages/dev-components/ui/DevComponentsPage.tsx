@@ -1,6 +1,8 @@
 import { ButtonSection } from './ButtonSection';
 import { IconButtonSection } from './IconButtonSection';
 import { IconSection } from './IconSection';
+import { SearchFieldSection } from './SearchFieldSection';
+import { SegmentedControlSection } from './SegmentedControlSection';
 import { ToneSection } from './ToneSection';
 
 // Development only (app/router.tsx): the library next to the design board, until the
@@ -13,6 +15,8 @@ export function DevComponentsPage() {
       <IconSection />
       <IconButtonSection />
       <ButtonSection />
+      <SegmentedControlSection />
+      <SearchFieldSection />
     </main>
   );
 }

@@ -34,6 +34,8 @@ export {
   WarningIcon,
 } from './icons';
 export { RelativeTime } from './relative-time';
+export { SearchField } from './search-field';
+export { SegmentedControl } from './segmented-control';
 export { SidePanel } from './side-panel';
 export { Spinner } from './spinner';
 export { StatusBanner } from './status-banner';
