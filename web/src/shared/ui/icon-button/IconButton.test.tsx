@@ -92,6 +92,7 @@ describe('IconButton', () => {
   );
 
   it.each([
+    ['sm', ['size-10', 'rounded-control', 'after:-inset-0.5']],
     ['md', ['size-11', 'rounded-control']],
     ['lg', ['size-12', 'rounded-full']],
   ] as const)('is %s with its size and radius', (size, classes) => {

@@ -133,9 +133,9 @@ function SearchBox(props: SearchBoxProps) {
         className={inputClassesOf(shape, state, canClear)}
       />
       {canClear && (
-        // The button touches the box's edge, so its focus ring is drawn inside it.
-        <span className="absolute top-1/2 right-0 -translate-y-1/2 [--focus-ring-offset:-4px]">
-          <IconButton label={clearLabel} icon="close" iconSize={18} onClick={clear} />
+        // Drawn inset from the box's edges so its hover and its focus ring stay inside the box.
+        <span className="absolute top-1/2 right-1 -translate-y-1/2 [--focus-ring-offset:-4px]">
+          <IconButton label={clearLabel} icon="close" iconSize={18} size="sm" onClick={clear} />
         </span>
       )}
     </div>

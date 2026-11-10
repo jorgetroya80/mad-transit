@@ -3,7 +3,7 @@ import { Icon, type IconName, type IconSize } from '../icons';
 import { Spinner } from '../spinner';
 
 type IconButtonVariant = 'ghost' | 'outline' | 'floating';
-type IconButtonSize = 'md' | 'lg';
+type IconButtonSize = 'sm' | 'md' | 'lg';
 type IconTone = 'neutral' | 'primary';
 
 type IconButtonProps = {
@@ -21,7 +21,9 @@ type IconButtonProps = {
   disabled?: boolean;
 };
 
+// sm is drawn at 40 px for tight spots and keeps a 44 px hit area.
 const SIZE_CLASSES = {
+  sm: 'size-10 rounded-control after:absolute after:-inset-0.5',
   md: 'size-11 rounded-control',
   lg: 'size-12 rounded-full',
 } as const satisfies Record<IconButtonSize, string>;
@@ -75,7 +77,7 @@ function classesOf(
   state: ButtonState,
 ) {
   return [
-    'focus-ring inline-flex shrink-0 items-center justify-center',
+    'focus-ring relative inline-flex shrink-0 items-center justify-center',
     SIZE_CLASSES[size],
     shadowOf(variant, size),
     surfaceOf(variant, state),

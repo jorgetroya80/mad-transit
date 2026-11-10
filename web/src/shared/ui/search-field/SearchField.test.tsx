@@ -167,12 +167,13 @@ describe('SearchField', () => {
       expect(clearButton()).toBeNull();
     });
 
-    it('is a 44 px button with the close icon and room for it in the box', () => {
+    it('is a 40 px button with a 44 px hit area, inset from the edges, with the close icon', () => {
       renderField({ value: 'Sol' });
       const button = clearButton();
 
       expect(button).toHaveAttribute('type', 'button');
-      expect(button).toHaveClass('size-11');
+      expect(button).toHaveClass('size-10', 'after:-inset-0.5');
+      expect(button?.parentElement).toHaveClass('right-1');
       expect(iconPathsOf(button as HTMLElement)).toEqual(ICON_DRAWINGS.close.paths);
       expect(input()).toHaveClass('pr-13');
     });
