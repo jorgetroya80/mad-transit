@@ -101,3 +101,4 @@ docs/specs/CAPABILITY-MAP.md           filas de api-bicimad y web-shell
 - 2026-10-30: spec aprobada.
 - 2026-10-30: implementación del PR 1 (T1-T2): paquete renombrado en `api/client`, CI y scripts.
 - 2026-10-30: spec implementada. SC1-SC4 comprobados; SC5 queda para el próximo deploy de la web en Render.
+- 2026-11-10: SC5 comprobado. Desde `web-v0.5.0`, Render sirve la web construida con el paquete nuevo y la lista de estaciones se ve como antes.
