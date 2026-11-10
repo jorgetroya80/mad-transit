@@ -15,13 +15,15 @@ Fuente: [docs/ideas/bicimad-now.md](../ideas/bicimad-now.md). Cada módulo tiene
 | `web-bicimad` | Mapa, lista, detalle, filtros y favoritos de estaciones                                                                                                                                              | web-shell, api-bicimad  | [SPEC-web-bicimad.md](SPEC-web-bicimad.md) | implemented           |
 | `deploy`      | Despliegue en Render (plan gratuito, Blueprint `render.yaml`): API desde la imagen de ghcr.io y web desde `web-dist.tar.gz`, con deploy hooks en `release.yml`; la web llama al API con CORS | foundation              | [SPEC-deploy.md](SPEC-deploy.md)           | implemented           |
 | `api-bus`     | Módulo `bus`: paradas cercanas, detalle con líneas y llegadas en `/v1/bus/stops/*`; `POST` en `EmtHttpClient`; caché y cupo propios | api-core | [SPEC-api-bus.md](SPEC-api-bus.md) | implemented |
-| `web-bus`     | Selector BiciMAD / Bus, iconos de parada en el mapa, popup de resumen, lista, detalle con llegadas y buscador | web-shell, api-bus, web-error-states | [SPEC-web-bus.md](SPEC-web-bus.md) | approved |
+| `web-bus`     | Selector BiciMAD / Bus, iconos de parada en el mapa, popup de resumen, lista, detalle con llegadas y buscador | web-shell, api-bus, web-ui-migration | [SPEC-web-bus.md](SPEC-web-bus.md) | approved |
 | `web-design-tokens` | Tema del rediseño en el `@theme` de Tailwind (color, forma, sombra, movimiento), fuente Inter y migración de las clases de la paleta por defecto a tokens | web-bicimad | [SPEC-web-design-tokens.md](SPEC-web-design-tokens.md) | implemented |
 | `web-data-state` | Estado único de la petición de estaciones (`loading`, `ok`, `stale`, `error`, `offline`), reintentos con espera creciente, caché en `localStorage` y nivel `unconfirmed` | web-bicimad | [SPEC-web-data-state.md](SPEC-web-data-state.md) | implemented |
 | `web-redesign-components` | Piezas del rediseño que ya existen, evolucionadas en su sitio: insignia con etiqueta, fila de estación, selector de modo «Sacar bici / Dejar bici», buscador con ayuda y botón de borrar, avisos y puntos del mapa de 40 px; tests de accesibilidad con `vitest-axe` | web-design-tokens, web-data-state | [SPEC-web-redesign-components.md](SPEC-web-redesign-components.md) | implemented |
 | `web-redesign-desktop` | Pantalla de escritorio (≥ 768 px): cabecera con indicador de actualización, panel lateral de 420 px con la lista siempre visible, tarjeta de estación sobre el mapa, favoritas plegables, leyenda y controles del mapa | web-redesign-components | [SPEC-web-redesign-desktop.md](SPEC-web-redesign-desktop.md) | implemented |
 | `web-redesign-mobile` | Pantalla móvil (< 768 px): buscador flotante, modo en píldora, botón de centrar y bottom sheet con tres alturas por toques | web-redesign-desktop | [SPEC-web-redesign-mobile.md](SPEC-web-redesign-mobile.md) | implemented |
 | `web-error-states` | Estados `error`, `stale`, `offline` y búsqueda sin resultados en las dos pantallas | web-redesign-desktop, web-redesign-mobile | [SPEC-web-error-states.md](SPEC-web-error-states.md) | implemented |
+| `web-ui-library` | Librería genérica en `shared/ui`: tonos `tone-*` y escalas, `Icon`, `Spinner` y las 16 piezas del lienzo «Componentes reutilizables · librería genérica»; sin textos fijos ni conocimiento del dominio; las pantallas no cambian | web-error-states | [SPEC-web-ui-library.md](SPEC-web-ui-library.md) | approved |
+| `web-ui-migration` | Las pantallas de BiciMAD pasan a usar la librería; se retiran las piezas y los tokens que sustituye (`StationRow`, `AvailabilityBadge`, `StatusBanner`, `ErrorState`, `CollapsibleSection`…, `availability-*`, `notice-*`) y la página temporal `/dev/components` | web-ui-library | — | — |
 | `web-sheet-drag` | Arrastre del bottom sheet con imantado a la altura más cercana (opcional) | web-redesign-mobile | — | — |
 | `web-offline-shell` | Service worker propio (plugin de Vite, sin dependencias) que guarda la app para abrirla sin conexión con la caché de estaciones | web-data-state | — | — |
 | `web-crash-screen` | Pantalla «Algo ha fallado» con «Recargar» en el `errorComponent` de TanStack Router, para que un error de render (un bug, no un fallo de datos) no deje la página en blanco; sin dependencias (pendiente de revisar, 2026-11-09) | web-design-tokens | — | — |
@@ -30,7 +32,7 @@ Fuente: [docs/ideas/bicimad-now.md](../ideas/bicimad-now.md). Cada módulo tiene
 
 ```
 foundation -> api-core -> api-bicimad -> web-shell -> web-bicimad -> deploy
-web-bicimad -> web-design-tokens -> web-data-state -> web-redesign-components -> web-redesign-desktop -> web-redesign-mobile -> web-error-states -> web-bus
+web-bicimad -> web-design-tokens -> web-data-state -> web-redesign-components -> web-redesign-desktop -> web-redesign-mobile -> web-error-states -> web-ui-library -> web-ui-migration -> web-bus
 web-redesign-mobile -> web-sheet-drag
 web-data-state -> web-offline-shell
 web-design-tokens -> web-crash-screen
@@ -38,6 +40,8 @@ api-core -> api-bus -> (release del cliente) -> web-bus
 ```
 
 **Rediseño de la UI (2026-10-31).** Los módulos `web-design-tokens` a `web-sheet-drag` aplican el diseño del lienzo «Mad Transit · rediseño» y del documento «Mad Transit — Especificación de UI», que son privados. El rediseño va antes que `web-bus`, que después se adapta a sus tokens y componentes y añade el selector BiciMAD / Bus.
+
+**Librería de componentes (2026-11-10).** `web-ui-library` y `web-ui-migration` aplican la sección «Librería de componentes» del documento y el tablero «Componentes reutilizables · librería genérica (16 piezas)» del lienzo. Van antes de `web-bus` (decisión del usuario), que monta sus pantallas con `Tag`, `Card` y `ListItem`.
 
 **Enfoque de contrato: código primero (2026-10-03, revisado 2026-10-05, 2026-10-27 y 2026-10-30).** Los controladores Spring son la fuente de verdad; springdoc genera el OpenAPI en el build (no se commitea). En cada release del API se publica en GitHub Packages el paquete `@jorgetroya80/mad-transit-client` (hasta la 0.7.1, `@jorgetroya80/bicimad-client`), con la misma versión que el API. Desde la 0.6.0 lo genera hey-api (tipos, una función por `operationId` y su cliente fetch, con el `openapi.json` dentro; ver [SPEC-api-client-hey-api.md](SPEC-api-client-hey-api.md)); hasta la 0.5.0 eran tipos de `openapi-typescript` + `openapi-fetch`. El frontend instala ese paquete. Por eso se construye después de `api-bicimad`.
 

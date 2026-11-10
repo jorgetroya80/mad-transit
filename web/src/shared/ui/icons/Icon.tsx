@@ -1,23 +1,30 @@
-import type { ReactNode } from 'react';
+import { ICON_DRAWINGS, type IconName } from './iconDrawings';
 
-export type IconProps = { className?: string };
+export const ICON_SIZES = [16, 18, 20, 22, 24, 30, 34] as const;
 
-type IconFrameProps = IconProps & { children: ReactNode };
+export type IconSize = (typeof ICON_SIZES)[number];
 
-// Decorative by design: the control or text next to the icon carries the accessible name.
-export function IconFrame({ className, children }: IconFrameProps) {
+type IconProps = { name: IconName; size?: IconSize; className?: string };
+
+// Always decorative: the piece that shows the icon carries the accessible name.
+export function Icon({ name, size = 20, className = '' }: IconProps) {
+  const { paths, strokeWidth, isFilled } = ICON_DRAWINGS[name];
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
-      fill="none"
+      width={size}
+      height={size}
+      fill={isFilled ? 'currentColor' : 'none'}
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
+      className={`shrink-0 ${className}`}
     >
-      {children}
+      {paths.map((d) => (
+        <path key={d} d={d} />
+      ))}
     </svg>
   );
 }

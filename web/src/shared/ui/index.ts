@@ -12,6 +12,11 @@ export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
 export { ErrorState } from './error-state';
 export {
   ArrowLeftIcon,
+  ICON_NAMES,
+  ICON_SIZES,
+  Icon,
+  type IconName,
+  type IconSize,
   BikeIcon,
   ChevronIcon,
   ClearIcon,
@@ -28,5 +33,7 @@ export {
 } from './icons';
 export { RelativeTime } from './relative-time';
 export { SidePanel } from './side-panel';
+export { Spinner } from './spinner';
 export { StatusBanner } from './status-banner';
 export { MessageAction, StateMessage } from './state-message';
+export { type LineStyle, TONES, type Tone, toneLineStyle } from './tone';
