@@ -6,7 +6,6 @@ const BOLD_STROKE_ICONS: IconName[] = [
   'chevron-down',
   'chevron-up',
   'chevron-left',
-  'arrow-left',
   'locate',
   'plus',
   'minus',
@@ -61,8 +60,9 @@ function renderIcon(name: IconName, size?: (typeof ICON_SIZES)[number]) {
 }
 
 describe('Icon', () => {
-  it('has the 21 names of the design', () => {
-    expect(ICON_NAMES).toHaveLength(21);
+  it('has the 20 names the screens use, without arrow-left', () => {
+    expect(ICON_NAMES).toHaveLength(20);
+    expectTypeOf<'arrow-left'>().not.toExtend<IconName>();
   });
 
   it.each(ICON_NAMES)('draws %s hidden from assistive technology', (name) => {

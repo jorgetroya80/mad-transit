@@ -26,7 +26,7 @@ export function ResultList({ ref, results, onChoose, onResultKeyDown }: ResultLi
             data-number={item.number}
             onClick={() => onChoose(item)}
             onKeyDown={(event) => onResultKeyDown(event, index)}
-            className="flex min-h-11 w-full flex-col justify-center px-3 py-2 text-left hover:bg-chip focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+            className="flex min-h-11 w-full flex-col justify-center px-3 py-2 text-left hover:bg-chip focus-ring [--focus-ring-offset:-2px]"
           >
             <span>
               <span className="font-semibold text-fg">{item.number}</span>

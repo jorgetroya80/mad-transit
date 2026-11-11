@@ -1,4 +1,5 @@
 import { LOW_AVAILABILITY_THRESHOLD } from '@/shared/config';
+import type { Tone } from '@/shared/ui';
 import type { AvailabilityLevel, DataStatus, Need, Station } from './types';
 
 type Availability = { level: AvailabilityLevel; count: number };
@@ -23,4 +24,19 @@ const OFF_LABEL = '–';
 // station's count is meaningless, so it shows a dash.
 export function availabilityLabel({ level, count }: Availability): string {
   return level === 'off' ? OFF_LABEL : String(count);
+}
+
+// Inverse is a surface, not a level, so no level may take it.
+type AvailabilityTone = Exclude<Tone, 'inverse'>;
+
+const AVAILABILITY_TONES = {
+  good: 'success',
+  low: 'warning',
+  empty: 'danger',
+  off: 'neutral',
+  unconfirmed: 'muted',
+} as const satisfies Record<AvailabilityLevel, AvailabilityTone>;
+
+export function availabilityTone(level: AvailabilityLevel): AvailabilityTone {
+  return AVAILABILITY_TONES[level];
 }

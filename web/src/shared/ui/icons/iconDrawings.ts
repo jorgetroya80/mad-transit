@@ -9,7 +9,6 @@ export const ICON_NAMES = [
   'chevron-down',
   'chevron-up',
   'chevron-left',
-  'arrow-left',
   'pin',
   'clock',
   'wifi-off',
@@ -78,7 +77,6 @@ export const ICON_DRAWINGS = {
   'chevron-down': boldOutline('m6 9 6 6 6-6'),
   'chevron-up': boldOutline('m6 15 6-6 6 6'),
   'chevron-left': boldOutline('m15 18-6-6 6-6'),
-  'arrow-left': boldOutline('M19 12H5', 'm12 19-7-7 7-7'),
   pin: outline('M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z', circle(12, 9.5, 2.5)),
   clock: outline(circle(12, 12, 9), 'M12 7v5l3 2'),
   'wifi-off': outline(

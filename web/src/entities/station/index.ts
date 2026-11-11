@@ -3,7 +3,7 @@ export type { Coordinates } from './api/stationKeys';
 export { stationKeys } from './api/stationKeys';
 export { useAllStations, useNearbyStations, useStation } from './api/stationQueries';
 export { readNearbyStations } from './api/stationsCache';
-export { availabilityFor, availabilityLabel } from './model/availability';
+export { availabilityFor, availabilityLabel, availabilityTone } from './model/availability';
 export { parseUpdatedAt } from './model/parseUpdatedAt';
 export { isSameStationNumber } from './model/stationNumber';
 export type { AvailabilityLevel, DataStatus, Need, Station } from './model/types';
