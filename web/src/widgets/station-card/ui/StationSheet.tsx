@@ -3,7 +3,7 @@ import { type Coordinates, useStationDetail } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
 import { DataAttribution } from '@/shared/ui';
 import { cardHeading } from '../model/cardHeading';
-import { useCloseOnEscape } from '../model/useCloseOnEscape';
+import { useCloseOnEscape } from '@/shared/lib';
 import { CardBody } from './CardBody';
 import { CardFooter } from './CardFooter';
 import { SheetCardHeader } from './SheetCardHeader';

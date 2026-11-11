@@ -19,12 +19,60 @@
 @theme static {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
 
+  /* Tones of the component library, each in a solid and a soft emphasis. A tone has only the
+     suffixes the design gives their own value; a missing one means the piece uses the solid. */
+  --color-tone-success: #0b6b3a;
+  --color-tone-success-foreground: #ffffff;
+  --color-tone-success-soft: #e7f3ec;
+  --color-tone-success-soft-foreground: #0b6b3a;
+  --color-tone-success-line: #0b6b3a;
+  --color-tone-success-icon: #0b6b3a;
+  --color-tone-success-label: #0b6b3a;
+  --color-tone-warning: #f2b33d;
+  --color-tone-warning-foreground: #2a1e00;
+  --color-tone-warning-soft: #fff4db;
+  --color-tone-warning-soft-foreground: #3d2a00;
+  --color-tone-warning-line: #f2b33d;
+  --color-tone-warning-soft-line: #e8c26a;
+  --color-tone-warning-icon: #7a4b00;
+  --color-tone-warning-label: #7a4b00;
+  --color-tone-warning-dot: #d18f00;
+  --color-tone-danger: #ffffff;
+  --color-tone-danger-foreground: #b42318;
+  --color-tone-danger-soft: #fdecea;
+  --color-tone-danger-soft-foreground: #b42318;
+  --color-tone-danger-line: #b42318;
+  --color-tone-danger-icon: #b42318;
+  --color-tone-danger-label: #b42318;
+  --color-tone-neutral: #4b5563;
+  --color-tone-neutral-foreground: #ffffff;
+  --color-tone-neutral-soft: #eef1f5;
+  --color-tone-neutral-soft-foreground: #2b333e;
+  --color-tone-neutral-icon: #4a5462;
+  --color-tone-neutral-label: #4a5462;
+  --color-tone-muted: #e3e6ea;
+  --color-tone-muted-foreground: #2b333e;
+  --color-tone-muted-line: #8a95a3;
+  --color-tone-muted-icon: #4a5462;
+  --color-tone-muted-label: #4a5462;
+  --color-tone-info: #0b5cad;
+  --color-tone-info-foreground: #ffffff;
+  --color-tone-info-soft: #eaf2fb;
+  --color-tone-info-soft-foreground: #14181f;
+  --color-tone-info-line: #0b5cad;
+  --color-tone-info-soft-line: #c4d9f0;
+  --color-tone-info-icon: #0b5cad;
+  --color-tone-info-label: #0b5cad;
+  --color-tone-inverse: #14181f;
+  --color-tone-inverse-foreground: #ffffff;
+  --color-tone-inverse-icon: #ffffff;
+
   /* Brand and interaction */
-  --color-primary: #0b5cad;
+  --color-primary: var(--color-tone-info);
   --color-primary-hover: #08427d;
-  --color-primary-foreground: #ffffff;
-  --color-primary-soft: #eaf2fb;
-  --color-primary-soft-border: #c4d9f0;
+  --color-primary-foreground: var(--color-tone-info-foreground);
+  --color-primary-soft: var(--color-tone-info-soft);
+  --color-primary-soft-border: var(--color-tone-info-soft-line);
 
   /* Text, surfaces and lines */
   --color-fg: #14181f;
@@ -36,35 +84,41 @@
   --color-line-strong: #c9d1db;
   --color-input-line: #7d8794;
   --color-handle: #8a95a3;
+  --color-surface-disabled: #f3f5f8;
+  --color-line-subtle: #e6eaef;
 
-  /* Notices */
-  --color-notice-stale: #fff4db;
-  --color-notice-stale-line: #e8c26a;
-  --color-notice-stale-foreground: #3d2a00;
-  --color-notice-stale-icon: #7a4b00;
-  --color-notice-error: #fdecea;
-  --color-notice-error-foreground: #b42318;
-  --color-notice-offline: #14181f;
-  --color-notice-offline-foreground: #ffffff;
-
-  /* Availability: same names as before, values from the design */
-  --color-availability-good: #0b6b3a;
-  --color-availability-good-foreground: #ffffff;
-  --color-availability-good-label: #0b6b3a;
-  --color-availability-low: #f2b33d;
-  --color-availability-low-foreground: #2a1e00;
-  --color-availability-low-label: #7a4b00;
-  --color-availability-empty: #ffffff;
-  --color-availability-empty-foreground: #b42318;
-  --color-availability-empty-line: #b42318;
-  --color-availability-empty-label: #b42318;
-  --color-availability-off: #4b5563;
-  --color-availability-off-foreground: #ffffff;
+  /* Notices and availability: the names the screens read today, kept until they read tone-*.
+     availability-off-label keeps its own value: it is #4b5563 and tone-neutral-label #4a5462. */
+  --color-notice-stale: var(--color-tone-warning-soft);
+  --color-notice-stale-line: var(--color-tone-warning-soft-line);
+  --color-notice-stale-foreground: var(--color-tone-warning-soft-foreground);
+  --color-notice-stale-icon: var(--color-tone-warning-icon);
+  --color-notice-error: var(--color-tone-danger-soft);
+  --color-notice-error-foreground: var(--color-tone-danger-soft-foreground);
+  --color-notice-offline: var(--color-tone-inverse);
+  --color-notice-offline-foreground: var(--color-tone-inverse-foreground);
+  --color-availability-good: var(--color-tone-success);
+  --color-availability-good-foreground: var(--color-tone-success-foreground);
+  --color-availability-good-label: var(--color-tone-success-label);
+  --color-availability-low: var(--color-tone-warning);
+  --color-availability-low-foreground: var(--color-tone-warning-foreground);
+  --color-availability-low-label: var(--color-tone-warning-label);
+  --color-availability-empty: var(--color-tone-danger);
+  --color-availability-empty-foreground: var(--color-tone-danger-foreground);
+  --color-availability-empty-line: var(--color-tone-danger-line);
+  --color-availability-empty-label: var(--color-tone-danger-label);
+  --color-availability-off: var(--color-tone-neutral);
+  --color-availability-off-foreground: var(--color-tone-neutral-foreground);
   --color-availability-off-label: #4b5563;
-  --color-availability-unconfirmed: #e3e6ea;
-  --color-availability-unconfirmed-foreground: #2b333e;
-  --color-availability-unconfirmed-line: #8a95a3;
-  --color-availability-unconfirmed-label: #4a5462;
+  --color-availability-unconfirmed: var(--color-tone-muted);
+  --color-availability-unconfirmed-foreground: var(--color-tone-muted-foreground);
+  --color-availability-unconfirmed-line: var(--color-tone-muted-line);
+  --color-availability-unconfirmed-label: var(--color-tone-muted-label);
+
+  /* Line badges */
+  --color-tag: #2b333e;
+  --color-tag-inverse: #14181f;
+  --color-tag-ring: #8a95a3;
 
   /* Map */
   --color-map-bg: #eceae4;
@@ -72,17 +126,58 @@
   --color-map-point-stroke: #ffffff;
   --color-map-point-selected-stroke: #0b5cad;
 
-  /* Type: the mobile sheet header, between the scale's steps */
+  /* Type: each step sets size, line height and weight together */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--font-weight: 600;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.125rem;
+  --text-meta--font-weight: 400;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-body--font-weight: 400;
+  --text-label: 0.9375rem;
+  --text-label--line-height: 1.25rem;
+  --text-label--font-weight: 600;
+  --text-input: 1rem;
+  --text-input--line-height: 1.5rem;
+  --text-input--font-weight: 400;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.5rem;
+  --text-title--font-weight: 700;
+  --text-title-lg: 1.25rem;
+  --text-title-lg--line-height: 1.625rem;
+  --text-title-lg--font-weight: 700;
+  --text-stat: 1.625rem;
+  --text-stat--line-height: 2rem;
+  --text-stat--font-weight: 700;
+  /* Size only until web-ui-migration: the design's line heights would shorten the mobile sheet
+     header, and this module changes no screen. */
   --text-sheet-title: 1.0625rem;
   --text-sheet-subtitle: 0.8125rem;
 
   /* Shape, shadow and motion */
+  --radius-tag: 6px;
   --radius-chip: 8px;
+  --radius-segment: 9px;
   --radius-control: 10px;
   --radius-card: 12px;
+  --radius-float: 14px;
   --radius-sheet: 20px;
+  --shadow-segment: 0 1px 3px rgb(20 24 31 / 0.18);
   --shadow-control: 0 2px 8px rgb(20 24 31 / 0.18);
+  --shadow-pill: 0 2px 10px rgb(20 24 31 / 0.14);
   --shadow-float: 0 6px 24px rgb(20 24 31 / 0.16);
   --shadow-sheet: 0 -4px 20px rgb(20 24 31 / 0.16);
   --ease-sheet: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The one focus ring of the library: 2 px at 2 px. A piece on a dark surface sets
+   --focus-ring-color, since primary on tone-inverse falls below 3:1; a control that touches
+   an edge sets --focus-ring-offset to draw the ring inside itself. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring-color, var(--color-primary));
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
 }

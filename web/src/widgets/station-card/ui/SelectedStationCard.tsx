@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { type Coordinates, useStationDetail } from '@/entities/station';
 import { cardHeading } from '../model/cardHeading';
-import { useCloseOnEscape } from '../model/useCloseOnEscape';
+import { useCloseOnEscape } from '@/shared/lib';
 import { CardBody } from './CardBody';
 import { CardFooter } from './CardFooter';
 import { CardHeader } from './CardHeader';

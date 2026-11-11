@@ -1,4 +1,4 @@
-import { IconFrame, type IconProps } from './Icon';
+import { IconFrame, type IconProps } from './IconFrame';
 
 export function BikeIcon({ className }: IconProps) {
   return (

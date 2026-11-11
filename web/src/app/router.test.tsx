@@ -47,3 +47,25 @@ describe('app router', () => {
     expect(Object.fromEntries(url.searchParams)).toEqual({ station: '538', need: 'docks' });
   });
 });
+
+describe('development routes', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('serves the component review page in development', async () => {
+    const view = await renderWithRouter(routeContent, { initialEntries: ['/dev/components'] });
+
+    expect(
+      await view.findByRole('heading', { level: 1, name: 'Librería de componentes' }),
+    ).toBeInTheDocument();
+  });
+
+  it('leaves the component review page out of a production router', async () => {
+    vi.stubEnv('DEV', false);
+
+    const { router } = await renderWithRouter(routeContent, {
+      initialEntries: ['/dev/components'],
+    });
+
+    expect(router.state.matches.map((match) => match.routeId)).not.toContain('/dev/components');
+  });
+});
