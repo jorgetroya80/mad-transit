@@ -75,4 +75,50 @@ describe('DevComponentsPage', () => {
     expect(stops.map((stop) => stop.getAttribute('inputmode'))).toEqual(['numeric', 'numeric']);
     expect(stops[1]).toHaveAccessibleDescription('El número de parada tiene de 1 a 4 cifras.');
   });
+
+  it('shows every Banner tone, the bar and the action states, with one live region', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'Banner' });
+    const actions = within(section).getAllByRole('button', { name: 'Usar mi ubicación' });
+
+    expect(within(section).getAllByText(/Sin conexión a internet\./)).toHaveLength(3);
+    expect(actions.map((action) => action.getAttribute('aria-busy'))).toEqual([
+      null,
+      null,
+      'true',
+      null,
+    ]);
+    expect(actions[3]).toBeDisabled();
+    expect(within(section).getAllByRole('status')).toHaveLength(1);
+    expect(within(section).queryByRole('alert')).toBeNull();
+  });
+
+  it('shows every EmptyState tone and size for both domains, with one live region', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'EmptyState' });
+
+    expect(
+      within(section).getAllByRole('heading', { name: 'No podemos cargar las estaciones' }),
+    ).toHaveLength(5);
+    expect(
+      within(section).getByRole('heading', { name: 'No existe la parada 9999' }),
+    ).toHaveProperty('tagName', 'H3');
+    expect(within(section).getAllByRole('status')).toHaveLength(1);
+    expect(within(section).queryByRole('alert')).toBeNull();
+  });
+
+  it('shows every StatusText tone and size, with one live region', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'StatusText' });
+
+    expect(within(section).getAllByText('Actualizado hace 30 s')).toHaveLength(3);
+    expect(within(section).getByText('Llegadas no disponibles')).toBeInTheDocument();
+    expect(within(section).getAllByRole('status')).toHaveLength(1);
+  });
+
+  it('says why only one specimen of each notice is live', () => {
+    render(<DevComponentsPage />);
+
+    expect(screen.getAllByText(/Solo un ejemplo es región viva/)).toHaveLength(3);
+  });
 });

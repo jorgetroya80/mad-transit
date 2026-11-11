@@ -7,7 +7,7 @@ type ButtonSize = 'sm' | 'md' | 'lg';
 type ColorScheme = 'primary' | 'secondary' | `outline-${ButtonTone}`;
 
 // Outline has no drawing of its own: it takes the color of its tone.
-type ButtonLook =
+export type ButtonLook =
   | { variant?: 'primary' | 'secondary'; tone?: never }
   | { variant: 'outline'; tone: ButtonTone };
 
