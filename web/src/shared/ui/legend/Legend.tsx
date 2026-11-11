@@ -9,7 +9,11 @@ type LegendItem = {
   shape?: SwatchShape;
   // Overrides the tone's line: the map legend draws danger solid, like the map point.
   lineStyle?: LineStyle;
+  // 'tag' swaps only the fill for the tag color, as the stop's point does on the map.
+  fill?: SwatchFill;
 };
+
+type SwatchFill = 'tone' | 'tag';
 
 type LegendProps = {
   label: string;
@@ -38,11 +42,17 @@ const LEGEND_LAYOUT = {
   stacked: 'flex-col',
 } as const satisfies Record<LegendLayout, string>;
 
-function Swatch({ tone, shape = 'circle', lineStyle = toneLineStyle[tone] }: LegendItem) {
+function Swatch({
+  tone,
+  shape = 'circle',
+  lineStyle = toneLineStyle[tone],
+  fill = 'tone',
+}: LegendItem) {
+  const color = fill === 'tag' ? 'bg-tag' : SWATCH_TONE[tone];
   return (
     <span
       aria-hidden="true"
-      className={`size-3.5 shrink-0 box-border ${SWATCH_SHAPE[shape]} ${SWATCH_TONE[tone]} ${LINE_STYLE_CLASSES[lineStyle]}`}
+      className={`size-3.5 shrink-0 box-border ${SWATCH_SHAPE[shape]} ${color} ${LINE_STYLE_CLASSES[lineStyle]}`}
     />
   );
 }

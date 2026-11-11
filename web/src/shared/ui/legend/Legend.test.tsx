@@ -99,6 +99,13 @@ describe('Legend', () => {
     expect(swatchOf('Parada')).not.toHaveClass('rounded-full');
   });
 
+  it('fills the swatch with the tag color as fill="tag", like the stop on the map', () => {
+    renderLegend({ items: [{ tone: 'neutral', text: 'Parada', shape: 'square', fill: 'tag' }] });
+
+    expect(swatchOf('Parada')).toHaveClass('bg-tag', 'rounded');
+    expect(swatchOf('Parada')).not.toHaveClass('bg-tone-neutral');
+  });
+
   it('sets the text at 13 px with the swatch 6 px away', () => {
     const { list } = renderLegend();
 

@@ -18,7 +18,7 @@ function availability(empty: LegendItem): LegendItem[] {
 }
 
 const STOPS: LegendItem[] = [
-  { tone: 'neutral', text: 'Parada', shape: 'square' },
+  { tone: 'neutral', text: 'Parada', shape: 'square', fill: 'tag' },
   { tone: 'info', text: 'Parada elegida', shape: 'square' },
 ];
 
