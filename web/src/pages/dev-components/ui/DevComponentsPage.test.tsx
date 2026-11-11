@@ -124,6 +124,50 @@ describe('DevComponentsPage', () => {
     expect(within(section).getAllByRole('status')).toHaveLength(1);
   });
 
+  it('shows every CountBadge tone at both sizes, loading, and the one that speaks', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'CountBadge' });
+
+    expect(within(section).getAllByText('0')).toHaveLength(2);
+    expect(within(section).getAllByText('0')[0]?.parentElement).toHaveClass('border-dashed');
+    expect(within(section).getByText('2 avisos sin leer')).toHaveClass('sr-only');
+    expect(within(section).getAllByText(/^Cargando/)).toHaveLength(2);
+  });
+
+  it('shows the day line and the night line, which says what it is', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'Tag' });
+
+    expect(within(section).getAllByText('N16')).toHaveLength(2);
+    expect(within(section).getAllByText('línea nocturna N16')).toHaveLength(2);
+    expect(within(section).getByText('Líneas:')).toHaveClass('sr-only');
+  });
+
+  it('shows every StatTile tone for both domains, with its status word and loading', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'StatTile' });
+
+    expect(within(section).getAllByText('bicis disponibles').length).toBeGreaterThan(1);
+    expect(within(section).getAllByText('anclajes libres').length).toBeGreaterThan(1);
+    expect(within(section).getByText('minutos para el 27')).toBeInTheDocument();
+    expect(within(section).getByText('Sin confirmar')).toHaveClass('text-tone-muted-label');
+  });
+
+  it('shows the map legend with a solid «Vacía» and the stops legend with squares', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'Legend' });
+    const [map, stacked] = within(section).getAllByRole('list', { name: 'Leyenda del mapa' });
+    const stops = within(section).getByRole('list', { name: 'Leyenda de paradas' });
+
+    expect(within(map as HTMLElement).getByText('Vacía').firstElementChild).toHaveClass(
+      'border-solid',
+    );
+    expect(within(stacked as HTMLElement).getByText('Vacía').firstElementChild).toHaveClass(
+      'border-dashed',
+    );
+    expect(within(stops).getByText('Parada elegida').firstElementChild).toHaveClass('rounded');
+  });
+
   it('says why only one specimen of each notice is live', () => {
     render(<DevComponentsPage />);
 

@@ -9,6 +9,7 @@ export {
 export { BottomSheet, type SheetSnap, useBottomSheetOverlap } from './bottom-sheet';
 export { Button } from './button';
 export { CollapsibleSection } from './collapsible-section';
+export { CountBadge } from './count-badge';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
 export { EmptyState } from './empty-state';
@@ -35,12 +36,15 @@ export {
   StarIcon,
   WarningIcon,
 } from './icons';
+export { Legend } from './legend';
 export { RelativeTime } from './relative-time';
 export { SearchField } from './search-field';
 export { SegmentedControl } from './segmented-control';
 export { SidePanel } from './side-panel';
 export { Spinner } from './spinner';
+export { StatTile } from './stat-tile';
 export { StatusBanner } from './status-banner';
 export { StatusText } from './status-text';
 export { MessageAction, StateMessage } from './state-message';
+export { Tag } from './tag';
 export { type LineStyle, TONES, type Tone, toneLineStyle } from './tone';

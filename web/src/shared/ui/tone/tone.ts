@@ -23,3 +23,8 @@ export const toneLineStyle = {
   info: 'solid',
   inverse: 'solid',
 } as const satisfies Record<Tone, LineStyle>;
+
+export const LINE_STYLE_CLASSES = {
+  solid: 'border-solid',
+  dashed: 'border-dashed',
+} as const satisfies Record<LineStyle, string>;

@@ -1,11 +1,15 @@
 import { BannerSection } from './BannerSection';
 import { ButtonSection } from './ButtonSection';
+import { CountBadgeSection } from './CountBadgeSection';
 import { EmptyStateSection } from './EmptyStateSection';
 import { IconButtonSection } from './IconButtonSection';
 import { IconSection } from './IconSection';
+import { LegendSection } from './LegendSection';
 import { SearchFieldSection } from './SearchFieldSection';
 import { SegmentedControlSection } from './SegmentedControlSection';
+import { StatTileSection } from './StatTileSection';
 import { StatusTextSection } from './StatusTextSection';
+import { TagSection } from './TagSection';
 import { ToneSection } from './ToneSection';
 
 // Development only (app/router.tsx): the library next to the design board, until the
@@ -23,6 +27,10 @@ export function DevComponentsPage() {
       <BannerSection />
       <EmptyStateSection />
       <StatusTextSection />
+      <CountBadgeSection />
+      <TagSection />
+      <StatTileSection />
+      <LegendSection />
     </main>
   );
 }
