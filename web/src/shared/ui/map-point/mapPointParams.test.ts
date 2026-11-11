@@ -1,5 +1,10 @@
 import type { IconName } from '../icons';
-import { MAP_POINT_TONES, type MapPointParams, mapPointImageId } from './mapPointParams';
+import {
+  MAP_POINT_TAG_TONES,
+  MAP_POINT_TONES,
+  type MapPointParams,
+  mapPointImageId,
+} from './mapPointParams';
 
 const BASE: MapPointParams = { tone: 'success', value: '3' };
 
@@ -22,6 +27,14 @@ describe('MapPointParams', () => {
     }>().not.toExtend<MapPointParams>();
     expectTypeOf<{ tone: 'inverse'; value: string }>().not.toExtend<MapPointParams>();
   });
+
+  it('takes the tag fill only with the tones whose value is white, so it stays readable', () => {
+    expect(MAP_POINT_TAG_TONES).toEqual(['success', 'neutral', 'info']);
+    expectTypeOf({ tone: 'neutral' as const, fill: 'tag' as const }).toExtend<MapPointParams>();
+    expectTypeOf<{ tone: 'muted'; fill: 'tag' }>().not.toExtend<MapPointParams>();
+    expectTypeOf<{ tone: 'warning'; fill: 'tag' }>().not.toExtend<MapPointParams>();
+    expectTypeOf<{ tone: 'danger'; fill: 'tag' }>().not.toExtend<MapPointParams>();
+  });
 });
 
 describe('mapPointImageId', () => {
@@ -37,7 +50,7 @@ describe('mapPointImageId', () => {
     ['tone', { ...BASE, tone: 'warning' }],
     ['value', { ...BASE, value: '4' }],
     ['shape', { ...BASE, shape: 'square' }],
-    ['fill', { ...BASE, fill: 'tag' }],
+    ['fill', { tone: 'success', value: '3', fill: 'tag' }],
     ['selected', { ...BASE, selected: true }],
     ['content', { tone: 'success' }],
   ])('gives another id when the %s changes', (_param, changed) => {
@@ -55,9 +68,14 @@ describe('mapPointImageId', () => {
       [false, true].flatMap((selected) => [
         mapPointImageId({ tone, selected, value: '3' }),
         mapPointImageId({ tone, selected, shape: 'square', icon: 'bus' }),
-        mapPointImageId({ tone, selected, shape: 'square', fill: 'tag', icon: 'bus' }),
       ]),
     );
+    const tagIds = MAP_POINT_TAG_TONES.flatMap((tone) =>
+      [false, true].map((selected) =>
+        mapPointImageId({ tone, selected, shape: 'square', fill: 'tag', icon: 'bus' }),
+      ),
+    );
+    ids.push(...tagIds);
 
     expect(new Set(ids).size).toBe(ids.length);
   });

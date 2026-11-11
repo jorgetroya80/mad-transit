@@ -5,6 +5,15 @@ export type MapPointTone = Exclude<Tone, 'inverse'>;
 
 export const MAP_POINT_TONES = TONES.filter((tone): tone is MapPointTone => tone !== 'inverse');
 
+// The tag fill is dark, so only the tones with a white value keep it readable.
+export const MAP_POINT_TAG_TONES = [
+  'success',
+  'neutral',
+  'info',
+] as const satisfies readonly MapPointTone[];
+
+type MapPointTagTone = (typeof MAP_POINT_TAG_TONES)[number];
+
 export type MapPointShape = 'circle' | 'square';
 
 export type MapPointFill = 'tone' | 'tag';
@@ -14,10 +23,10 @@ type MapPointContent =
   | { icon: IconName; value?: never }
   | { value?: never; icon?: never };
 
-export type MapPointParams = {
-  tone: MapPointTone;
+type MapPointLook = { tone: MapPointTone; fill?: 'tone' } | { tone: MapPointTagTone; fill: 'tag' };
+
+export type MapPointParams = MapPointLook & {
   shape?: MapPointShape;
-  fill?: MapPointFill;
   selected?: boolean;
 } & MapPointContent;
 

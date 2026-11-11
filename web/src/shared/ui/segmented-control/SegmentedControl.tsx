@@ -43,22 +43,21 @@ const LAYOUT_CLASSES = {
 } as const satisfies Record<SegmentedVariant, string>;
 
 const PILL_UNSELECTED = {
-  normal: 'bg-transparent text-fg hover:bg-chip active:bg-line',
+  normal: 'bg-transparent text-fg',
   disabled: 'bg-transparent text-fg-muted',
   disabledSelected: 'bg-chip text-fg-muted',
 } as const;
 
 const STATE_CLASSES = {
   tray: {
-    normal: 'bg-transparent text-fg hover:bg-line active:bg-line-strong',
+    normal: 'bg-transparent text-fg',
     selected: 'bg-surface text-primary shadow-segment font-bold',
     disabled: 'bg-transparent text-fg-muted',
     disabledSelected: 'bg-surface text-fg-muted shadow-segment font-bold',
   },
   cards: {
-    normal: 'bg-surface border-line-strong text-fg hover:bg-chip active:bg-line',
-    selected:
-      'bg-primary border-primary text-primary-foreground hover:bg-primary-hover hover:border-primary-hover active:bg-primary-hover active:border-primary-hover',
+    normal: 'bg-surface border-line-strong text-fg',
+    selected: 'bg-primary border-primary text-primary-foreground',
     disabled: 'bg-surface-disabled border-line-strong text-fg-muted',
     disabledSelected: 'bg-surface-disabled border-line-strong text-fg-muted',
   },
@@ -68,9 +67,25 @@ const STATE_CLASSES = {
   },
   'pill-solid': {
     ...PILL_UNSELECTED,
-    selected: 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-hover',
+    selected: 'bg-primary text-primary-foreground',
   },
 } as const satisfies Record<ColorScheme, Record<SegmentState, string>>;
+
+// Kept apart from the colors, so a busy segment drops them like Button.
+const PILL_HOVER = 'hover:bg-chip active:bg-line';
+const INTERACTION_CLASSES = {
+  tray: { normal: 'hover:bg-line active:bg-line-strong', selected: '' },
+  cards: {
+    normal: 'hover:bg-chip active:bg-line',
+    selected:
+      'hover:bg-primary-hover hover:border-primary-hover active:bg-primary-hover active:border-primary-hover',
+  },
+  'pill-soft': { normal: PILL_HOVER, selected: '' },
+  'pill-solid': {
+    normal: PILL_HOVER,
+    selected: 'hover:bg-primary-hover active:bg-primary-hover',
+  },
+} as const satisfies Record<ColorScheme, Record<'normal' | 'selected', string>>;
 
 const ICON_SIZES = {
   tray: 20,
@@ -81,6 +96,12 @@ const ICON_SIZES = {
 function segmentStateOf(isSelected: boolean, isDisabled: boolean): SegmentState {
   if (isDisabled) return isSelected ? 'disabledSelected' : 'disabled';
   return isSelected ? 'selected' : 'normal';
+}
+
+function segmentColorsOf(scheme: ColorScheme, state: SegmentState, isBusy: boolean) {
+  const colors = STATE_CLASSES[scheme][state];
+  if (isBusy || (state !== 'normal' && state !== 'selected')) return colors;
+  return `${colors} ${INTERACTION_CLASSES[scheme][state]}`;
 }
 
 type GroupFrameProps = { label: string; labelVisible: boolean; children: ReactNode };
@@ -128,7 +149,7 @@ function Segment<V extends string>(props: SegmentProps<V>) {
       aria-describedby={hasDescription ? descriptionId : undefined}
       disabled={isDisabled}
       onClick={isBusy ? undefined : onPress}
-      className={`focus-ring relative inline-flex items-center ${LAYOUT_CLASSES[variant]} ${STATE_CLASSES[scheme][state]}`}
+      className={`focus-ring relative inline-flex items-center ${LAYOUT_CLASSES[variant]} ${segmentColorsOf(scheme, state, isBusy)}`}
     >
       <LeadingIcon icon={option.icon} isBusy={isBusy} size={ICON_SIZES[variant]} />
       {variant === 'cards' ? (

@@ -63,6 +63,20 @@ describe('useCloseOnEscape', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('keeps one listener across renders and calls the latest onClose', async () => {
+    const addListener = vi.spyOn(document, 'addEventListener');
+    const { rerender } = renderPanel();
+    const latestOnClose = vi.fn<() => void>();
+    rerender(<Panel onClose={latestOnClose} />);
+    screen.getByRole('button', { name: 'Dentro' }).focus();
+
+    await userEvent.keyboard('{Escape}');
+
+    expect(addListener.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(1);
+    expect(latestOnClose).toHaveBeenCalledOnce();
+    addListener.mockRestore();
+  });
+
   it('stops listening once unmounted', async () => {
     const { onClose, unmount } = renderPanel();
     unmount();

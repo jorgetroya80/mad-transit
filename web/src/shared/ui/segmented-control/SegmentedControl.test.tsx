@@ -389,6 +389,33 @@ describe('SegmentedControl', () => {
       expect(segment('Bus')).toHaveFocus();
     });
 
+    it.each([
+      ['tray', { busyValue: 'buses' }, 'Bus'],
+      [
+        'cards',
+        { variant: 'cards', options: NEED_OPTIONS, value: 'take', busyValue: 'take' },
+        NEED_OPTIONS[0].label,
+      ],
+      [
+        'pill solid',
+        {
+          variant: 'pill',
+          emphasis: 'solid',
+          options: DIRECTION_OPTIONS,
+          value: 'sol',
+          busyValue: 'sol',
+        },
+        'Hacia Sol',
+      ],
+    ] as const)(
+      '%s drops hover and press fills on the busy option, like Button',
+      (_, props, name) => {
+        renderControl(props);
+
+        expect(segment(name).className).not.toMatch(/hover:|active:/);
+      },
+    );
+
     it('keeps the other options as they are', () => {
       renderControl({ busyValue: 'bikes' });
 

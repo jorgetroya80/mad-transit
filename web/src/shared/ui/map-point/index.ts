@@ -6,6 +6,7 @@ export {
   mapPointValueFont,
 } from './drawMapPoint';
 export {
+  MAP_POINT_TAG_TONES,
   MAP_POINT_TONES,
   type MapPointFill,
   type MapPointParams,
