@@ -50,7 +50,7 @@ Las zonas son independientes en el código, pero comparten `shared/ui/index.ts`,
   - Archivos: `entities/station/{model/availability.ts,model/availability.test.ts,index.ts}`, `features/search-by-number/ui/ResultList.tsx`, `shared/ui/bottom-sheet/BottomSheet.tsx`, `widgets/station-list/ui/StationSection.tsx`, spec, plan, capability map.
   - Dependencias: ninguna.
 
-- [ ] **T2: `Icon` sin `arrow-left`** (XS, ~15 min)
+- [x] **T2: `Icon` sin `arrow-left`** (XS, ~15 min)
   - Descripción: quitar el nombre `arrow-left` de `ICON_NAMES` y de `iconDrawings.ts`, y su ejemplo de la sección «Iconos» de `/dev/components` (supuesto 5). La librería queda con 20 nombres.
   - Aceptación: los tests de `Icon` recorren los 20 nombres; `arrow-left` no compila; el test de la página sigue pasando.
   - Verificación: `pnpm --filter web exec vitest run src/shared/ui/icons src/pages/dev-components`; `pnpm check:task`.
@@ -227,3 +227,4 @@ Unas 16 h en total: PR 1 ~1 h, PR 2 ~4 h, PR 3 ~3 h, PR 4 ~3 h 30 min, PR 5 ~3 h
 - 2026-11-11: borrador a partir de la spec aprobada.
 - 2026-11-11: aprobado por el usuario, con el PR 1 como `refactor(web)`.
 - 2026-11-11: T1 hecha (con el agente `frontend-developer`). `availabilityTone()` en `entities/station/model/availability.ts`, con su tabla `satisfies Record<AvailabilityLevel, …>` y el tipo de vuelta sin `inverse` (comprobado con `expectTypeOf`); todavía no la usa nadie. `ResultList` y `BottomSheet` tenían el anillo por dentro (`-outline-offset-2`), así que pasan a `focus-ring [--focus-ring-offset:-2px]`; `StationSection` a `focus-ring`. El anillo se ve igual y ningún test miraba sus clases. 6 tests nuevos; `pnpm check:task` en verde (1689 tests en web, floor guard limpio).
+- 2026-11-11: T2 hecha. `arrow-left` sale de `ICON_NAMES` y de `iconDrawings.ts`; la librería queda con 20 nombres y un `expectTypeOf` comprueba que `arrow-left` ya no es un `IconName`. `/dev/components` no lo nombraba (recorre `ICON_NAMES`). El floor guard avisa de 1 aserción reescrita: `toHaveLength(21)` pasa a `toHaveLength(20)`, que sigue fijando el número exacto de nombres. El resto de `check:task` en verde por separado (tipos, lint, secretos, tests de scripts, 1684 tests en web, api, 100 % de líneas cambiadas y depcruise); son 5 tests menos, los casos de `arrow-left` de los `it.each`.
