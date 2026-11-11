@@ -1,7 +1,7 @@
 # Spec: web-ui-library
 
 - Created: 2026-11-10
-- Status: **approved** (2026-11-10)
+- Status: **implemented** (2026-11-11)
 - Plan: [PLAN-web-ui-library.md](../plans/PLAN-web-ui-library.md)
 
 Módulo `web-ui-library` del [Capability Map](CAPABILITY-MAP.md). Construye la sección «Librería de componentes» del documento «Mad Transit — Especificación de UI» y el tablero «Componentes reutilizables · librería genérica (16 piezas)» del lienzo «Mad Transit · rediseño», que son privados. El documento es el contrato de cada pieza (parámetros, colores por estado, medidas, accesibilidad y lo que no hace). Esta spec fija dónde vive la librería, qué se desvía del documento y cómo se comprueba. Las pantallas no cambian: eso lo hace `web-ui-migration`, el módulo siguiente.
@@ -216,3 +216,4 @@ Ninguna. El documento se revisó en la rev 54, que ya recoge el `tooltip` de `Ic
 - 2026-11-10: supuesto 14: `refactor(web)`, sin release. Supuesto 15 (decisión del usuario): página `/dev/components` solo en desarrollo, que se elimina al terminar `web-ui-migration`. Sin preguntas abiertas.
 - 2026-11-10: el documento (rev 54) recoge el `tooltip` de `IconButton` y el anillo de foco de 2 px.
 - 2026-11-10: aprobada por el usuario.
+- 2026-11-11: implementada en el PR #112 (`refactor(web)`, sin release). SC1 a SC7 comprobados, con la revisión visual del usuario en `/dev/components`.
