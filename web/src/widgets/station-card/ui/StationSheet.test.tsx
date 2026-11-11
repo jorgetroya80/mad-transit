@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { onlineManager } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
+import { createRef } from 'react';
 import type { Coordinates } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
 import { stationsFixture } from '@/shared/api/mocks/fixtures';
@@ -154,9 +155,12 @@ describe('StationSheetHeader and StationSheetBody', () => {
     const meta = await screen.findByText('Estación 1a · 12 m');
 
     expect(meta.compareDocumentPosition(heading)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(meta.parentElement).toBe(heading.parentElement);
-    expect(backButton().parentElement).toHaveClass('flex', 'items-center');
-    expect(backButton().parentElement).toBe(heading.parentElement?.parentElement);
+    const column = heading.parentElement?.parentElement;
+    expect(column).toContainElement(meta);
+    expect(backButton().parentElement?.nextElementSibling).toBe(column);
+    expect(screen.getByRole('button', { name: 'Favorita' }).parentElement?.parentElement).toBe(
+      heading.parentElement,
+    );
   });
 
   it('draws «Volver a la lista» as a 44 px primary arrow', async () => {
@@ -166,6 +170,22 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(backButton()).toHaveClass('size-11', 'text-primary');
     expect(backButton()).toHaveTextContent('');
     expect(backButton().querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(backButton().querySelector('svg')).toHaveAttribute('width', '22');
+  });
+
+  it('hands its title to headingRef, so the page can move the focus there', async () => {
+    const headingRef = createRef<HTMLHeadingElement>();
+    await renderWithRouter(
+      <StationSheetHeader number="1a" center={SOL} headingRef={headingRef} />,
+      {
+        initialEntries: ['/?station=1a'],
+      },
+    );
+    const heading = await title();
+
+    headingRef.current?.focus();
+
+    expect(heading).toHaveFocus();
   });
 
   it('goes back to the list with «Volver a la lista», keeping need', async () => {

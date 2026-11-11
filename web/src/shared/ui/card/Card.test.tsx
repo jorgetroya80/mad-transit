@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type ComponentProps, type ReactNode, useId, useState } from 'react';
+import { type ComponentProps, createRef, type ReactNode, useId, useState } from 'react';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { Banner } from '../banner';
 import { IconButton } from '../icon-button';
@@ -171,6 +171,15 @@ describe('Card', () => {
 
       await userEvent.tab();
       expect(title()).not.toHaveFocus();
+    });
+
+    it('hands the title element to titleRef, so a page can focus it', () => {
+      const titleRef = createRef<HTMLHeadingElement>();
+      renderCard({ header: { titleRef } });
+
+      expect(titleRef.current).toBe(title());
+      titleRef.current?.focus();
+      expect(title()).toHaveFocus();
     });
 
     it('draws the meta in 13/600 fg-muted and the title in 18/700', () => {

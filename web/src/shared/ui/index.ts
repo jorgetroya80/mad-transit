@@ -18,7 +18,6 @@ export { EmptyState } from './empty-state';
 export { ErrorState } from './error-state';
 export { IconButton } from './icon-button';
 export {
-  ArrowLeftIcon,
   ICON_NAMES,
   ICON_SIZES,
   Icon,
@@ -27,7 +26,6 @@ export {
   BikeIcon,
   ChevronIcon,
   ClearIcon,
-  CloseIcon,
   DockIcon,
   InfoIcon,
   LocationIcon,
@@ -35,7 +33,6 @@ export {
   OfflineIcon,
   PlusIcon,
   RefreshIcon,
-  StarIcon,
   WarningIcon,
 } from './icons';
 export { Legend } from './legend';

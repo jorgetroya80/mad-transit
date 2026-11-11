@@ -1,12 +1,13 @@
-import type { Ref } from 'react';
+import { type Ref, useId } from 'react';
 import { type Coordinates, useStationDetail } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
-import { DataAttribution } from '@/shared/ui';
+import { FavoriteButton } from '@/features/toggle-favorite';
+import { Card, DataAttribution, IconButton } from '@/shared/ui';
 import { cardHeading } from '../model/cardHeading';
+import { useStationMeta } from '../model/useStationMeta';
 import { useCloseOnEscape } from '@/shared/lib';
 import { CardBody } from './CardBody';
 import { CardFooter } from './CardFooter';
-import { SheetCardHeader } from './SheetCardHeader';
 
 // The station card inside the mobile sheet, in two pieces: the header row goes in the sheet's
 // header and the rest in its body, since the sheet decides what goes in each slot. Both read the same cached detail, and
@@ -23,16 +24,30 @@ type StationSheetHeaderProps = {
 export function StationSheetHeader({ number, center, headingRef }: StationSheetHeaderProps) {
   const detail = useStationDetail(number);
   const { clear } = useSelectedStation();
-  const escapeRef = useCloseOnEscape(clear);
+  const titleId = useId();
+  const heading = cardHeading(number, detail);
+  const meta = useStationMeta(heading, center);
 
   return (
-    <div ref={escapeRef} className="px-4 pb-3">
-      <SheetCardHeader
-        heading={cardHeading(number, detail)}
-        center={center}
-        onBack={clear}
-        headingRef={headingRef}
-      />
+    <div className="pb-3">
+      <Card as="div" elevation="flat" titleId={titleId} onEscape={clear}>
+        <Card.Header
+          titleId={titleId}
+          title={heading.title}
+          meta={meta}
+          titleRef={headingRef}
+          leadingAction={
+            <IconButton
+              label="Volver a la lista"
+              icon="chevron-left"
+              iconSize={22}
+              iconTone="primary"
+              onClick={clear}
+            />
+          }
+          titleAction={heading.station ? <FavoriteButton number={heading.station.number} /> : null}
+        />
+      </Card>
     </div>
   );
 }

@@ -87,12 +87,12 @@ describe('StationCard', () => {
     const close = within(region).getByRole('button', { name: 'Cerrar' });
     const star = within(region).getByRole('button', { name: 'Favorita' });
 
-    expect(close).toHaveClass('row-start-1', 'col-start-2');
-    expect(star).toHaveClass('row-start-2', 'col-start-2', 'self-center');
-    expect(within(region).getByRole('heading', { level: 2 })).toHaveClass(
-      'row-start-2',
-      'self-center',
-    );
+    const meta = await within(region).findByText('Estación 1a · 12 m');
+    const heading = within(region).getByRole('heading', { level: 2 });
+
+    expect(close.parentElement?.parentElement).toContainElement(meta);
+    expect(meta.compareDocumentPosition(heading)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(star.parentElement?.parentElement).toBe(heading.parentElement);
     await userEvent.tab();
     expect(close).toHaveFocus();
     await userEvent.tab();
