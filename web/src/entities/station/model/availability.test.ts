@@ -1,4 +1,5 @@
-import { availabilityFor, availabilityLabel } from './availability';
+import type { Tone } from '@/shared/ui';
+import { availabilityFor, availabilityLabel, availabilityTone } from './availability';
 import type { AvailabilityLevel, DataStatus, Need, Station } from './types';
 
 type StationCounts = Pick<Station, 'status' | 'bikes' | 'freeDocks'>;
@@ -63,5 +64,21 @@ describe('availabilityLabel', () => {
 
   it('shows a dash instead of the count when off', () => {
     expect(availabilityLabel({ level: 'off', count: 7 })).toBe('–');
+  });
+});
+
+describe('availabilityTone', () => {
+  it.each<[AvailabilityLevel, Exclude<Tone, 'inverse'>]>([
+    ['good', 'success'],
+    ['low', 'warning'],
+    ['empty', 'danger'],
+    ['off', 'neutral'],
+    ['unconfirmed', 'muted'],
+  ])('tones %s as %s', (level, tone) => {
+    expect(availabilityTone(level)).toBe(tone);
+  });
+
+  it('never gives the inverse tone, which is for dark surfaces and not for a level', () => {
+    expectTypeOf(availabilityTone).returns.toEqualTypeOf<Exclude<Tone, 'inverse'>>();
   });
 });

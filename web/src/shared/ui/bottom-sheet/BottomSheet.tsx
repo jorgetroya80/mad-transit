@@ -99,7 +99,7 @@ function SheetHandle({
       aria-controls={bodyId}
       onClick={() => onSnapChange(OTHER_SNAP[snap])}
       style={handleStyle[snap]}
-      className="flex w-full shrink-0 flex-col items-center justify-center gap-2 px-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+      className="flex w-full shrink-0 flex-col items-center justify-center gap-2 px-4 focus-ring [--focus-ring-offset:-2px]"
     >
       <span aria-hidden="true" className="h-1 w-10 shrink-0 rounded-full bg-handle" />
       {isHidden ? (

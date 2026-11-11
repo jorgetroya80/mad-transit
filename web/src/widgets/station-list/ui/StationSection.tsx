@@ -35,7 +35,7 @@ export function StationSection({
         <Heading
           id={headingId}
           tabIndex={-1}
-          className="text-base font-semibold text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="text-base font-semibold text-fg focus-ring"
         >
           {heading}
         </Heading>

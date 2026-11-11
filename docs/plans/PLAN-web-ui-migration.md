@@ -1,0 +1,229 @@
+# Plan: web-ui-migration
+
+- Created: 2026-11-11
+- Status: **approved** (2026-11-11)
+- Spec: [SPEC-web-ui-migration.md](../specs/SPEC-web-ui-migration.md)
+
+## Overview
+
+Pasar las pantallas de BiciMAD a la librería de `shared/ui` y retirar lo que sustituye, en seis PRs por zona (supuesto 10 de la spec): base, lista, ficha, buscador y panel, mapa y retirada. Cada PR sale de `main`, migra su zona entera, borra lo viejo que deja sin uso y se mergea tras la revisión visual del usuario. Los PRs 2 a 5 son `feat(web)` y el 1 y el 6 `refactor(web)`; el PR de release se mergea al final, así que sale una sola web 0.11.0.
+
+## Decisiones de implementación
+
+- **Una rama por PR desde `main`**, `feat/web-ui-migration-<n>-<zona>`, abierta después de mergear la anterior. Un commit por tarea, sin `Co-Authored-By`. La spec, este plan y el capability map van en el commit de T1.
+- **Test primero en cada zona** (supuesto 8): la aserción de clase pasa a la clase nueva y falla, después se migra la zona. Antes de borrar el test de una pieza vieja, la tarea apunta en el changelog dónde queda probado lo que comprobaba, y añade lo que falte.
+- **Los textos salen de donde están hoy:** `availabilityStatusText`, `availabilityCountText`, `availabilityLabel` (`entities/station`) y las constantes de cada widget. Ninguno cambia.
+- **Comparar antes y después:** cada tarea mira su zona con `pnpm --filter web dev` a 1440 y 390 px contra el lienzo y apunta en el changelog lo que cambia (supuesto 3).
+- **Si el floor guard avisa,** se corre solo para ver la lista y después el resto de `check:task` por separado, y el cuerpo del commit explica cada aviso (supuesto 8).
+- **Sin cambios en la librería** salvo quitar `arrow-left` (T2). Si una pantalla necesita otro parámetro, se pregunta antes.
+- **Sin dependencias nuevas.**
+
+## Grafo de dependencias
+
+```
+PR 1 base     T1 availabilityTone + focus-ring en lo que se queda ─┐
+              T2 sin arrow-left                                     │
+                                                                    ▼
+PR 2 lista    T3 filas (ListItem, CountBadge) ─► T4 favoritas y leyenda ─► T5 avisos y estados de la lista
+                                                                    │
+PR 3 ficha    T6 Card (cabecera, estrella, volver) ─► T7 cuerpo (StatTile, errores) ── borra AvailabilityBadge,
+                                                                    │                    ErrorState, StateMessage
+PR 4 buscador T8 SearchField, NoResults ─► T9 NeedToggle ─► T10 avisos del panel e indicador ── borra StatusBanner
+                                                                    │
+PR 5 mapa     T11 puntos con drawMapPoint ─► T12 posición del usuario ─► T13 controles y MapNotice
+                                                                    │
+PR 6 retirada T14 iconos y tokens viejos, test de retirada ─► T15 sin /dev/components, cierre
+```
+
+Las zonas son independientes en el código, pero comparten `shared/ui/index.ts`, las pantallas de `pages/map` y lo que cada una borra, así que van en serie: un PR detrás de otro.
+
+## Task List
+
+### PR 1: Base (`feat/web-ui-migration-1-base`)
+
+- [x] **T1: `availabilityTone()` y `focus-ring` en lo que se queda** (S, ~45 min)
+  - Descripción: `availabilityTone(level)` en `entities/station/model/availability.ts` (supuesto 2), exportada desde `entities/station`, con su tabla `satisfies Record<AvailabilityLevel, …>` y los 6 tonos sin `inverse`. `ResultList`, `BottomSheet` y `StationSection` cambian sus anillos escritos a mano por la clase `focus-ring` (supuesto 7). Spec, plan y capability map entran en este commit.
+  - Aceptación:
+    - Cada nivel da su tono (`good` → `success` … `unconfirmed` → `muted`), con test.
+    - Los tres componentes usan `focus-ring` y sus tests de foco y teclado pasan sin cambios; a la vista el anillo es el mismo (2 px `primary` a 2 px).
+  - Verificación: `pnpm --filter web exec vitest run src/entities/station src/features/search-by-number src/shared/ui/bottom-sheet src/widgets/station-list`; `pnpm check:task`.
+  - Archivos: `entities/station/{model/availability.ts,model/availability.test.ts,index.ts}`, `features/search-by-number/ui/ResultList.tsx`, `shared/ui/bottom-sheet/BottomSheet.tsx`, `widgets/station-list/ui/StationSection.tsx`, spec, plan, capability map.
+  - Dependencias: ninguna.
+
+- [ ] **T2: `Icon` sin `arrow-left`** (XS, ~15 min)
+  - Descripción: quitar el nombre `arrow-left` de `ICON_NAMES` y de `iconDrawings.ts`, y su ejemplo de la sección «Iconos» de `/dev/components` (supuesto 5). La librería queda con 20 nombres.
+  - Aceptación: los tests de `Icon` recorren los 20 nombres; `arrow-left` no compila; el test de la página sigue pasando.
+  - Verificación: `pnpm --filter web exec vitest run src/shared/ui/icons src/pages/dev-components`; `pnpm check:task`.
+  - Archivos: `shared/ui/icons/{iconDrawings.ts,Icon.test.tsx}`, `pages/dev-components/ui/IconSection.tsx` (si nombra el icono).
+  - Dependencias: ninguna.
+
+#### Checkpoint PR 1
+- [ ] `pnpm check:task` en verde; nada cambia a la vista (`refactor(web)`).
+- [ ] Permiso del usuario para push, PR y merge.
+
+### PR 2: Lista (`feat/web-ui-migration-2-list`)
+
+- [ ] **T3: filas de estación con `ListItem` y `CountBadge`** (M, ~1 h 30 min)
+  - Descripción: `StationRows` monta `ListItem` (`onSelect`, `accessibleLabel`, `selected`, `subtitle` con distancia y paseo, `leadingText` con el número) y en `trailing` un `CountBadge` con `availabilityTone`, `availabilityLabel` y `srText`, con `trailingCaption` de `availabilityStatusText`. Se borra `StationRow` (`entities/station/ui`).
+  - Aceptación:
+    - Los nombres accesibles y el orden de lectura de cada fila son los de hoy; los tests de `StationList` de selección, foco de vuelta y estados pasan sin cambiar su comportamiento.
+    - Antes de borrar `StationRow.test.tsx`, cada aserción suya está cubierta en `StationList.test.tsx`, en los tests de texto de `entities/station` o en `ListItem`/`CountBadge` (lista en el changelog).
+  - Verificación: `pnpm --filter web exec vitest run src/widgets/station-list src/entities/station src/pages/map`; floor guard y resto de `check:task` (supuesto 8).
+  - Archivos: `widgets/station-list/ui/StationRows.tsx`, `entities/station/ui/StationRow{,.test}.tsx`, `entities/station/index.ts`, `widgets/station-list/ui/StationList.test.tsx`.
+  - Dependencias: T1.
+
+- [ ] **T4: favoritas con `Disclosure` y leyenda con `Legend`** (S, ~1 h)
+  - Descripción: `FavoriteStations` guarda el estado con `useLocalStorage` (`FAVORITES_OPEN_STORAGE_KEY`, `parseOpen`, abierta por defecto) y monta `Disclosure` con `icon="star-filled"`, `count` y `headingLevel` (supuesto 6). `AvailabilityLegend` monta `Legend` con los cinco tonos y sus textos. Se borra `CollapsibleSection`.
+  - Aceptación:
+    - «Favoritas · 2» como nombre del botón y de la región, el estado sobrevive a recargar y `data-station-list="favorites"` sigue en su sitio (tests de `StationList` sin cambios).
+    - La leyenda dice lo mismo que hoy, en el mismo orden.
+  - Verificación: `pnpm --filter web exec vitest run src/widgets/station-list src/shared/ui`; floor guard y resto de `check:task`.
+  - Archivos: `widgets/station-list/ui/{FavoriteStations,AvailabilityLegend}.tsx` (+ tests), `shared/ui/collapsible-section/*`, `shared/ui/index.ts`.
+  - Dependencias: T3.
+
+- [ ] **T5: avisos y estados de la lista** (M, ~1 h 30 min)
+  - Descripción: `ApproximateLocationNotice` y `LocatingNotice` montan `Banner` `info` (con la acción ocupada de «Usar mi ubicación» / «Activar»). `NearbyStations` cambia sus bloques de error, sin conexión y lista vacía (`ErrorState`, `StateMessage`, iconos viejos) por `EmptyState` con sus textos, tono, `note` y acción. `StationSection` pasa a los tokens y la escala `text-*` nuevos.
+  - Aceptación:
+    - Las regiones vivas son las de hoy (un aviso por causa, `web-error-states`): `alert` en el error, `status` donde hoy es `output`, ninguna en los avisos fijos.
+    - Los textos, las acciones y el foco tras «Reintentar» no cambian.
+  - Verificación: `pnpm --filter web exec vitest run src/widgets/station-list src/pages/map`; floor guard y resto de `check:task`.
+  - Archivos: `widgets/station-list/ui/{LocationNotice,NearbyStations,StationSection}.tsx`, `widgets/station-list/ui/StationList.test.tsx`.
+  - Dependencias: T3.
+
+#### Checkpoint PR 2
+- [ ] Resto de `check:task` en verde y avisos del floor guard explicados en cada commit.
+- [ ] Revisión visual del usuario de la lista (escritorio y panel móvil) en cada estado, a 1440 y 390 px.
+- [ ] Permiso para push, PR y merge.
+
+### PR 3: Ficha (`feat/web-ui-migration-3-card`)
+
+- [ ] **T6: la ficha con `Card`, la estrella y volver con `IconButton`** (M, ~1 h 30 min)
+  - Descripción: `StationCard` (escritorio, `float`) y `StationSheet` (móvil, `flat`) montan `Card` con `titleId`, `onEscape` (sustituye al uso directo de `useCloseOnEscape`) y `Card.Header` (`meta` con `StationMeta`, título enfocable por código, acciones). `FavoriteButton` monta `IconButton` con `pressed`, `icon="star"`, `pressedIcon="star-filled"` y `tooltip`. El botón de volver es `IconButton` `ghost` con `chevron-left` de 22 px y `iconTone="primary"` (supuesto 5). `CardHeader` y `SheetCardHeader` se quedan como piezas del widget que montan `Card.Header`, o desaparecen si `Card.Header` basta.
+  - Aceptación:
+    - Escape cierra la ficha desde cualquier control y el foco vuelve como hoy (`useListFocusReturn`); el título recibe el foco al abrir.
+    - «Favorita» sigue siendo el nombre de la estrella, con su tooltip y `aria-pressed`.
+  - Verificación: `pnpm --filter web exec vitest run src/widgets/station-card src/features/toggle-favorite src/pages/map`; floor guard y resto de `check:task`.
+  - Archivos: `widgets/station-card/ui/{StationCard,StationSheet,SelectedStationCard,CardHeader,SheetCardHeader}.tsx` (+ tests), `features/toggle-favorite/ui/FavoriteButton{,.test}.tsx`.
+  - Dependencias: PR 2 mergeado.
+
+- [ ] **T7: el cuerpo de la ficha con `StatTile` y sus errores** (M, ~1 h 30 min)
+  - Descripción: `CardAvailability` monta dos `StatTile` con `availabilityTone`, cifra, texto y `statusLabel` (supuesto 3). `CardBody` cambia sus estados (cargando, no encontrada, error de carga, fuera de servicio, sin confirmar) por `Card.Body` `busy`, `EmptyState` y `Banner`. Se borran `AvailabilityBadge`, `ErrorState` y `StateMessage`.
+  - Aceptación:
+    - Las cajas toman el tono (fondo suave y borde; vacía en blanco con borde discontinuo); el lector oye lo mismo que hoy.
+    - Cada estado de la ficha de `web-error-states` mantiene su texto, su región viva y su acción.
+    - Cada aserción de los tests borrados queda cubierta (lista en el changelog).
+  - Verificación: `pnpm --filter web exec vitest run src/widgets/station-card src/entities/station src/shared/ui src/pages/map`; floor guard y resto de `check:task`.
+  - Archivos: `widgets/station-card/ui/{CardAvailability,CardBody,CardFooter}.tsx` (+ tests), `entities/station/ui/AvailabilityBadge{,.test}.tsx`, `entities/station/index.ts`, `shared/ui/{error-state,state-message}/*`, `shared/ui/index.ts`.
+  - Dependencias: T6.
+
+#### Checkpoint PR 3
+- [ ] Resto de `check:task` en verde y avisos explicados.
+- [ ] Revisión visual del usuario de la ficha en escritorio y móvil, en cada estado, a 1440 y 390 px.
+- [ ] Permiso para push, PR y merge.
+
+### PR 4: Buscador y panel (`feat/web-ui-migration-4-search`)
+
+- [ ] **T8: el buscador con `SearchField` y `NoResults` con `EmptyState`** (M, ~1 h 15 min)
+  - Descripción: `SearchInput` monta `SearchField` (`label`, `clearLabel`, `hint`, `error`, `inputMode="numeric"`, `busy`, `shape` según la pantalla) y pierde su `FOCUS_RING`. `NoResults` monta `EmptyState` con `announce="status"`, sus acciones y la sugerencia de la estación cercana. `ResultList` y `SourcePicker` no cambian.
+  - Aceptación: Escape con texto borra y deja el foco en la caja; las flechas siguen moviéndose por los resultados; los textos y el anuncio de «sin resultados» no cambian.
+  - Verificación: `pnpm --filter web exec vitest run src/features/search-by-number src/widgets/transit-search src/pages/map`; floor guard y resto de `check:task`.
+  - Archivos: `features/search-by-number/ui/{SearchInput,NoResults,SearchByNumber}.tsx` (+ test).
+  - Dependencias: PR 3 mergeado.
+
+- [ ] **T9: `NeedToggle` con `SegmentedControl`** (S, ~45 min)
+  - Descripción: `NeedToggle` monta `SegmentedControl` (`cards` en escritorio con descripción, `pill` en móvil) con `label="¿Qué quieres hacer?"` oculta e iconos `bike` y `dock`, y pierde su `FOCUS_RING` (supuesto 4).
+  - Aceptación: Tab pasa por cada opción y Enter o Espacio la elige, como hoy; `aria-pressed` y los nombres no cambian; la descripción sigue fuera del nombre.
+  - Verificación: `pnpm --filter web exec vitest run src/features/filter-by-need src/pages/map`; floor guard y resto de `check:task`.
+  - Archivos: `features/filter-by-need/ui/NeedToggle{,.test}.tsx`.
+  - Dependencias: T8.
+
+- [ ] **T10: avisos del panel e indicador de actualización** (M, ~1 h 30 min)
+  - Descripción: `StaleNotice` monta `Banner` `warning` con título y acción «Reintentar» ocupada; `OfflineBar` y `OfflineBanner` montan `Banner` `inverse` (`bar` y `card`). `UpdatedIndicator` monta `StatusText` con su tabla de tonos (supuesto 2) y un `Button` `sm`. `MobileSheetHeader` pasa a `tone-*` y `text-meta` (supuesto 3). Se borra `StatusBanner`.
+  - Aceptación:
+    - Los textos con hora y edad se actualizan como hoy; el botón ocupado no pierde el foco.
+    - Sigue habiendo un solo aviso por causa (`web-error-states`).
+  - Verificación: `pnpm --filter web exec vitest run src/shared/ui/data-freshness src/widgets/station-list src/widgets/app-header src/pages/map`; floor guard y resto de `check:task`.
+  - Archivos: `shared/ui/data-freshness/{StaleNotice,UpdatedIndicator}.tsx` (+ tests), `pages/map/ui/{OfflineNotice,MobileSheetHeader}.tsx`, `shared/ui/status-banner/*`, `shared/ui/index.ts`.
+  - Dependencias: T9.
+
+#### Checkpoint PR 4
+- [ ] Resto de `check:task` en verde y avisos explicados.
+- [ ] Revisión visual del usuario del buscador, el selector y los avisos en cada estado, a 1440 y 390 px.
+- [ ] Permiso para push, PR y merge.
+
+### PR 5: Mapa (`feat/web-ui-migration-5-map`)
+
+- [ ] **T11: puntos con `drawMapPoint`** (M, ~1 h 30 min)
+  - Descripción: `toMapPoints` da a cada punto los parámetros de `MapPoint` (`tone` con `availabilityTone`, `value` con `availabilityLabel`, `selected`) y pierde `TONE_BY_LEVEL`. `points.ts` cambia su tipo `MapPoint` y las capas piden `icon-image` con `mapPointImageId`; la imagen que falta se dibuja en `styleimagemissing` con `drawMapPoint`, tras esperar a `mapPointValueFont(style)`. `mapColors.ts` se queda solo con los colores de la posición del usuario (supuesto 7). Se borran `pointImage.ts` y el `MapPointTone` viejo; `shared/ui/index.ts` exporta el de la librería.
+  - Aceptación:
+    - Halo de 2 px, anillo de 4 px, cifra de 15 px, `muted` sin halo y `danger` continuo (supuesto 3); el elegido va encima (`symbol-sort-key`).
+    - Los tests de capas y de `toMapPoints` cubren los cinco niveles, el elegido y el registro de la imagen sobre un pintor falso.
+  - Verificación: `pnpm --filter web exec vitest run src/shared/ui/base-map src/widgets/stations-map src/pages/map`; floor guard y resto de `check:task`.
+  - Archivos: `widgets/stations-map/lib/toMapPoints{,.test}.ts`, `shared/ui/base-map/{points,mapLayers,mapColors,pointImage,useMapLibre,index}.ts` (+ tests), `shared/ui/index.ts`.
+  - Dependencias: PR 4 mergeado.
+
+- [ ] **T12: posición del usuario** (S, ~45 min)
+  - Descripción: la capa de la posición pasa a relleno de 12 px y borde blanco de 2, y gana una capa de halo de 22 px al 18 % debajo (supuesto 3). Las dos siguen en `base-map`.
+  - Aceptación: test de las dos capas (radio, borde, color, opacidad y orden).
+  - Verificación: `pnpm --filter web exec vitest run src/shared/ui/base-map`; `pnpm check:task`.
+  - Archivos: `shared/ui/base-map/{points,mapLayers}.ts` (+ tests).
+  - Dependencias: T11.
+
+- [ ] **T13: controles del mapa y `MapNotice`** (M, ~1 h 15 min)
+  - Descripción: `MapControls` se sustituye: el zoom es un `ControlGroup` con dos `IconButton` («Acercar», «Alejar») y centrar, un `IconButton` `floating` `md` con `iconTone="primary"` aparte, como en el lienzo de escritorio. `RecenterButton` (móvil) monta `IconButton` `floating` `lg`, `iconTone="primary"`, `iconSize={22}` y sigue su posición sobre el panel. `MapNotice` pasa a `tone-*`, cambia `OfflineIcon` por `Icon name="wifi-off"` y su leyenda de «sin confirmar» a `Legend`. Se borra `MapControls`.
+  - Aceptación: los nombres, `aria-busy`/`aria-disabled` de centrar y su posición sobre el panel no cambian; el aviso de servicio y la capa sin conexión dicen lo mismo.
+  - Verificación: `pnpm --filter web exec vitest run src/shared/ui/base-map src/widgets/stations-map src/pages/map`; floor guard y resto de `check:task`.
+  - Archivos: `shared/ui/base-map/{BaseMap,MapControls}.tsx` (+ tests), `pages/map/ui/RecenterButton{,.test}.tsx`, `widgets/stations-map/ui/MapNotice.tsx`, `widgets/stations-map/ui/StationsMap.test.tsx`.
+  - Dependencias: T12.
+
+#### Checkpoint PR 5
+- [ ] Resto de `check:task` en verde y avisos explicados.
+- [ ] Revisión visual del usuario del mapa (puntos, elegido, posición, controles, avisos) a 1440 y 390 px.
+- [ ] Permiso para push, PR y merge.
+
+### PR 6: Retirada (`feat/web-ui-migration-6-cleanup`)
+
+- [ ] **T14: iconos y tokens viejos, con su test** (S, ~1 h)
+  - Descripción: borrar `icons.tsx` e `IconFrame`, los tokens `availability-*` y `notice-*` y `text-sheet-subtitle` de `index.css`, y añadir el test de retirada, que busca en `web/src` esas clases y variables (supuesto 7).
+  - Aceptación: el test falla si se añade una clase `bg-availability-good` y pasa sin ella; `pnpm --filter web build` sin errores; ningún archivo importa los iconos viejos.
+  - Verificación: `pnpm --filter web exec vitest run src/app src/shared`; `pnpm --filter web build`; floor guard y resto de `check:task`.
+  - Archivos: `shared/ui/icons/{icons.tsx,IconFrame.tsx,index.ts}` (+ tests), `shared/ui/index.ts`, `app/styles/index.css`, un test de retirada en `app/styles`.
+  - Dependencias: PR 5 mergeado.
+
+- [ ] **T15: sin `/dev/components` y cierre** (S, ~45 min)
+  - Descripción: borrar `pages/dev-components`, su ruta solo de desarrollo y su test en `app/router.tsx`. Comprobar que el build no la incluye, repasar SC1 a SC5 y dejar al día este plan y la spec.
+  - Aceptación: la ruta no existe ni en desarrollo; SC1 a SC5 comprobados y apuntados.
+  - Verificación: `pnpm --filter web build`; floor guard y resto de `check:task`.
+  - Archivos: `pages/dev-components/*`, `app/router.tsx` (+ test), spec, este plan.
+  - Dependencias: T14.
+
+### Checkpoint final
+- [ ] SC1 a SC5 comprobados; CI en verde en el PR 6.
+- [ ] Revisión visual del usuario de las dos pantallas en cada estado, a 1440 y 390 px (SC6).
+- [ ] Permiso para mergear el PR 6 y, después, el PR de release (web 0.11.0); comprobación en Render.
+- [ ] Un PR `docs` pasa spec, plan y capability map a **implemented**.
+
+## Riesgos y mitigaciones
+
+| Riesgo | Impacto | Mitigación |
+| --- | --- | --- |
+| Un test de pantalla reescrito pierde una comprobación de comportamiento | Alto | Solo cambian las aserciones de aspecto; cada aviso del floor guard se explica en el commit; antes de borrar un test viejo se apunta dónde queda probado |
+| Un estado de `web-error-states` cambia su región viva o anuncia dos veces | Alto | Cada tarea comprueba `<output>`, `role="alert"` y su ausencia en los mismos tests de hoy |
+| El mapa deja de dibujar puntos al cambiar el registro de imágenes | Medio | T11 prueba el registro en `styleimagemissing` con un pintor falso y se mira en el navegador antes del merge |
+| La cifra del punto se dibuja con la fuente de reserva | Bajo | Esperar a `mapPointValueFont(style)` antes de dibujar, con test |
+| Un cambio de web ajeno al módulo entra en la release mientras el PR de release espera | Bajo | El PR de release no se mergea sin permiso; se revisa su changelog antes |
+| Una pantalla necesita un parámetro que la librería no tiene | Medio | Se pregunta antes de tocar `shared/ui` (Boundaries de la spec) |
+
+## Preguntas abiertas
+
+Ninguna. El PR 1 es `refactor(web)` (decisión del usuario, 2026-11-11), porque no cambia nada a la vista.
+
+## Estimación
+
+Unas 16 h en total: PR 1 ~1 h, PR 2 ~4 h, PR 3 ~3 h, PR 4 ~3 h 30 min, PR 5 ~3 h 30 min, PR 6 ~1 h 45 min, sin contar la revisión visual de cada PR.
+
+## Changelog
+
+- 2026-11-11: borrador a partir de la spec aprobada.
+- 2026-11-11: aprobado por el usuario, con el PR 1 como `refactor(web)`.
+- 2026-11-11: T1 hecha (con el agente `frontend-developer`). `availabilityTone()` en `entities/station/model/availability.ts`, con su tabla `satisfies Record<AvailabilityLevel, …>` y el tipo de vuelta sin `inverse` (comprobado con `expectTypeOf`); todavía no la usa nadie. `ResultList` y `BottomSheet` tenían el anillo por dentro (`-outline-offset-2`), así que pasan a `focus-ring [--focus-ring-offset:-2px]`; `StationSection` a `focus-ring`. El anillo se ve igual y ningún test miraba sus clases. 6 tests nuevos; `pnpm check:task` en verde (1689 tests en web, floor guard limpio).
