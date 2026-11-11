@@ -8,7 +8,9 @@ export {
 } from './base-map';
 export { BottomSheet, type SheetSnap, useBottomSheetOverlap } from './bottom-sheet';
 export { Button } from './button';
+export { Card } from './card';
 export { CollapsibleSection } from './collapsible-section';
+export { ControlGroup } from './control-group';
 export { CountBadge } from './count-badge';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';

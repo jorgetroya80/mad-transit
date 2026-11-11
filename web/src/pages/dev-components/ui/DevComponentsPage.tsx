@@ -1,5 +1,7 @@
 import { BannerSection } from './BannerSection';
 import { ButtonSection } from './ButtonSection';
+import { CardSection } from './CardSection';
+import { ControlGroupSection } from './ControlGroupSection';
 import { CountBadgeSection } from './CountBadgeSection';
 import { DisclosureSection } from './DisclosureSection';
 import { EmptyStateSection } from './EmptyStateSection';
@@ -35,6 +37,8 @@ export function DevComponentsPage() {
       <LegendSection />
       <ListItemSection />
       <DisclosureSection />
+      <CardSection />
+      <ControlGroupSection />
     </main>
   );
 }

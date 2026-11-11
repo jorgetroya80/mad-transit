@@ -233,6 +233,48 @@ describe('DevComponentsPage', () => {
     );
   });
 
+  it('shows the station and stop cards, busy, in error and flat, each named by its title', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'Card' });
+    const station = within(section).getByRole('region', { name: 'Puerta del Sol' });
+    const stop = within(section).getByRole('article', { name: 'Puerta del Sol' });
+
+    expect(within(station).getByText('Estación 33 · 57 m')).toBeInTheDocument();
+    expect(within(station).getByText('bicis disponibles')).toBeInTheDocument();
+    expect(within(stop).getByText('Parada 48 · a 45 m')).toBeInTheDocument();
+    expect(within(stop).getByText('ATOCHA')).toBeInTheDocument();
+    expect(
+      within(stop).getByRole('button', { name: 'Cerrar la ficha de la parada' }),
+    ).toBeInTheDocument();
+    expect(within(section).getByText('Cargando la disponibilidad')).toHaveClass('sr-only');
+    expect(within(section).getByText('No se pudo cargar la estación.')).toBeInTheDocument();
+    expect(within(section).getByRole('button', { name: 'Volver a la lista' })).toBeInTheDocument();
+  });
+
+  it('toggles the card star and its tooltip like the real one', async () => {
+    render(<DevComponentsPage />);
+    const station = screen.getByRole('region', { name: 'Puerta del Sol' });
+    const star = within(station).getByRole('button', { name: 'Favorita' });
+
+    expect(star).toHaveAttribute('title', 'Añadir a favoritas');
+    await userEvent.click(star);
+
+    expect(star).toHaveAttribute('aria-pressed', 'true');
+    expect(star).toHaveAttribute('title', 'Quitar de favoritas');
+  });
+
+  it('shows the zoom group, with zoom in disabled, the days side by side and a lone locate', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'ControlGroup' });
+    const zoomIns = within(section).getAllByRole('button', { name: 'Acercar' });
+    const locate = within(section).getByRole('button', { name: 'Centrar en mi posición' });
+
+    expect(within(section).getAllByRole('group', { name: 'Zoom del mapa' })).toHaveLength(3);
+    expect(zoomIns.map((button) => button.hasAttribute('disabled'))).toEqual([false, true, false]);
+    expect(within(section).getByRole('group', { name: 'Cambiar de día' })).toHaveClass('flex-row');
+    expect(locate.closest('fieldset')).toBeNull();
+  });
+
   it('says why only one specimen of each notice is live', () => {
     render(<DevComponentsPage />);
 
