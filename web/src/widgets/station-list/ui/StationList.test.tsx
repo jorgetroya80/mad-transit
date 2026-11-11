@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import type { StationsResponse } from '@jorgetroya80/mad-transit-client';
@@ -19,6 +19,7 @@ import {
   RETRY_DELAYS_MS,
 } from '@/shared/config';
 import { formatClock } from '@/shared/lib';
+import { Icon, type IconName } from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { findStaleNotice } from '../../../../test/staleNotice';
@@ -74,6 +75,18 @@ function recordAllRequests(): URL[] {
   const urls: URL[] = [];
   server.events.on('request:start', ({ request }) => urls.push(new URL(request.url)));
   return urls;
+}
+
+// The first stroke of a library icon, drawn apart, tells which icon a notice shows.
+function iconPath(name: IconName) {
+  const { container, unmount } = render(<Icon name={name} />);
+  const path = container.querySelector('path')?.getAttribute('d');
+  unmount();
+  return path;
+}
+
+function firstIconPath(element: Element | null | undefined) {
+  return element?.querySelector('svg path')?.getAttribute('d');
 }
 
 function saveFavorites(numbers: string[]) {
@@ -225,6 +238,30 @@ describe('StationList', () => {
     expect(within(nearby).getByRole('heading', { level: 2 })).toHaveAttribute('tabindex', '-1');
   });
 
+  it('heads each section at 16 px bold, with its caption in the meta size', async () => {
+    await renderList();
+
+    const nearby = await nearbyRegion();
+
+    expect(within(nearby).getByRole('heading', { level: 2 })).toHaveClass(
+      'text-base',
+      'font-bold',
+      'text-fg',
+    );
+    expect(within(nearby).getByText('Bicis disponibles')).toHaveClass('text-meta', 'text-fg-muted');
+  });
+
+  it('draws the approximate location notice as an info banner with the info icon', async () => {
+    await renderList({ isApproximateLocation: true });
+
+    const banner = screen.getByText(
+      'Sin ubicación: mostrando estaciones cerca de la Puerta del Sol',
+    ).parentElement;
+
+    expect(banner).toHaveClass('bg-tone-info-soft', 'border-tone-info-soft-line', 'rounded-card');
+    expect(firstIconPath(banner)).toBe(iconPath('info'));
+  });
+
   it('warns about the approximate location and names the fallback place', async () => {
     await renderList({ isApproximateLocation: true });
 
@@ -320,6 +357,18 @@ describe('StationList', () => {
       expect(screen.queryByText(NO_LOCATION)).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
       expect(await nearbyRegion('Cerca de la Puerta del Sol')).toBeInTheDocument();
+    });
+
+    it('draws the location notice as an info banner with the pin and a primary action', async () => {
+      await renderDesktopList({ isApproximateLocation: true });
+
+      const banner = screen.getByText(NO_LOCATION).parentElement;
+
+      expect(banner).toHaveClass('bg-tone-info-soft', 'border-tone-info-soft-line');
+      expect(firstIconPath(banner)).toBe(iconPath('pin'));
+      expect(
+        within(banner ?? document.body).getByRole('button', { name: 'Usar mi ubicación' }),
+      ).toHaveClass('bg-primary', 'h-10');
     });
 
     it('says nothing about the location while it is still pending', async () => {
@@ -566,6 +615,28 @@ describe('StationList', () => {
     expect(all.some((url) => url.searchParams.has('near'))).toBe(false);
   });
 
+  it('draws the loading message with the spinner in the body size, without the old stripe', async () => {
+    await renderList({ center: undefined });
+
+    const status = screen.getByRole('status');
+
+    expect(status).toHaveAttribute('aria-busy', 'true');
+    expect(status).toHaveClass('text-body', 'text-fg-muted');
+    expect(status).not.toHaveClass('border-l-4');
+    expect(status.querySelector('svg')).toHaveClass('animate-spin');
+  });
+
+  it('draws the empty message in the body size, without the old stripe', async () => {
+    nearbyJson({ ...nearbyStationsFixture, stations: [] });
+    await renderList();
+
+    const status = await screen.findByText('Ninguna estación en 500 m');
+
+    expect(status).toHaveRole('status');
+    expect(status).toHaveClass('text-body', 'text-fg-muted');
+    expect(status).not.toHaveClass('border-l-4');
+  });
+
   it('says so when no station is within the radius', async () => {
     nearbyJson({ ...nearbyStationsFixture, stations: [] });
 
@@ -592,6 +663,34 @@ describe('StationList', () => {
     expect(await screen.findByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
     expect(requests.length).toBeGreaterThan(attemptsBeforeRetry);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('draws the service error with the cloud on a danger circle and a large retry', async () => {
+    failNearby();
+    await renderList();
+
+    const alert = await screen.findByRole('alert', {}, AFTER_RETRY);
+    const circle = alert.parentElement?.firstElementChild;
+    const retry = screen.getByRole('button', { name: 'Reintentar' });
+
+    expect(circle).toHaveClass('bg-tone-danger-soft', 'size-18');
+    expect(firstIconPath(circle)).toBe(iconPath('cloud-alert'));
+    expect(within(alert).getByRole('heading', { level: 2 })).toHaveClass('text-title-lg');
+    expect(retry).toHaveClass('h-12', 'bg-primary');
+    expect(firstIconPath(retry)).toBe(iconPath('refresh'));
+  });
+
+  it('keeps «Reintentar» busy until the request it sent answers', async () => {
+    failNearby();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await renderList();
+    const retry = await screen.findByRole('button', { name: 'Reintentar' }, AFTER_RETRY);
+    server.use(http.get(STATIONS_URL, () => delay('infinite')));
+
+    await user.click(retry);
+
+    expect(retry).toHaveAttribute('aria-busy', 'true');
+    expect(retry).toHaveFocus();
   });
 
   describe('countdown to the next automatic retry (SC1)', () => {
@@ -861,6 +960,17 @@ describe('StationList', () => {
     expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Volveremos a intentarlo/)).not.toBeInTheDocument();
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+
+  it('draws the offline block with the crossed wifi on a neutral circle', async () => {
+    onlineManager.setOnline(false);
+    await renderList();
+
+    const alert = await screen.findByRole('alert');
+    const circle = alert.parentElement?.firstElementChild;
+
+    expect(circle).toHaveClass('bg-chip', 'size-18');
+    expect(firstIconPath(circle)).toBe(iconPath('wifi-off'));
   });
 
   it('loads the stations by itself when the connection returns', async () => {

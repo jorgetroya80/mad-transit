@@ -31,16 +31,12 @@ export function StationSection({
       data-station-list={section}
       className="flex flex-col gap-2"
     >
-      <div>
-        <Heading
-          id={headingId}
-          tabIndex={-1}
-          className="text-base font-semibold text-fg focus-ring"
-        >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <Heading id={headingId} tabIndex={-1} className="text-base font-bold text-fg focus-ring">
           {heading}
         </Heading>
         {caption === undefined ? null : (
-          <p id={captionId} className="text-sm text-fg-muted">
+          <p id={captionId} className="text-meta text-fg-muted">
             {caption}
           </p>
         )}

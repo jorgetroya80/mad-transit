@@ -1,7 +1,7 @@
 import type { DataStatus, Need } from '@/entities/station';
 import { NEARBY_RADIUS_M } from '@/shared/config';
-import { useCountdown } from '@/shared/lib';
-import { ErrorState, OfflineIcon, StateMessage, UpdatedAt, WarningIcon } from '@/shared/ui';
+import { useCountdown, usePendingAction } from '@/shared/lib';
+import { EmptyState, Spinner, UpdatedAt } from '@/shared/ui';
 import type { NearbyList } from '../model/useNearbyList';
 import { StationRows } from './StationRows';
 
@@ -10,31 +10,37 @@ type BlockingStatus = Extract<DataStatus, 'error' | 'offline'>;
 // Offline needs no retry: the query asks again by itself when the connection returns.
 const BLOCKING_TEXT = {
   error: {
-    tone: 'error',
-    icon: WarningIcon,
+    tone: 'danger',
+    icon: 'cloud-alert',
     title: 'No podemos cargar las estaciones',
-    body: 'El servicio de BiciMAD no está respondiendo. Suele ser temporal; no es un problema de tu conexión.',
+    message:
+      'El servicio de BiciMAD no está respondiendo. Suele ser temporal; no es un problema de tu conexión.',
     canRetry: true,
   },
   offline: {
     tone: 'neutral',
-    icon: OfflineIcon,
+    icon: 'wifi-off',
     title: 'Sin conexión a internet',
-    body: 'Necesitas conexión para ver las estaciones la primera vez. Se cargarán solas al volver a conectarte.',
+    message:
+      'Necesitas conexión para ver las estaciones la primera vez. Se cargarán solas al volver a conectarte.',
     canRetry: false,
   },
 } as const satisfies Record<
   BlockingStatus,
   {
-    tone: 'error' | 'neutral';
-    icon: typeof WarningIcon;
+    tone: 'danger' | 'neutral';
+    icon: 'cloud-alert' | 'wifi-off';
     title: string;
-    body: string;
+    message: string;
     canRetry: boolean;
   }
 >;
 
 const RETRYING_TEXT = 'Intentándolo de nuevo…';
+
+// The library has no small message: an EmptyState needs a body and a big icon, and these are one
+// line each. Loading and empty are polite, as they have always been.
+const MESSAGE_CLASSES = 'flex items-center gap-2 p-4 text-body text-fg-muted';
 
 type NearbyStationsProps = {
   list: NearbyList;
@@ -54,23 +60,19 @@ export function NearbyStations({
 }: NearbyStationsProps) {
   const { stations } = list;
   if (list.status === 'loading') {
-    return <StateMessage variant="loading" title="Cargando estaciones cercanas…" />;
-  }
-  if (stations === undefined) {
-    const { canRetry, ...text } = BLOCKING_TEXT[list.status === 'offline' ? 'offline' : 'error'];
     return (
-      <ErrorState
-        {...text}
-        action={canRetry ? { label: 'Reintentar', onAction: list.retry } : undefined}
-        footer={canRetry ? retryFooter(list) : undefined}
-      />
+      <output aria-busy="true" className={MESSAGE_CLASSES}>
+        <Spinner className="text-primary" />
+        Cargando estaciones cercanas…
+      </output>
     );
   }
+  if (stations === undefined) return <BlockingState list={list} />;
   return (
     <>
       {showUpdatedAt && list.updatedAt ? <UpdatedAt date={list.updatedAt} /> : null}
       {stations.length === 0 ? (
-        <StateMessage variant="empty" title={`Ninguna estación en ${NEARBY_RADIUS_M} m`} />
+        <output className={MESSAGE_CLASSES}>{`Ninguna estación en ${NEARBY_RADIUS_M} m`}</output>
       ) : (
         <StationRows
           stations={stations}
@@ -81,6 +83,30 @@ export function NearbyStations({
         />
       )}
     </>
+  );
+}
+
+type BlockingStateProps = { list: NearbyList };
+
+// The countdown goes in its own paragraph, not in `note`, to stay explicitly off the air
+// (`aria-live="off"`) as it always has; it takes the note's place and look.
+function BlockingState({ list }: BlockingStateProps) {
+  const { isPending, run } = usePendingAction(list.retry);
+  const { canRetry, ...text } = BLOCKING_TEXT[list.status === 'offline' ? 'offline' : 'error'];
+  if (!canRetry) return <EmptyState {...text} announce="alert" />;
+  const footer = retryFooter(list);
+  return (
+    <EmptyState
+      {...text}
+      announce="alert"
+      action={{ label: 'Reintentar', icon: 'refresh', onClick: run, busy: isPending }}
+    >
+      {footer ? (
+        <p aria-live="off" className="text-meta text-fg-muted">
+          {footer}
+        </p>
+      ) : null}
+    </EmptyState>
   );
 }
 
