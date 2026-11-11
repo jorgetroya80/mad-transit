@@ -1,5 +1,10 @@
 import { ICON_DRAWINGS } from '../icons';
-import { drawMapPoint, type MapPointPainter, mapPointSize } from './drawMapPoint';
+import {
+  drawMapPoint,
+  type MapPointPainter,
+  mapPointSize,
+  mapPointValueFont,
+} from './drawMapPoint';
 import { MAP_POINT_TONES, type MapPointParams } from './mapPointParams';
 import type { MapPointStyle } from './mapPointStyle';
 
@@ -176,6 +181,12 @@ describe('drawMapPoint', () => {
 
   it('scales the drawing to the pixel ratio first', () => {
     expect(draw({ tone: 'success', value: '3' }, 2)[0]).toEqual(['scale', 2, 2]);
+  });
+});
+
+describe('mapPointValueFont', () => {
+  it('gives the font the value is drawn in, so the caller can wait for that same font', () => {
+    expect(mapPointValueFont(style)).toBe(FONT);
   });
 });
 

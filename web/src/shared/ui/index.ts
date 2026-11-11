@@ -53,6 +53,7 @@ export {
   type MapPointStyle,
   mapPointImageId,
   mapPointSize,
+  mapPointValueFont,
   readMapPointStyle,
 } from './map-point';
 export { RelativeTime } from './relative-time';

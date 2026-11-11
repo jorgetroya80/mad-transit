@@ -144,9 +144,10 @@ function rowStateOf({ selected, disabled, onSelect, busy }: ListItemProps): RowS
 // The caller renders the <li>. Without onSelect the row is a plain div, so its trailing slot can
 // hold a button of its own without nesting buttons.
 export function ListItem(props: ListItemProps) {
-  const { onSelect, accessibleLabel, busy = false, busyLabel, density = 'md' } = props;
+  const { onSelect, accessibleLabel, busyLabel, density = 'md' } = props;
   const busyLabelId = useId();
   const state = rowStateOf(props);
+  const busy = state.isBusy;
   const content = (
     <>
       <Leading {...props} density={density} isSelected={state.isSelected} />
@@ -168,9 +169,9 @@ export function ListItem(props: ListItemProps) {
       {...shared}
       aria-label={accessibleLabel}
       aria-describedby={busy ? busyLabelId : undefined}
-      aria-disabled={state.isBusy || undefined}
+      aria-disabled={busy || undefined}
       disabled={state.isDisabled}
-      onClick={state.isBusy ? undefined : onSelect}
+      onClick={busy ? undefined : onSelect}
     >
       {content}
     </button>

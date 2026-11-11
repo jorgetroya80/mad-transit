@@ -378,6 +378,17 @@ describe('SegmentedControl', () => {
       expect(busySegment).toHaveTextContent(busyOption.label);
     });
 
+    it('ignores presses on the busy option and keeps its focus, like Button', async () => {
+      const { onChange } = renderControl({ busyValue: 'buses' });
+
+      await userEvent.click(segment('Bus'));
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(segment('Bus')).toHaveAttribute('aria-disabled', 'true');
+      expect(segment('Bus')).not.toBeDisabled();
+      expect(segment('Bus')).toHaveFocus();
+    });
+
     it('keeps the other options as they are', () => {
       renderControl({ busyValue: 'bikes' });
 

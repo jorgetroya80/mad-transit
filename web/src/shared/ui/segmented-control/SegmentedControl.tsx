@@ -124,9 +124,10 @@ function Segment<V extends string>(props: SegmentProps<V>) {
       type="button"
       aria-pressed={isSelected}
       aria-busy={isBusy || undefined}
+      aria-disabled={isBusy || undefined}
       aria-describedby={hasDescription ? descriptionId : undefined}
       disabled={isDisabled}
-      onClick={onPress}
+      onClick={isBusy ? undefined : onPress}
       className={`focus-ring relative inline-flex items-center ${LAYOUT_CLASSES[variant]} ${STATE_CLASSES[scheme][state]}`}
     >
       <LeadingIcon icon={option.icon} isBusy={isBusy} size={ICON_SIZES[variant]} />

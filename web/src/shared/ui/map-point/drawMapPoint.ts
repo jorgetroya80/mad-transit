@@ -88,10 +88,15 @@ function paintShape(painter: MapPointPainter, params: MapPointParams, colors: Ma
   painter.stroke();
 }
 
-type Label = { value: string; center: number; fontFamily: string };
+// The value is drawn inside the image, so the caller waits for this font before drawing.
+export function mapPointValueFont({ fontFamily }: MapPointStyle): string {
+  return `${VALUE_WEIGHT} ${VALUE_SIZE_PX}px ${fontFamily}`;
+}
 
-function paintValue(painter: MapPointPainter, { value, center, fontFamily }: Label) {
-  painter.font = `${VALUE_WEIGHT} ${VALUE_SIZE_PX}px ${fontFamily}`;
+type Label = { value: string; center: number; style: MapPointStyle };
+
+function paintValue(painter: MapPointPainter, { value, center, style }: Label) {
+  painter.font = mapPointValueFont(style);
   painter.textAlign = 'center';
   painter.textBaseline = 'middle';
   painter.fillText(value, center, center);
@@ -126,7 +131,7 @@ function paintContent(painter: MapPointPainter, params: MapPointParams, style: M
     return;
   }
   if (params.value === undefined) return;
-  paintValue(painter, { value: params.value, center, fontFamily: style.fontFamily });
+  paintValue(painter, { value: params.value, center, style });
 }
 
 // The caller sizes the canvas to Math.ceil(mapPointSize(params) * pixelRatio) on each side.

@@ -5,12 +5,11 @@ import {
   type MapPointParams,
   type MapPointStyle,
   mapPointSize,
+  mapPointValueFont,
   readMapPointStyle,
 } from '@/shared/ui';
 import { ReviewSection } from './ReviewSection';
 import { type Specimen, SpecimenRow } from './SpecimenRow';
-
-const VALUE_FONT = '700 15px Inter';
 
 const VALUES = {
   success: '12',
@@ -33,8 +32,8 @@ const SELECTED_SQUARE: MapPointParams = {
 
 // The value is drawn inside the image, so the font has to be there first, as on the map.
 // Without the fonts API, or if the font fails, the point is drawn in the fallback font.
-async function fontsReady() {
-  await document.fonts?.load(VALUE_FONT);
+async function fontsReady(style: MapPointStyle) {
+  await document.fonts?.load(mapPointValueFont(style));
 }
 
 type MapPointCanvasProps = { params: MapPointParams; style: MapPointStyle };
@@ -49,7 +48,7 @@ function MapPointCanvas({ params, style }: MapPointCanvasProps) {
       const context = canvasRef.current?.getContext('2d');
       if (context) drawMapPoint(context, params, { pixelRatio, style });
     };
-    void fontsReady().then(draw, draw);
+    void fontsReady(style).then(draw, draw);
   }, [params, pixelRatio, style]);
 
   return (

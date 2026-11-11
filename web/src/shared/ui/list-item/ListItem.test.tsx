@@ -317,6 +317,15 @@ describe('ListItem', () => {
     it('drops hover and pressed colors while busy', () => {
       expect(renderRow(BUSY).row).not.toHaveClass('hover:bg-chip', 'active:bg-line');
     });
+
+    it('is not busy when it is also disabled, like Button', () => {
+      const { row } = renderRow({ ...BUSY, disabled: true });
+
+      expect(row).not.toHaveAttribute('aria-busy');
+      expect(row).not.toHaveAccessibleDescription(BUSY.busyLabel);
+      expect(within(row).queryByText(BUSY.busyLabel)).toBeNull();
+      expect(within(row).getByText('3')).toBeInTheDocument();
+    });
   });
 
   describe('disabled', () => {

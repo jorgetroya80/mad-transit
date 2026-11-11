@@ -3,6 +3,7 @@ export {
   type MapPointDrawing,
   type MapPointPainter,
   mapPointSize,
+  mapPointValueFont,
 } from './drawMapPoint';
 export {
   MAP_POINT_TONES,
