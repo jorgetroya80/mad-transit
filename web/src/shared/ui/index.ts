@@ -12,6 +12,7 @@ export { CollapsibleSection } from './collapsible-section';
 export { CountBadge } from './count-badge';
 export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
+export { Disclosure } from './disclosure';
 export { EmptyState } from './empty-state';
 export { ErrorState } from './error-state';
 export { IconButton } from './icon-button';
@@ -37,6 +38,7 @@ export {
   WarningIcon,
 } from './icons';
 export { Legend } from './legend';
+export { ListItem } from './list-item';
 export { RelativeTime } from './relative-time';
 export { SearchField } from './search-field';
 export { SegmentedControl } from './segmented-control';

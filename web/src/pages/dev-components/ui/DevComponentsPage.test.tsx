@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ICON_NAMES, ICON_SIZES } from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { DevComponentsPage } from './DevComponentsPage';
@@ -166,6 +167,70 @@ describe('DevComponentsPage', () => {
       'border-dashed',
     );
     expect(within(stops).getByText('Parada elegida').firstElementChild).toHaveClass('rounded');
+  });
+
+  it('shows the rows for both domains, inside list items, with no nested buttons', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'ListItem' });
+    const stations = within(section).getAllByRole('button', {
+      name: 'Estación 33, Puerta del Sol, 57 metros, 3 bicis',
+    });
+    const showOnMap = within(section).getAllByRole('button', {
+      name: 'Ver en el mapa el autobús de la línea 51',
+    });
+
+    expect(stations).toHaveLength(6);
+    expect(stations.map((row) => row.getAttribute('aria-current'))).toEqual([
+      null,
+      'true',
+      null,
+      null,
+      null,
+      'true',
+    ]);
+    expect(stations[3]).toHaveAccessibleDescription('Cargando disponibilidad');
+    expect(
+      within(section)
+        .getByRole('button', {
+          name: 'Parada 1211, Alcalá-Sevilla, 140 metros, líneas 5, 15 y 20',
+        })
+        .closest('li'),
+    ).not.toBeNull();
+    expect(showOnMap.map((button) => button.getAttribute('aria-pressed'))).toEqual([
+      'false',
+      'true',
+    ]);
+    expect(section.querySelector('button button')).toBeNull();
+  });
+
+  it('toggles the arrival row button like the real one', async () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'ListItem' });
+    const [showOnMap] = within(section).getAllByRole('button', {
+      name: 'Ver en el mapa el autobús de la línea 51',
+    });
+
+    await userEvent.click(showOnMap as HTMLElement);
+
+    expect(showOnMap).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('shows the Disclosure open, closed, controlled and small', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'Disclosure' });
+    const toggles = within(section).getAllByRole('button', { name: /^Favoritas · \d$/ });
+
+    expect(toggles.map((toggle) => toggle.getAttribute('aria-expanded'))).toEqual([
+      'true',
+      'false',
+      'true',
+      'true',
+      'false',
+    ]);
+    expect(within(section).getByRole('button', { name: 'Horario de hoy' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
   });
 
   it('says why only one specimen of each notice is live', () => {
