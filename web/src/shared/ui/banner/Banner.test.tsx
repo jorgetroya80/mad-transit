@@ -122,6 +122,14 @@ describe('Banner', () => {
     expect(banner).not.toHaveClass('rounded-card');
   });
 
+  it('floats over the map with its shadow and 13 px text, as layout="float"', () => {
+    const { banner } = renderBanner({ layout: 'float' });
+
+    expect(banner).toHaveClass('rounded-card', 'px-3.5', 'py-3', 'shadow-pill');
+    expect(banner.querySelector('p')).toHaveClass('text-meta');
+    expect(banner.querySelector('p')).not.toHaveClass('text-body');
+  });
+
   it('lets the action wrap under the text when it does not fit', () => {
     expect(renderBanner({ action: locationAction() }).banner).toHaveClass('flex', 'flex-wrap');
   });

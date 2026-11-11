@@ -3,7 +3,7 @@ import { Button, type ButtonLook } from '../button';
 import { Icon, type IconName } from '../icons';
 
 type BannerTone = 'info' | 'warning' | 'danger' | 'inverse';
-type BannerLayout = 'card' | 'bar';
+type BannerLayout = 'card' | 'bar' | 'float';
 type Announce = 'none' | 'polite' | 'assertive';
 
 type BannerAction = { label: string; onClick: () => void; busy?: boolean; disabled?: boolean };
@@ -49,10 +49,11 @@ const ACTION_LOOKS = {
 } as const satisfies Record<BannerTone, ButtonLook>;
 
 // The text grows on a card, so the action sits at the end; on a bar it stays its size, so the
-// whole notice is centered.
+// whole notice is centered. A float is the card over the mobile map, with smaller text.
 const LAYOUT_CLASSES = {
-  card: { banner: 'rounded-card px-3.5 py-3', text: 'grow basis-40' },
-  bar: { banner: 'w-full rounded-none justify-center px-6 py-3', text: '' },
+  card: { banner: 'rounded-card px-3.5 py-3', text: 'grow basis-40 text-body' },
+  bar: { banner: 'w-full rounded-none justify-center px-6 py-3', text: 'text-body' },
+  float: { banner: 'rounded-card px-3.5 py-3 shadow-pill', text: 'grow basis-40 text-meta' },
 } as const satisfies Record<BannerLayout, { banner: string; text: string }>;
 
 type BannerTextProps = { announce: Announce; className: string; children: ReactNode };
@@ -88,7 +89,7 @@ export function Banner({
       {icon ? <Icon name={icon} className={ICON_CLASSES[tone]} /> : null}
       <BannerText
         announce={announce}
-        className={`min-w-0 text-body ${layoutClasses.text} ${TEXT_CLASSES[tone]}`}
+        className={`min-w-0 ${layoutClasses.text} ${TEXT_CLASSES[tone]}`}
       >
         {title ? <strong>{title}</strong> : null}
         {title ? ' ' : null}

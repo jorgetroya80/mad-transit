@@ -95,6 +95,25 @@ const BAR_SPECIMENS: Specimen[] = [
   },
 ];
 
+const FLOAT_SPECIMENS: Specimen[] = [
+  {
+    caption: 'info · float',
+    piece: (
+      <div className={CARD_WIDTH}>
+        <Banner {...NO_LOCATION} layout="float" />
+      </div>
+    ),
+  },
+  {
+    caption: 'warning · float',
+    piece: (
+      <div className={CARD_WIDTH}>
+        <Banner {...STALE} layout="float" />
+      </div>
+    ),
+  },
+];
+
 export function BannerSection() {
   return (
     <ReviewSection title="Banner">
@@ -102,6 +121,7 @@ export function BannerSection() {
       <SpecimenRow title='Tonos · layout="card"' specimens={TONE_SPECIMENS} />
       <SpecimenRow title="Estados de la acción (Button sm)" specimens={ACTION_SPECIMENS} />
       <SpecimenRow title='layout="bar" (franja de escritorio)' specimens={BAR_SPECIMENS} />
+      <SpecimenRow title='layout="float" (sobre el mapa en móvil)' specimens={FLOAT_SPECIMENS} />
     </ReviewSection>
   );
 }

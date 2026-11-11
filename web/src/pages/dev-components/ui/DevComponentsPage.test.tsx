@@ -93,6 +93,14 @@ describe('DevComponentsPage', () => {
     expect(within(section).queryByRole('alert')).toBeNull();
   });
 
+  it('shows the Banner floating over the mobile map', () => {
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'Banner' });
+
+    expect(within(section).getByText('info · float')).toBeInTheDocument();
+    expect(within(section).getByText('warning · float')).toBeInTheDocument();
+  });
+
   it('shows every EmptyState tone and size for both domains, with one live region', () => {
     render(<DevComponentsPage />);
     const section = screen.getByRole('region', { name: 'EmptyState' });
