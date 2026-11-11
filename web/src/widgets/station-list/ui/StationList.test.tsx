@@ -354,6 +354,52 @@ describe('StationList', () => {
       );
     });
 
+    it('heads the favorites with a filled star and a chevron that turns as they fold', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      saveFavorites(['1b']);
+      await renderDesktopList();
+      const header = await screen.findByRole('button', { name: 'Favoritas · 1' });
+      const [star, chevron] = [...header.querySelectorAll('svg')];
+      const panel = document.getElementById(header.getAttribute('aria-controls') ?? '');
+
+      expect(star).toHaveAttribute('width', '18');
+      expect(star).toHaveAttribute('fill', 'currentColor');
+      expect(star).toHaveClass('text-primary');
+      expect(chevron).toHaveClass('rotate-180');
+      await user.click(header);
+
+      expect(chevron).not.toHaveClass('rotate-180');
+      expect(panel).toHaveAttribute('hidden');
+      await user.click(header);
+
+      expect(header).toHaveAttribute('aria-expanded', 'true');
+      expect(
+        within(screen.getByRole('region', { name: 'Favoritas · 1' })).getAllByRole('button', {
+          name: /^Estación/,
+        }),
+      ).toHaveLength(1);
+    });
+
+    it('lets the favorites heading, an h2, take the focus without a tab stop', async () => {
+      saveFavorites(['1b']);
+      await renderDesktopList();
+
+      const heading = await screen.findByRole('heading', { level: 2, name: 'Favoritas · 1' });
+
+      expect(heading).toHaveAttribute('tabindex', '-1');
+    });
+
+    it('keeps the favorites open when the stored state is not valid', async () => {
+      localStorage.setItem(FAVORITES_OPEN_STORAGE_KEY, '"folded"');
+      saveFavorites(['1b']);
+      await renderDesktopList();
+
+      expect(await screen.findByRole('button', { name: 'Favoritas · 1' })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      );
+    });
+
     it('has no favorites header without favorites', async () => {
       await renderDesktopList();
       await nearbyRegion();
