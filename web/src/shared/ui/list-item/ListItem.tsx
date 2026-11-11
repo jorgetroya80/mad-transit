@@ -30,7 +30,12 @@ type Busy = { busy: boolean; busyLabel: string } | { busy?: false; busyLabel?: n
 
 type ListItemProps = ListItemContent & Selection & Busy;
 
-type RowState = { isSelected: boolean; isDisabled: boolean; isSelectable: boolean };
+type RowState = {
+  isSelected: boolean;
+  isDisabled: boolean;
+  isSelectable: boolean;
+  isBusy: boolean;
+};
 
 const PADDING = {
   md: 'p-2.5',
@@ -56,9 +61,9 @@ const ROW_BASE = 'flex min-h-16 w-full items-center gap-3 rounded-control border
 const LEADING_BOX_BASE =
   'inline-flex shrink-0 items-center justify-center rounded-chip px-1.5 text-body font-bold text-tone-neutral-soft-foreground tabular-nums';
 
-function surfaceOf({ isSelected, isDisabled, isSelectable }: RowState) {
+function surfaceOf({ isSelected, isDisabled, isSelectable, isBusy }: RowState) {
   if (isSelected) return 'bg-primary-soft border-primary';
-  if (isDisabled || !isSelectable) return 'bg-transparent border-transparent';
+  if (isDisabled || isBusy || !isSelectable) return 'bg-transparent border-transparent';
   return 'bg-transparent border-transparent hover:bg-chip active:bg-line';
 }
 
@@ -126,16 +131,22 @@ function Trailing({ trailing, trailingCaption, busyLabel, busyLabelId }: Trailin
   );
 }
 
+// Disabled wins over busy, as in Button.
+function rowStateOf({ selected, disabled, onSelect, busy }: ListItemProps): RowState {
+  return {
+    isSelected: selected === true,
+    isDisabled: disabled === true,
+    isSelectable: onSelect !== undefined,
+    isBusy: busy === true && disabled !== true,
+  };
+}
+
 // The caller renders the <li>. Without onSelect the row is a plain div, so its trailing slot can
 // hold a button of its own without nesting buttons.
 export function ListItem(props: ListItemProps) {
   const { onSelect, accessibleLabel, busy = false, busyLabel, density = 'md' } = props;
   const busyLabelId = useId();
-  const state = {
-    isSelected: props.selected === true,
-    isDisabled: props.disabled === true,
-    isSelectable: onSelect !== undefined,
-  };
+  const state = rowStateOf(props);
   const content = (
     <>
       <Leading {...props} density={density} isSelected={state.isSelected} />
@@ -150,14 +161,16 @@ export function ListItem(props: ListItemProps) {
   };
 
   if (!onSelect) return <div {...shared}>{content}</div>;
+  // A busy row keeps the focus (aria-disabled, not disabled) and ignores presses, like Button.
   return (
     <button
       type="button"
       {...shared}
       aria-label={accessibleLabel}
       aria-describedby={busy ? busyLabelId : undefined}
+      aria-disabled={state.isBusy || undefined}
       disabled={state.isDisabled}
-      onClick={onSelect}
+      onClick={state.isBusy ? undefined : onSelect}
     >
       {content}
     </button>

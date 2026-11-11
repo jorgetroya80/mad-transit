@@ -300,6 +300,23 @@ describe('ListItem', () => {
     it('is not busy by default', () => {
       expect(renderRow().row).not.toHaveAttribute('aria-busy');
     });
+
+    it('ignores presses and keeps the focus while busy, like Button', async () => {
+      const { row, onSelect } = renderRow(BUSY);
+
+      await userEvent.click(row);
+      row.focus();
+      await userEvent.keyboard('{Enter}');
+
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(row).toHaveAttribute('aria-disabled', 'true');
+      expect(row).not.toBeDisabled();
+      expect(row).toHaveFocus();
+    });
+
+    it('drops hover and pressed colors while busy', () => {
+      expect(renderRow(BUSY).row).not.toHaveClass('hover:bg-chip', 'active:bg-line');
+    });
   });
 
   describe('disabled', () => {
