@@ -1,7 +1,7 @@
 # Plan: web-ui-library
 
 - Created: 2026-11-10
-- Status: **approved** (2026-11-10)
+- Status: **implemented** (2026-11-11)
 - Spec: [SPEC-web-ui-library.md](../specs/SPEC-web-ui-library.md)
 
 ## Overview
@@ -166,9 +166,9 @@ T1–T8 ─► T9 cierre: build sin /dev/components, tokens text-sheet-*, revisi
 
 ### Checkpoint final
 
-- [ ] SC1-SC7 comprobados; `pnpm check:task` y CI en verde.
+- [x] SC1-SC7 comprobados; `pnpm check:task` y CI en verde.
 - [x] Revisión visual del usuario de todas las piezas en `/dev/components` (SC7).
-- [ ] Pedir permiso antes de push, abrir el PR y hacer merge. Sin release. Después del merge, un PR `docs` pasa spec, plan y capability map a **implemented**, como en los módulos anteriores.
+- [x] Pedir permiso antes de push, abrir el PR y hacer merge. Sin release. Después del merge, un PR `docs` pasa spec, plan y capability map a **implemented**, como en los módulos anteriores.
 
 ## Riesgos y mitigaciones
 
@@ -209,3 +209,4 @@ Unas 13 h en total: fase 1 ~5 h 15 min, fase 2 ~4 h y fase 3 ~3 h 45 min.
 - 2026-11-11: T8 hecha (con el agente `frontend-developer`). `shared/ui/map-point` con `drawMapPoint`, `mapPointImageId`, `mapPointSize` y `readMapPointStyle`, y su sección en `/dev/components` (14 `canvas`: los 6 tonos con cifra, normal y seleccionado, y el cuadrado con `bus`, `fill="tag"` y elegido en `info`). Desvío del documento: la firma es `drawMapPoint(ctx, params, { pixelRatio, style })`, porque la función no lee el CSS (supuesto 5) y oxlint limita a 3 parámetros; los colores se leen una vez con `readMapPointStyle()`. El borde va por fuera de la forma, como en `pointImage.ts`: la imagen mide 44 (56 elegido) en círculo y 36 (48) en cuadrado, y quien llama da al `canvas` `Math.ceil(mapPointSize(params) * pixelRatio)`. `danger` y `muted` cambian el halo por su línea de 2 px, siempre continua; el anillo de 4 px de elegido gana a los dos. El icono usa los trazos de `Icon` escalados de 24 a 16 con `Path2D`; los rellenos (`star-filled`) se rellenan y se trazan. Sin cifra ni icono solo se pinta la forma. El id normaliza los valores por defecto y pone la cifra al final, así que ningún texto la confunde con otro punto. `MapPointTone` no sale de `shared/ui/index.ts` porque choca con el tipo de hoy del mapa (`good`, `low`…); se usa `MapPointParams['tone']` hasta `web-ui-migration`. `pointImage.ts` y el mapa no cambian. 41 tests nuevos; `pnpm check:task` en verde (1658 tests en web, floor guard limpio).
 - 2026-11-11: T9 hecha. `pnpm --filter web build` sin la página: ningún texto propio de `/dev/components` («Librería de componentes», «Parada elegida», «Día siguiente») aparece en `dist/`. Repaso de cada pieza contra su tabla del documento (rev 54), con un agente revisor que descartó lo ya decidido en la spec y en este plan: las 19 piezas y la base coinciden salvo tres arreglos, hechos con su test antes. `ListItem` desactivado y ocupado ya no anuncia la carga (sin `aria-busy`, sin `Spinner` ni `busyLabel`), porque desactivado gana como en `Button`. El segmento ocupado de `SegmentedControl` lleva `aria-disabled` e ignora las pulsaciones sin perder el foco, como `Button` y `ListItem`. `MapPoint` gana `mapPointValueFont(style)`, la misma fuente con la que dibuja la cifra, para que quien llama espere a esa fuente: la página esperaba a `Inter` y la cifra se dibuja en `Inter Variable`. Esperar a la fuente es cosa de quien llama (la página hoy, el mapa en `web-ui-migration`). Se quedan como están: la etiqueta de `SearchField` `pill` es visible por defecto (el documento no la oculta; quien llama pasa `labelVisible={false}`), y `Card.Footer` no lleva separador (la línea `line-subtle` es `separated` en `Card.Body`, decidido en T7). Para el diseñador: el documento da dos contrastes para `muted-label` (7,68 en la tabla de tonos y 6,13 en `StatTile`); el código usa un solo token, `#4a5462`. SC1 a SC6 comprobados. SC7: revisión visual aprobada por el usuario. 3 tests nuevos; `pnpm check:task` en verde (1661 tests en web, floor guard limpio).
 - 2026-11-11: revisión de código (cinco ejes) antes del PR, con tres arreglos aprobados por el usuario, cada uno con su test antes. `MapPoint`: `fill: 'tag'` solo se admite por tipo con `success`, `neutral` e `info` (`MAP_POINT_TAG_TONES`), porque el relleno `#2b333e` deja ilegible la cifra de `muted` (el mismo color), `warning` y `danger`. `SegmentedControl`: los colores de hover y pulsado van aparte de los de cada estado, así que el segmento ocupado los pierde como `Button`. `useCloseOnEscape` lee el último `onClose` de un `ref`, así que un `onEscape` escrito en línea ya no vuelve a poner el listener en cada render. Para saber: con dos `Card` anidadas con `onEscape`, un Escape cierra las dos; hoy ninguna pantalla las anida. 5 tests nuevos; `pnpm check:task` en verde (1666 tests en web, floor guard limpio).
+- 2026-11-11: PR #112 mergeado (`refactor(web)`, sin release). En CI, el test de axe de toda la página pasaba de los 5 s; ahora revisa cada sección por separado, con la misma comprobación. Plan cerrado.
