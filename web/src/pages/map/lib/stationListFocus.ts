@@ -1,5 +1,5 @@
 // DOM contract of widgets/station-list: each section carries `data-station-list` and its
-// focusable heading; each row, `data-station-number`.
+// focusable heading; each row, `data-station-number` on its <li>, around the row's button.
 const SECTION_ATTRIBUTE = 'data-station-list';
 const ROW_SELECTOR = '[data-station-number]';
 const SECTION_HEADING_SELECTOR = `[${SECTION_ATTRIBUTE}] h2, [${SECTION_ATTRIBUTE}] h3`;
@@ -20,7 +20,8 @@ export function findRow(container: Element, { section, number }: RowOrigin) {
   const rows = container.querySelectorAll<HTMLElement>(
     `[${SECTION_ATTRIBUTE}="${section}"] ${ROW_SELECTOR}`,
   );
-  return Array.from(rows).find((row) => row.dataset.stationNumber === number);
+  const row = Array.from(rows).find((item) => item.dataset.stationNumber === number);
+  return row?.querySelector<HTMLElement>('button') ?? undefined;
 }
 
 export function findFirstSectionHeading(container: Element) {

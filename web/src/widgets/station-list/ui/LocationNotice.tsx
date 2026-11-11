@@ -1,4 +1,5 @@
-import { LocationIcon, StatusBanner } from '@/shared/ui';
+import type { ComponentProps } from 'react';
+import { Banner } from '@/shared/ui';
 
 const DENIED_TEXT =
   'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol';
@@ -14,11 +15,16 @@ export function ApproximateLocationNotice({
 }: LocationNoticeProps) {
   if (!isApproximateLocation) return null;
   return (
-    <StatusBanner variant="info">
-      {isLocationDenied
-        ? DENIED_TEXT
-        : 'Sin ubicación: mostrando estaciones cerca de la Puerta del Sol'}
-    </StatusBanner>
+    <Banner
+      tone="info"
+      icon="info"
+      announce="polite"
+      message={
+        isLocationDenied
+          ? DENIED_TEXT
+          : 'Sin ubicación: mostrando estaciones cerca de la Puerta del Sol'
+      }
+    />
   );
 }
 
@@ -45,6 +51,13 @@ const NO_LOCATION = {
   },
 } as const satisfies Record<LocatingLayout, { text: string; label: string; pendingLabel: string }>;
 
+type LocationBannerProps = Pick<ComponentProps<typeof Banner>, 'message' | 'action'>;
+
+// Polite, as the notice has always been: only its text is read, not the action.
+function LocationBanner(props: LocationBannerProps) {
+  return <Banner tone="info" icon="pin" announce="polite" {...props} />;
+}
+
 // Always on screen, so the user knows what the list is around. A denied permission is not
 // asked again: the browser would not show its prompt.
 export function LocatingNotice({
@@ -54,32 +67,13 @@ export function LocatingNotice({
   onLocate,
   isLocating,
 }: LocatingNoticeProps) {
-  if (!isApproximateLocation) {
-    return (
-      <StatusBanner variant="info" icon={LocationIcon}>
-        Usando tu ubicación actual.
-      </StatusBanner>
-    );
-  }
-  if (isLocationDenied) {
-    return (
-      <StatusBanner variant="info" icon={LocationIcon}>
-        {DENIED_TEXT}
-      </StatusBanner>
-    );
-  }
+  if (!isApproximateLocation) return <LocationBanner message="Usando tu ubicación actual." />;
+  if (isLocationDenied) return <LocationBanner message={DENIED_TEXT} />;
   const { text, label, pendingLabel } = NO_LOCATION[layout];
   return (
-    <StatusBanner
-      variant="info"
-      icon={LocationIcon}
-      action={{
-        label: isLocating ? pendingLabel : label,
-        onClick: onLocate,
-        isPending: isLocating,
-      }}
-    >
-      {text}
-    </StatusBanner>
+    <LocationBanner
+      message={text}
+      action={{ label: isLocating ? pendingLabel : label, onClick: onLocate, busy: isLocating }}
+    />
   );
 }

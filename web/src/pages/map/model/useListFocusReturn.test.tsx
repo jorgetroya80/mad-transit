@@ -17,9 +17,11 @@ function Page({ openStation, isSheet = false }: { openStation?: string; isSheet?
       <div ref={panelRef}>
         <section data-station-list="nearby">
           <h3 tabIndex={-1}>Cercanas</h3>
-          <button type="button" data-station-number="1a">
-            Estación 1a
-          </button>
+          <ul>
+            <li data-station-number="1a">
+              <button type="button">Estación 1a</button>
+            </li>
+          </ul>
         </section>
       </div>
       <h2 ref={detailHeading} tabIndex={-1}>

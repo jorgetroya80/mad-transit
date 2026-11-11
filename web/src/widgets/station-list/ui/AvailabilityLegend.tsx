@@ -1,36 +1,20 @@
-import { useId } from 'react';
+import { Legend } from '@/shared/ui';
 
-// Same order, colors and dashed empty border as the badges in the rows. Full class names so
-// Tailwind finds them; the unconfirmed grey gets a line so it shows on the white panel.
+// Same order and tones as the badges in the rows; empty keeps its dashed line.
 const LEVELS = [
-  { label: '5 o más', swatch: 'bg-availability-good' },
-  { label: '1 a 4', swatch: 'bg-availability-low' },
-  {
-    label: 'Vacía',
-    swatch: 'bg-availability-empty border-2 border-dashed border-availability-empty-line',
-  },
-  { label: 'Fuera de servicio', swatch: 'bg-availability-off' },
-  {
-    label: 'Sin confirmar',
-    swatch: 'bg-availability-unconfirmed border border-availability-unconfirmed-line',
-  },
+  { tone: 'success', text: '5 o más' },
+  { tone: 'warning', text: '1 a 4' },
+  { tone: 'danger', text: 'Vacía' },
+  { tone: 'neutral', text: 'Fuera de servicio' },
+  { tone: 'muted', text: 'Sin confirmar' },
 ] as const;
 
+// The hidden heading keeps the panel's outline; the list takes the same name from its label.
 export function AvailabilityLegend() {
-  const headingId = useId();
   return (
     <div>
-      <h2 id={headingId} className="sr-only">
-        Leyenda
-      </h2>
-      <ul aria-labelledby={headingId} className="flex flex-wrap gap-x-4 gap-y-2">
-        {LEVELS.map(({ label, swatch }) => (
-          <li key={label} className="flex items-center gap-1.5 text-xs text-fg-muted">
-            <span aria-hidden="true" className={`size-3.5 shrink-0 rounded-full ${swatch}`} />
-            {label}
-          </li>
-        ))}
-      </ul>
+      <h2 className="sr-only">Leyenda</h2>
+      <Legend label="Leyenda" items={LEVELS} />
     </div>
   );
 }

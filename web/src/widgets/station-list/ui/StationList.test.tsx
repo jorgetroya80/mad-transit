@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import type { StationsResponse } from '@jorgetroya80/mad-transit-client';
@@ -19,6 +19,7 @@ import {
   RETRY_DELAYS_MS,
 } from '@/shared/config';
 import { formatClock } from '@/shared/lib';
+import { Icon, type IconName } from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { findStaleNotice } from '../../../../test/staleNotice';
@@ -74,6 +75,18 @@ function recordAllRequests(): URL[] {
   const urls: URL[] = [];
   server.events.on('request:start', ({ request }) => urls.push(new URL(request.url)));
   return urls;
+}
+
+// The first stroke of a library icon, drawn apart, tells which icon a notice shows.
+function iconPath(name: IconName) {
+  const { container, unmount } = render(<Icon name={name} />);
+  const path = container.querySelector('path')?.getAttribute('d');
+  unmount();
+  return path;
+}
+
+function firstIconPath(element: Element | null | undefined) {
+  return element?.querySelector('svg path')?.getAttribute('d');
 }
 
 function saveFavorites(numbers: string[]) {
@@ -151,7 +164,66 @@ describe('StationList', () => {
     const region = await nearbyRegion();
     const [first] = await within(region).findAllByRole('button', { name: /^Estación/ });
 
-    expect(first).toHaveAttribute('data-station-number', '1a');
+    expect(first?.closest('li')).toHaveAttribute('data-station-number', '1a');
+  });
+
+  it('separates the rows by a 2 px gap, without dividers, as the design does', async () => {
+    await renderList();
+
+    const region = await nearbyRegion();
+    const [first] = await within(region).findAllByRole('button', { name: /^Estación/ });
+    const list = first?.closest('ul');
+
+    expect(list).toHaveClass('flex', 'flex-col', 'gap-0.5');
+    expect(list).not.toHaveClass('divide-y');
+  });
+
+  it('shows number, name, distance and walk as visible text, the name whole', async () => {
+    await renderList();
+
+    const row = await screen.findByRole('button', { name: /^Estación 1a,/ });
+
+    expect(row).toHaveTextContent('1a');
+    expect(within(row).getByText('Puerta del Sol A')).not.toHaveClass('truncate');
+    expect(within(row).getByText('Puerta del Sol A').className).not.toMatch(/line-clamp/);
+    expect(within(row).getByText('12 m · 1 min a pie')).toBeInTheDocument();
+  });
+
+  it('omits the distance of a station without one', async () => {
+    saveFavorites(['3']);
+
+    await renderList();
+
+    const favorites = await screen.findByRole('region', { name: 'Favoritas' });
+    const row = await within(favorites).findByRole('button', { name: /^Estación 3,/ });
+    expect(row).not.toHaveTextContent(' m');
+    expect(row).not.toHaveTextContent('a pie');
+  });
+
+  it.each([
+    { number: '1a', count: '12', status: 'Disponible', tone: 'success' },
+    { number: '1b', count: '2', status: 'Pocas', tone: 'warning' },
+    { number: '2', count: '–', status: 'Fuera de servicio', tone: 'neutral' },
+  ])(
+    'draws the count of $number in a $tone badge with its status under it, leaving the count to the row name',
+    async ({ number, count, status, tone }) => {
+      await renderList();
+
+      const row = await screen.findByRole('button', { name: new RegExp(`^Estación ${number},`) });
+      const badge = within(row).getByText(count).parentElement;
+
+      expect(badge).toHaveAttribute('aria-hidden', 'true');
+      expect(badge).toHaveClass(`bg-tone-${tone}`, 'h-8', 'min-w-11');
+      expect(within(row).getByText(status)).toHaveClass(`text-tone-${tone}-label`);
+      expect(screen.queryByText(`${count} bicis, ${status}`)).toBeNull();
+    },
+  );
+
+  it('has no axe violations with a selected row', async () => {
+    const { container } = await renderList({}, ['/?station=1a']);
+    await screen.findByRole('button', { name: /^Estación 1a,/, current: true });
+
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 
   it('tags each section and lets its heading take the focus, for the page to return it', async () => {
@@ -164,6 +236,30 @@ describe('StationList', () => {
     expect(favorites).toHaveAttribute('data-station-list', 'favorites');
     expect(nearby).toHaveAttribute('data-station-list', 'nearby');
     expect(within(nearby).getByRole('heading', { level: 2 })).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('heads each section at 16 px bold, with its caption in the meta size', async () => {
+    await renderList();
+
+    const nearby = await nearbyRegion();
+
+    expect(within(nearby).getByRole('heading', { level: 2 })).toHaveClass(
+      'text-base',
+      'font-bold',
+      'text-fg',
+    );
+    expect(within(nearby).getByText('Bicis disponibles')).toHaveClass('text-meta', 'text-fg-muted');
+  });
+
+  it('draws the approximate location notice as an info banner with the info icon', async () => {
+    await renderList({ isApproximateLocation: true });
+
+    const banner = screen.getByText(
+      'Sin ubicación: mostrando estaciones cerca de la Puerta del Sol',
+    ).parentElement;
+
+    expect(banner).toHaveClass('bg-tone-info-soft', 'border-tone-info-soft-line', 'rounded-card');
+    expect(firstIconPath(banner)).toBe(iconPath('info'));
   });
 
   it('warns about the approximate location and names the fallback place', async () => {
@@ -263,6 +359,18 @@ describe('StationList', () => {
       expect(await nearbyRegion('Cerca de la Puerta del Sol')).toBeInTheDocument();
     });
 
+    it('draws the location notice as an info banner with the pin and a primary action', async () => {
+      await renderDesktopList({ isApproximateLocation: true });
+
+      const banner = screen.getByText(NO_LOCATION).parentElement;
+
+      expect(banner).toHaveClass('bg-tone-info-soft', 'border-tone-info-soft-line');
+      expect(firstIconPath(banner)).toBe(iconPath('pin'));
+      expect(
+        within(banner ?? document.body).getByRole('button', { name: 'Usar mi ubicación' }),
+      ).toHaveClass('bg-primary', 'h-10');
+    });
+
     it('says nothing about the location while it is still pending', async () => {
       await renderDesktopList({ center: undefined });
 
@@ -292,6 +400,52 @@ describe('StationList', () => {
       expect(await screen.findByRole('button', { name: 'Favoritas · 2' })).toHaveAttribute(
         'aria-expanded',
         'false',
+      );
+    });
+
+    it('heads the favorites with a filled star and a chevron that turns as they fold', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      saveFavorites(['1b']);
+      await renderDesktopList();
+      const header = await screen.findByRole('button', { name: 'Favoritas · 1' });
+      const [star, chevron] = [...header.querySelectorAll('svg')];
+      const panel = document.getElementById(header.getAttribute('aria-controls') ?? '');
+
+      expect(star).toHaveAttribute('width', '18');
+      expect(star).toHaveAttribute('fill', 'currentColor');
+      expect(star).toHaveClass('text-primary');
+      expect(chevron).toHaveClass('rotate-180');
+      await user.click(header);
+
+      expect(chevron).not.toHaveClass('rotate-180');
+      expect(panel).toHaveAttribute('hidden');
+      await user.click(header);
+
+      expect(header).toHaveAttribute('aria-expanded', 'true');
+      expect(
+        within(screen.getByRole('region', { name: 'Favoritas · 1' })).getAllByRole('button', {
+          name: /^Estación/,
+        }),
+      ).toHaveLength(1);
+    });
+
+    it('lets the favorites heading, an h2, take the focus without a tab stop', async () => {
+      saveFavorites(['1b']);
+      await renderDesktopList();
+
+      const heading = await screen.findByRole('heading', { level: 2, name: 'Favoritas · 1' });
+
+      expect(heading).toHaveAttribute('tabindex', '-1');
+    });
+
+    it('keeps the favorites open when the stored state is not valid', async () => {
+      localStorage.setItem(FAVORITES_OPEN_STORAGE_KEY, '"folded"');
+      saveFavorites(['1b']);
+      await renderDesktopList();
+
+      expect(await screen.findByRole('button', { name: 'Favoritas · 1' })).toHaveAttribute(
+        'aria-expanded',
+        'true',
       );
     });
 
@@ -461,6 +615,28 @@ describe('StationList', () => {
     expect(all.some((url) => url.searchParams.has('near'))).toBe(false);
   });
 
+  it('draws the loading message with the spinner in the body size, without the old stripe', async () => {
+    await renderList({ center: undefined });
+
+    const status = screen.getByRole('status');
+
+    expect(status).toHaveAttribute('aria-busy', 'true');
+    expect(status).toHaveClass('text-body', 'text-fg-muted');
+    expect(status).not.toHaveClass('border-l-4');
+    expect(status.querySelector('svg')).toHaveClass('animate-spin');
+  });
+
+  it('draws the empty message in the body size, without the old stripe', async () => {
+    nearbyJson({ ...nearbyStationsFixture, stations: [] });
+    await renderList();
+
+    const status = await screen.findByText('Ninguna estación en 500 m');
+
+    expect(status).toHaveRole('status');
+    expect(status).toHaveClass('text-body', 'text-fg-muted');
+    expect(status).not.toHaveClass('border-l-4');
+  });
+
   it('says so when no station is within the radius', async () => {
     nearbyJson({ ...nearbyStationsFixture, stations: [] });
 
@@ -487,6 +663,34 @@ describe('StationList', () => {
     expect(await screen.findByRole('button', { name: /^Estación 1a/ })).toBeInTheDocument();
     expect(requests.length).toBeGreaterThan(attemptsBeforeRetry);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('draws the service error with the cloud on a danger circle and a large retry', async () => {
+    failNearby();
+    await renderList();
+
+    const alert = await screen.findByRole('alert', {}, AFTER_RETRY);
+    const circle = alert.parentElement?.firstElementChild;
+    const retry = screen.getByRole('button', { name: 'Reintentar' });
+
+    expect(circle).toHaveClass('bg-tone-danger-soft', 'size-18');
+    expect(firstIconPath(circle)).toBe(iconPath('cloud-alert'));
+    expect(within(alert).getByRole('heading', { level: 2 })).toHaveClass('text-title-lg');
+    expect(retry).toHaveClass('h-12', 'bg-primary');
+    expect(firstIconPath(retry)).toBe(iconPath('refresh'));
+  });
+
+  it('keeps «Reintentar» busy until the request it sent answers', async () => {
+    failNearby();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await renderList();
+    const retry = await screen.findByRole('button', { name: 'Reintentar' }, AFTER_RETRY);
+    server.use(http.get(STATIONS_URL, () => delay('infinite')));
+
+    await user.click(retry);
+
+    expect(retry).toHaveAttribute('aria-busy', 'true');
+    expect(retry).toHaveFocus();
   });
 
   describe('countdown to the next automatic retry (SC1)', () => {
@@ -756,6 +960,17 @@ describe('StationList', () => {
     expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Volveremos a intentarlo/)).not.toBeInTheDocument();
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+
+  it('draws the offline block with the crossed wifi on a neutral circle', async () => {
+    onlineManager.setOnline(false);
+    await renderList();
+
+    const alert = await screen.findByRole('alert');
+    const circle = alert.parentElement?.firstElementChild;
+
+    expect(circle).toHaveClass('bg-chip', 'size-18');
+    expect(firstIconPath(circle)).toBe(iconPath('wifi-off'));
   });
 
   it('loads the stations by itself when the connection returns', async () => {

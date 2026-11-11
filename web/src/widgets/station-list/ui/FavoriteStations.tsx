@@ -1,6 +1,7 @@
 import type { Need } from '@/entities/station';
 import { FAVORITES_OPEN_STORAGE_KEY } from '@/shared/config';
-import { CollapsibleSection, StarIcon } from '@/shared/ui';
+import { useLocalStorage } from '@/shared/lib';
+import { Disclosure } from '@/shared/ui';
 import { needCaption } from '../lib/needCaption';
 import { useFavoriteStations } from '../model/useFavoriteStations';
 import { StationRows } from './StationRows';
@@ -15,6 +16,10 @@ type FavoriteStationsProps = {
   level?: 2 | 3;
 };
 
+function parseOpen(raw: unknown): boolean | undefined {
+  return typeof raw === 'boolean' ? raw : undefined;
+}
+
 export function FavoriteStations({
   need,
   selectedNumber,
@@ -23,6 +28,8 @@ export function FavoriteStations({
   level = 2,
 }: FavoriteStationsProps) {
   const { stations, status } = useFavoriteStations();
+  // Kept here, not in the disclosure, so the fold survives a reload.
+  const [isOpen, setOpen] = useLocalStorage(FAVORITES_OPEN_STORAGE_KEY, parseOpen, true);
 
   if (stations.length === 0) return null;
   const rows = (
@@ -44,15 +51,16 @@ export function FavoriteStations({
   // The wrapper carries the section tag the page uses to return the focus to a row.
   return (
     <div data-station-list="favorites">
-      <CollapsibleSection
+      <Disclosure
+        open={isOpen}
+        onOpenChange={setOpen}
         title="Favoritas"
-        count={stations.length}
-        icon={StarIcon}
-        storageKey={FAVORITES_OPEN_STORAGE_KEY}
-        level={level}
+        count={String(stations.length)}
+        icon="star-filled"
+        headingLevel={level}
       >
         {rows}
-      </CollapsibleSection>
+      </Disclosure>
     </div>
   );
 }

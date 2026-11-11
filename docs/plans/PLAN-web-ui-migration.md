@@ -63,7 +63,7 @@ Las zonas son independientes en el código, pero comparten `shared/ui/index.ts`,
 
 ### PR 2: Lista (`feat/web-ui-migration-2-list`)
 
-- [ ] **T3: filas de estación con `ListItem` y `CountBadge`** (M, ~1 h 30 min)
+- [x] **T3: filas de estación con `ListItem` y `CountBadge`** (M, ~1 h 30 min)
   - Descripción: `StationRows` monta `ListItem` (`onSelect`, `accessibleLabel`, `selected`, `subtitle` con distancia y paseo, `leadingText` con el número) y en `trailing` un `CountBadge` con `availabilityTone`, `availabilityLabel` y `srText`, con `trailingCaption` de `availabilityStatusText`. Se borra `StationRow` (`entities/station/ui`).
   - Aceptación:
     - Los nombres accesibles y el orden de lectura de cada fila son los de hoy; los tests de `StationList` de selección, foco de vuelta y estados pasan sin cambiar su comportamiento.
@@ -72,7 +72,7 @@ Las zonas son independientes en el código, pero comparten `shared/ui/index.ts`,
   - Archivos: `widgets/station-list/ui/StationRows.tsx`, `entities/station/ui/StationRow{,.test}.tsx`, `entities/station/index.ts`, `widgets/station-list/ui/StationList.test.tsx`.
   - Dependencias: T1.
 
-- [ ] **T4: favoritas con `Disclosure` y leyenda con `Legend`** (S, ~1 h)
+- [x] **T4: favoritas con `Disclosure` y leyenda con `Legend`** (S, ~1 h)
   - Descripción: `FavoriteStations` guarda el estado con `useLocalStorage` (`FAVORITES_OPEN_STORAGE_KEY`, `parseOpen`, abierta por defecto) y monta `Disclosure` con `icon="star-filled"`, `count` y `headingLevel` (supuesto 6). `AvailabilityLegend` monta `Legend` con los cinco tonos y sus textos. Se borra `CollapsibleSection`.
   - Aceptación:
     - «Favoritas · 2» como nombre del botón y de la región, el estado sobrevive a recargar y `data-station-list="favorites"` sigue en su sitio (tests de `StationList` sin cambios).
@@ -81,7 +81,7 @@ Las zonas son independientes en el código, pero comparten `shared/ui/index.ts`,
   - Archivos: `widgets/station-list/ui/{FavoriteStations,AvailabilityLegend}.tsx` (+ tests), `shared/ui/collapsible-section/*`, `shared/ui/index.ts`.
   - Dependencias: T3.
 
-- [ ] **T5: avisos y estados de la lista** (M, ~1 h 30 min)
+- [x] **T5: avisos y estados de la lista** (M, ~1 h 30 min)
   - Descripción: `ApproximateLocationNotice` y `LocatingNotice` montan `Banner` `info` (con la acción ocupada de «Usar mi ubicación» / «Activar»). `NearbyStations` cambia sus bloques de error, sin conexión y lista vacía (`ErrorState`, `StateMessage`, iconos viejos) por `EmptyState` con sus textos, tono, `note` y acción. `StationSection` pasa a los tokens y la escala `text-*` nuevos.
   - Aceptación:
     - Las regiones vivas son las de hoy (un aviso por causa, `web-error-states`): `alert` en el error, `status` donde hoy es `output`, ninguna en los avisos fijos.
@@ -91,8 +91,8 @@ Las zonas son independientes en el código, pero comparten `shared/ui/index.ts`,
   - Dependencias: T3.
 
 #### Checkpoint PR 2
-- [ ] Resto de `check:task` en verde y avisos del floor guard explicados en cada commit.
-- [ ] Revisión visual del usuario de la lista (escritorio y panel móvil) en cada estado, a 1440 y 390 px.
+- [x] Resto de `check:task` en verde y avisos del floor guard explicados en cada commit.
+- [x] Revisión visual del usuario de la lista (escritorio y panel móvil) en cada estado, a 1440 y 390 px.
 - [ ] Permiso para push, PR y merge.
 
 ### PR 3: Ficha (`feat/web-ui-migration-3-card`)
@@ -228,3 +228,7 @@ Unas 16 h en total: PR 1 ~1 h, PR 2 ~4 h, PR 3 ~3 h, PR 4 ~3 h 30 min, PR 5 ~3 h
 - 2026-11-11: aprobado por el usuario, con el PR 1 como `refactor(web)`.
 - 2026-11-11: T1 hecha (con el agente `frontend-developer`). `availabilityTone()` en `entities/station/model/availability.ts`, con su tabla `satisfies Record<AvailabilityLevel, …>` y el tipo de vuelta sin `inverse` (comprobado con `expectTypeOf`); todavía no la usa nadie. `ResultList` y `BottomSheet` tenían el anillo por dentro (`-outline-offset-2`), así que pasan a `focus-ring [--focus-ring-offset:-2px]`; `StationSection` a `focus-ring`. El anillo se ve igual y ningún test miraba sus clases. 6 tests nuevos; `pnpm check:task` en verde (1689 tests en web, floor guard limpio).
 - 2026-11-11: T2 hecha. `arrow-left` sale de `ICON_NAMES` y de `iconDrawings.ts`; la librería queda con 20 nombres y un `expectTypeOf` comprueba que `arrow-left` ya no es un `IconName`. `/dev/components` no lo nombraba (recorre `ICON_NAMES`). El floor guard avisa de 1 aserción reescrita: `toHaveLength(21)` pasa a `toHaveLength(20)`, que sigue fijando el número exacto de nombres. El resto de `check:task` en verde por separado (tipos, lint, secretos, tests de scripts, 1684 tests en web, api, 100 % de líneas cambiadas y depcruise); son 5 tests menos, los casos de `arrow-left` de los `it.each`.
+- 2026-11-12: T3 hecha (con el agente `frontend-developer`). `StationRows` monta `ListItem` con el número (`leadingText`), el nombre, la distancia y el paseo, un `CountBadge` `md` (32 px en todos los anchos; hoy 30 en móvil) con `availabilityTone` y la etiqueta de estado (`trailingCaption`); el nombre accesible es el de hoy, ahora en `rowLabel()` dentro del widget. `entities/station` exporta los textos y formatos que usa. `ListItem` no pasa atributos `data-*`, así que `data-station-number` pasa al `<li>` y `findRow` devuelve su botón: el foco sigue volviendo al botón de la fila. Como en el lienzo, las filas van separadas por 2 px y sin líneas (`gap-0.5`, antes `divide-y`), y miden 64 px (`ListItem`). El hover es `chip`, como pide el documento; el lienzo usa `#f1f5fa`, casi igual, y el cuadro del número se funde un poco con la fila al pasar el ratón, en los dos. `StationRow` se borra; sus 14 comprobaciones quedan cubiertas en `StationList.test.tsx` (6 tests nuevos y el de la separación) y en los de `ListItem` y `CountBadge`, salvo dos que ya no aplican: el hover distinto de `chip` (ahora es `chip`, buscado) y el paso de `ref` (nadie lo usaba). El floor guard avisa de 2: `StationRow.test.tsx` borrado y la aserción de «tags each row», que comprueba el atributo en el `<li>` en vez de en el botón. El resto de `check:task` en verde por separado (1677 tests en web, 100 % de 12 líneas cambiadas, depcruise sin violaciones).
+- 2026-11-12: T4 hecha (con el agente `frontend-developer`). `FavoriteStations` guarda el estado con `useLocalStorage` (misma clave, `parseOpen` movido desde `CollapsibleSection`, abierta por defecto) y monta `Disclosure` controlada con `star-filled`; el nombre «Favoritas · N», el estado tras recargar, `data-station-list` y el `h3` en móvil siguen con sus tests sin cambios. `AvailabilityLegend` monta `Legend` («Leyenda») y conserva el `h2` oculto, así que la página tiene los mismos encabezados. `CollapsibleSection` se borra; sus 7 comprobaciones quedan en `StationList.test.tsx` (3 tests nuevos: encabezado enfocable, estrella rellena de 18 px con chevron que gira, estado guardado no válido) y en los de `Disclosure`. A la vista: estrella rellena de 18 px, título en negrita con «· N» en gris de 13 px, 4 px entre encabezado y filas; la leyenda pasa a 13 px y «Vacía» a blanco con borde rojo discontinuo de 2 px. El floor guard avisa de 6 en esta tarea: `CollapsibleSection.test.tsx` borrado y 5 aserciones de clase de la leyenda que pasan de `availability-*` a `tone-*` (mismas comprobaciones, clases nuevas). El resto de `check:task` en verde por separado (1670 tests en web, 100 % de 14 líneas cambiadas, depcruise sin violaciones).
+- 2026-11-12: T5 hecha (con el agente `frontend-developer`). Los avisos de ubicación montan `Banner` `info` con `pin` (el del lienzo de escritorio) y su acción como `Button` `sm` ocupado; siguen siendo `polite` como hoy (el plan decía «ninguna», pero hoy ya son `status` y un test de la página lo espera), y ahora la acción queda fuera de la región viva, como pide la librería. El bloque de error y sin conexión monta `EmptyState` `alert` con `cloud-alert` (el icono de los tableros de error, no el triángulo de hoy) o `wifi-off`, «Reintentar» grande con `refresh` y ocupado (`usePendingAction` en un `BlockingState`), y la cuenta atrás como `children` con su `aria-live="off"` de hoy (`note` no lo lleva y su test se habría reescrito). «Cargando…» y «Ninguna estación en N m» no caben en `EmptyState` (pide mensaje e icono grande y ningún texto puede cambiar): son un `<output>` del widget, con `aria-busy` y `Spinner` al cargar. `StationSection` pasa a 16/700 con su leyenda en `text-meta`, en la misma línea en escritorio como en el lienzo. Para la revisión visual: el lienzo móvil dibuja el aviso «Sin tu ubicación» sin icono y el código lo pinta con `pin`. 9 tests nuevos, ninguna aserción reescrita; el floor guard no suma avisos (siguen los 8 de T3 y T4). El resto de `check:task` en verde por separado (1678 tests en web, 100 % de 24 líneas cambiadas, depcruise sin violaciones).
+- 2026-11-12: revisión visual del PR 2 aprobada por el usuario; se quedan como están el `pin` del aviso móvil «Sin tu ubicación» y el hover `chip` de las filas.
