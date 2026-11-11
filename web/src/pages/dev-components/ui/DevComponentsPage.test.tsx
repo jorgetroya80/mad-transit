@@ -1,10 +1,14 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ICON_NAMES, ICON_SIZES } from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { DevComponentsPage } from './DevComponentsPage';
 
 describe('DevComponentsPage', () => {
+  // jsdom has no canvas, so the map points draw only where a test gives them a context.
+  beforeEach(() => vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null));
+  afterEach(() => vi.restoreAllMocks());
+
   it('passes axe with every piece on the page', async () => {
     const { container } = render(<DevComponentsPage />);
 
@@ -273,6 +277,45 @@ describe('DevComponentsPage', () => {
     expect(zoomIns.map((button) => button.hasAttribute('disabled'))).toEqual([false, true, false]);
     expect(within(section).getByRole('group', { name: 'Cambiar de día' })).toHaveClass('flex-row');
     expect(locate.closest('fieldset')).toBeNull();
+  });
+
+  it('draws every map point on a hidden canvas sized to the point', async () => {
+    const fillText = vi.fn<CanvasRenderingContext2D['fillText']>();
+    const draw = () => {};
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      ...Object.fromEntries(
+        [
+          'scale',
+          'beginPath',
+          'arc',
+          'roundRect',
+          'fill',
+          'stroke',
+          'save',
+          'restore',
+          'translate',
+        ].map((call) => [call, draw]),
+      ),
+      fillText,
+    } as unknown as CanvasRenderingContext2D);
+    vi.stubGlobal(
+      'Path2D',
+      class {
+        constructor(readonly d: string) {}
+      },
+    );
+    render(<DevComponentsPage />);
+    const section = screen.getByRole('region', { name: 'MapPoint' });
+    const canvases = section.querySelectorAll('canvas');
+
+    expect(canvases).toHaveLength(14);
+    expect([...canvases].every((canvas) => canvas.getAttribute('aria-hidden') === 'true')).toBe(
+      true,
+    );
+    expect(canvases[0]).toHaveStyle({ width: '44px', height: '44px' });
+    expect(canvases[6]).toHaveAttribute('width', '56');
+    expect(within(section).getByText('info · seleccionado · icon="bus"')).toBeInTheDocument();
+    await waitFor(() => expect(fillText).toHaveBeenCalledTimes(12));
   });
 
   it('says why only one specimen of each notice is live', () => {

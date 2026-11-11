@@ -9,6 +9,7 @@ import { IconButtonSection } from './IconButtonSection';
 import { IconSection } from './IconSection';
 import { LegendSection } from './LegendSection';
 import { ListItemSection } from './ListItemSection';
+import { MapPointSection } from './MapPointSection';
 import { SearchFieldSection } from './SearchFieldSection';
 import { SegmentedControlSection } from './SegmentedControlSection';
 import { StatTileSection } from './StatTileSection';
@@ -39,6 +40,7 @@ export function DevComponentsPage() {
       <DisclosureSection />
       <CardSection />
       <ControlGroupSection />
+      <MapPointSection />
     </main>
   );
 }

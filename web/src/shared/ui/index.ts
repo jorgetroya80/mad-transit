@@ -41,6 +41,20 @@ export {
 } from './icons';
 export { Legend } from './legend';
 export { ListItem } from './list-item';
+// MapPointTone is still the base map's name, so the new tone type is reached as
+// MapPointParams['tone'] until the map draws with drawMapPoint.
+export {
+  drawMapPoint,
+  MAP_POINT_TONES,
+  type MapPointColors,
+  type MapPointDrawing,
+  type MapPointPainter,
+  type MapPointParams,
+  type MapPointStyle,
+  mapPointImageId,
+  mapPointSize,
+  readMapPointStyle,
+} from './map-point';
 export { RelativeTime } from './relative-time';
 export { SearchField } from './search-field';
 export { SegmentedControl } from './segmented-control';
