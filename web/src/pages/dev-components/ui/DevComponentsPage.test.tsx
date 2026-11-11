@@ -2,18 +2,25 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ICON_NAMES, ICON_SIZES } from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
-import { DevComponentsPage } from './DevComponentsPage';
+import { DevComponentsPage, PAGE_SECTIONS } from './DevComponentsPage';
 
 describe('DevComponentsPage', () => {
   // jsdom has no canvas, so the map points draw only where a test gives them a context.
   beforeEach(() => vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null));
   afterEach(() => vi.restoreAllMocks());
 
-  it('passes axe with every piece on the page', async () => {
-    const { container } = render(<DevComponentsPage />);
+  it.each(PAGE_SECTIONS.map((Section) => [Section.name, Section] as const))(
+    'passes axe with every piece of %s',
+    async (_name, Section) => {
+      const { container } = render(
+        <main>
+          <Section />
+        </main>,
+      );
 
-    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
-  });
+      await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    },
+  );
 
   it('shows a swatch for every tone token', () => {
     render(<DevComponentsPage />);
