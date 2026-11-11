@@ -151,7 +151,66 @@ describe('StationList', () => {
     const region = await nearbyRegion();
     const [first] = await within(region).findAllByRole('button', { name: /^Estación/ });
 
-    expect(first).toHaveAttribute('data-station-number', '1a');
+    expect(first?.closest('li')).toHaveAttribute('data-station-number', '1a');
+  });
+
+  it('separates the rows by a 2 px gap, without dividers, as the design does', async () => {
+    await renderList();
+
+    const region = await nearbyRegion();
+    const [first] = await within(region).findAllByRole('button', { name: /^Estación/ });
+    const list = first?.closest('ul');
+
+    expect(list).toHaveClass('flex', 'flex-col', 'gap-0.5');
+    expect(list).not.toHaveClass('divide-y');
+  });
+
+  it('shows number, name, distance and walk as visible text, the name whole', async () => {
+    await renderList();
+
+    const row = await screen.findByRole('button', { name: /^Estación 1a,/ });
+
+    expect(row).toHaveTextContent('1a');
+    expect(within(row).getByText('Puerta del Sol A')).not.toHaveClass('truncate');
+    expect(within(row).getByText('Puerta del Sol A').className).not.toMatch(/line-clamp/);
+    expect(within(row).getByText('12 m · 1 min a pie')).toBeInTheDocument();
+  });
+
+  it('omits the distance of a station without one', async () => {
+    saveFavorites(['3']);
+
+    await renderList();
+
+    const favorites = await screen.findByRole('region', { name: 'Favoritas' });
+    const row = await within(favorites).findByRole('button', { name: /^Estación 3,/ });
+    expect(row).not.toHaveTextContent(' m');
+    expect(row).not.toHaveTextContent('a pie');
+  });
+
+  it.each([
+    { number: '1a', count: '12', status: 'Disponible', tone: 'success' },
+    { number: '1b', count: '2', status: 'Pocas', tone: 'warning' },
+    { number: '2', count: '–', status: 'Fuera de servicio', tone: 'neutral' },
+  ])(
+    'draws the count of $number in a $tone badge with its status under it, leaving the count to the row name',
+    async ({ number, count, status, tone }) => {
+      await renderList();
+
+      const row = await screen.findByRole('button', { name: new RegExp(`^Estación ${number},`) });
+      const badge = within(row).getByText(count).parentElement;
+
+      expect(badge).toHaveAttribute('aria-hidden', 'true');
+      expect(badge).toHaveClass(`bg-tone-${tone}`, 'h-8', 'min-w-11');
+      expect(within(row).getByText(status)).toHaveClass(`text-tone-${tone}-label`);
+      expect(screen.queryByText(`${count} bicis, ${status}`)).toBeNull();
+    },
+  );
+
+  it('has no axe violations with a selected row', async () => {
+    const { container } = await renderList({}, ['/?station=1a']);
+    await screen.findByRole('button', { name: /^Estación 1a,/, current: true });
+
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 
   it('tags each section and lets its heading take the focus, for the page to return it', async () => {
