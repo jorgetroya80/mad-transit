@@ -1,11 +1,10 @@
 import { useSelectedStation } from '@/features/select-station';
+import { useMapLocation, useUserFocus } from '@/shared/lib';
 import { SidePanel } from '@/shared/ui';
 import { AppHeader } from '@/widgets/app-header';
 import { StationCard } from '@/widgets/station-card';
 import { StationsMap } from '@/widgets/stations-map';
 import { useListFocusReturn } from '../model/useListFocusReturn';
-import { useMapLocation } from '../model/useMapLocation';
-import { useUserFocus } from '../model/useUserFocus';
 import { DesktopPanel } from './DesktopPanel';
 import { OfflineBar } from './OfflineNotice';
 

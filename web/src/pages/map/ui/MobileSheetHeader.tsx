@@ -1,9 +1,8 @@
 import { useNeed } from '@/features/filter-by-need';
 import { NOW_TICK_MS } from '@/shared/config';
-import { formatClock, formatMinutesAgo, useNow } from '@/shared/lib';
+import { type MapLocation, formatClock, formatMinutesAgo, useNow } from '@/shared/lib';
 import { RelativeTime } from '@/shared/ui';
 import { savedListCaption, useCombinedDataStatus } from '@/widgets/station-list';
-import type { MapLocation } from '../model/useMapLocation';
 import { useNearbyTitle } from '../model/useNearbyTitle';
 
 type MobileSheetHeaderProps = { location: MapLocation };

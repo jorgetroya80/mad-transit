@@ -13,6 +13,7 @@ export { IconButton } from './icon-button';
 export { ICON_NAMES, ICON_SIZES, Icon, type IconName, type IconSize } from './icons';
 export { Legend } from './legend';
 export { ListItem } from './list-item';
+export { ApproximateLocationBanner, LocatingBanner } from './location-notice';
 export {
   drawMapPoint,
   MAP_POINT_TONES,

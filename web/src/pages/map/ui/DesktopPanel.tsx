@@ -1,8 +1,8 @@
 import { NeedToggle } from '@/features/filter-by-need';
+import type { MapLocation } from '@/shared/lib';
 import { DataAttribution } from '@/shared/ui';
 import { AvailabilityLegend, StationList } from '@/widgets/station-list';
 import { TransitSearch } from '@/widgets/transit-search';
-import type { MapLocation } from '../model/useMapLocation';
 
 type DesktopPanelProps = { location: MapLocation };
 
