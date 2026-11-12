@@ -1,8 +1,6 @@
 import { render } from '@testing-library/react';
 import {
-  BikeIcon,
   ChevronIcon,
-  DockIcon,
   InfoIcon,
   LocationIcon,
   MinusIcon,
@@ -13,8 +11,6 @@ import {
 } from '.';
 
 const DECORATIVE_ICONS = [
-  BikeIcon,
-  DockIcon,
   WarningIcon,
   OfflineIcon,
   InfoIcon,

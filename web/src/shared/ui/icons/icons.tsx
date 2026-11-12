@@ -1,24 +1,5 @@
 import { IconFrame, type IconProps } from './IconFrame';
 
-export function BikeIcon({ className }: IconProps) {
-  return (
-    <IconFrame className={className}>
-      <circle cx="5.5" cy="17.5" r="3.5" />
-      <circle cx="18.5" cy="17.5" r="3.5" />
-      <path d="M15 6h2l3 11.5M5.5 17.5 9 9h7l-4.5 8.5H5.5M9 9 8 6H6" />
-    </IconFrame>
-  );
-}
-
-export function DockIcon({ className }: IconProps) {
-  return (
-    <IconFrame className={className}>
-      <rect x="9" y="3" width="6" height="12" rx="1" />
-      <path d="M12 15v6M7 21h10" />
-    </IconFrame>
-  );
-}
-
 export function WarningIcon({ className }: IconProps) {
   return (
     <IconFrame className={className}>

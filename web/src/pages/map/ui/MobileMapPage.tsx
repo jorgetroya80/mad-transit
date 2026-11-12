@@ -70,7 +70,7 @@ function FloatingControls({ center }: { center: Coordinates | undefined }) {
   return (
     <div className="absolute inset-x-4 top-11 z-20 flex flex-col gap-2.5">
       <TransitSearch center={center} variant="floating" />
-      <div className="self-end rounded-control shadow-float">
+      <div className="self-end">
         <NeedToggle variant="pill" />
       </div>
       <OfflineBanner center={center} />
