@@ -8,7 +8,7 @@ import { useNearbyTitle } from '../model/useNearbyTitle';
 
 type MobileSheetHeaderProps = { location: MapLocation };
 
-const SUBTITLE = 'text-sheet-subtitle';
+const SUBTITLE = 'text-meta';
 
 export function MobileSheetHeader({ location }: MobileSheetHeaderProps) {
   const { title, updatedAt, isSaved } = useNearbyTitle(location.center);
@@ -34,7 +34,7 @@ function LiveSubtitle({ location, updatedAt }: SubtitleProps) {
   const now = useNow(NOW_TICK_MS);
   if (panel.status === 'stale') {
     return (
-      <p className={`${SUBTITLE} text-notice-stale-foreground`}>
+      <p className={`${SUBTITLE} text-tone-warning-soft-foreground`}>
         {panel.updatedAt
           ? `Última actualización: ${formatClock(panel.updatedAt)} · ${formatMinutesAgo(panel.updatedAt, now)}`
           : 'Datos sin confirmar'}

@@ -61,6 +61,18 @@ describe('NeedToggle', () => {
     expect(toggleButton('Sacar bici')).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it.each(['{Enter}', ' '])('tabs to "Dejar bici" and picks it with %s', async (key) => {
+    const { router } = await renderWithRouter(<NeedToggle variant="cards" />);
+
+    await userEvent.tab();
+    expect(toggleButton('Sacar bici')).toHaveFocus();
+    await userEvent.tab();
+    await userEvent.keyboard(key);
+
+    expect(searchParams(router)).toEqual({ need: 'docks' });
+    expect(toggleButton('Dejar bici')).toHaveFocus();
+  });
+
   it('describes each card with what it lists and switches need with it', async () => {
     const { router } = await renderWithRouter(<NeedToggle variant="cards" />);
 
@@ -73,11 +85,33 @@ describe('NeedToggle', () => {
     expect(toggleButton('Dejar bici')).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('draws the library cards with a 22 px icon and the focus ring', async () => {
+    await renderWithRouter(<NeedToggle variant="cards" />);
+
+    for (const name of ['Sacar bici', 'Dejar bici'] as const) {
+      expect(toggleButton(name)).toHaveClass('min-h-14', 'rounded-card', 'focus-ring');
+      expect(toggleButton(name).querySelector('svg')).toHaveAttribute('width', '22');
+    }
+    expect(toggleButton('Sacar bici')).toHaveClass('bg-primary', 'text-primary-foreground');
+  });
+
   it('shows only the titles in the pill', async () => {
     await renderWithRouter(<NeedToggle variant="pill" />);
 
     expect(toggleButton('Sacar bici')).not.toHaveAccessibleDescription();
     expect(screen.queryByText('Bicis disponibles')).not.toBeInTheDocument();
+    expect(toggleButton('Sacar bici').querySelector('svg')).toBeNull();
+  });
+
+  it('draws the library pill and marks the chosen option soft', async () => {
+    await renderWithRouter(<NeedToggle variant="pill" />);
+
+    expect(toggleButton('Dejar bici')).toHaveClass('h-10', 'rounded-full', 'focus-ring');
+    expect(toggleButton('Sacar bici')).toHaveClass(
+      'bg-primary-soft',
+      'text-primary',
+      'inset-ring-primary',
+    );
   });
 
   it.each(['cards', 'pill'] as const)('has no axe violations as %s', async (variant) => {

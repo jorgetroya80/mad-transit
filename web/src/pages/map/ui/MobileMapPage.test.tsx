@@ -13,6 +13,7 @@ import userEvent from '@testing-library/user-event';
 import { env, FAVORITES_STORAGE_KEY } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
+import { firstIconPath, iconPath } from '../../../../test/iconPath';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 
 type CapturedMapProps = { onSelectPoint?: (id: string) => void };
@@ -226,7 +227,19 @@ describe('MobileMapPage', () => {
         screen.getByRole('heading', { level: 2, name: 'Últimos datos guardados' }),
       ).toBeInTheDocument();
       expect(screen.getByText(/· pueden no estar al día$/)).toBeInTheDocument();
+      expect(screen.getByText(/· pueden no estar al día$/)).toHaveClass(
+        'text-meta',
+        'text-fg-muted',
+      );
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+
+    it('draws the banner as a dark card, with the connection icon', async () => {
+      await goOffline();
+
+      const banner = (await screen.findByRole('alert')).parentElement;
+      expect(banner).toHaveClass('bg-tone-inverse', 'rounded-card');
+      expect(firstIconPath(banner)).toBe(iconPath('wifi-off'));
     });
 
     it('names the hidden strip after the saved list', async () => {
@@ -269,7 +282,7 @@ describe('MobileMapPage', () => {
       );
       expect(
         screen.getByText(`Última actualización: ${formatClock(updatedAt)} · hace 35 min`),
-      ).toHaveClass('text-notice-stale-foreground');
+      ).toHaveClass('text-meta', 'text-tone-warning-soft-foreground');
       expect(screen.queryByText('Gris = dato sin confirmar')).not.toBeInTheDocument();
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });

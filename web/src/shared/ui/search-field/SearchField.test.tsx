@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, createRef, type KeyboardEvent, useState } from 'react';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { ICON_DRAWINGS } from '../icons';
 import { SearchField } from '.';
@@ -98,9 +98,35 @@ describe('SearchField', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith('3');
   });
 
+  it('hands its ref to the input', () => {
+    const ref = createRef<HTMLInputElement>();
+    render(
+      <SearchField {...STATIONS} ref={ref} value="" onChange={vi.fn<(value: string) => void>()} />,
+    );
+
+    expect(ref.current).toBe(input());
+  });
+
+  it('passes every key to onKeyDown, after clearing on Escape', async () => {
+    const keys: [string, boolean][] = [];
+    const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) =>
+      keys.push([event.key, event.defaultPrevented]);
+    render(<StatefulField value="Sol" onKeyDown={onKeyDown} />);
+
+    await userEvent.click(input());
+    await userEvent.keyboard('{ArrowDown}{Escape}');
+
+    expect(keys).toEqual([
+      ['ArrowDown', false],
+      ['Escape', true],
+    ]);
+    expect(input()).toHaveValue('');
+  });
+
   it.each([
     [undefined, 'search'],
     ['numeric', 'numeric'],
+    ['text', 'text'],
   ] as const)('opens the %s keyboard', (inputMode, expected) => {
     renderField({ inputMode });
 
@@ -269,6 +295,47 @@ describe('SearchField', () => {
       renderField({ hint: undefined });
 
       expect(input()).not.toHaveAttribute('aria-describedby');
+    });
+
+    it('can be hidden visually and still describe the box', () => {
+      renderField({ hintVisible: false });
+
+      expect(screen.getByText(STATIONS.hint)).toHaveClass('sr-only');
+      expect(input()).toHaveAccessibleDescription(STATIONS.hint);
+    });
+  });
+
+  describe('describedBy', () => {
+    const EXTRA = 'Sin resultados.';
+
+    function renderDescribed(props: FieldOptions = {}) {
+      render(
+        <>
+          <SearchField
+            {...STATIONS}
+            value=""
+            onChange={vi.fn<(value: string) => void>()}
+            describedBy="extra"
+            {...props}
+          />
+          <p id="extra">{EXTRA}</p>
+        </>,
+      );
+    }
+
+    it('adds the description after the hint', () => {
+      renderDescribed();
+      expect(input()).toHaveAccessibleDescription(`${STATIONS.hint} ${EXTRA}`);
+    });
+
+    it('adds it after the error', () => {
+      renderDescribed({ error: STOPS.error });
+      expect(input()).toHaveAccessibleDescription(`${STOPS.error} ${EXTRA}`);
+    });
+
+    it('is the whole description without a hint', () => {
+      renderDescribed({ hint: undefined });
+      expect(input()).toHaveAccessibleDescription(EXTRA);
     });
   });
 

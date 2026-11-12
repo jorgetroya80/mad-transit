@@ -60,7 +60,7 @@ describe('AppHeader', () => {
     expect(button).toHaveAttribute('aria-busy', 'true');
 
     await act(async () => release());
-    expect(button).toHaveAttribute('aria-busy', 'false');
+    expect(button).not.toHaveAttribute('aria-busy');
   });
 
   it('has no axe violations', async () => {

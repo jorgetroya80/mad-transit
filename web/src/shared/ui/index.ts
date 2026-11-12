@@ -22,17 +22,11 @@ export {
   Icon,
   type IconName,
   type IconSize,
-  BikeIcon,
   ChevronIcon,
-  ClearIcon,
-  DockIcon,
-  InfoIcon,
   LocationIcon,
   MinusIcon,
   OfflineIcon,
   PlusIcon,
-  RefreshIcon,
-  WarningIcon,
 } from './icons';
 export { Legend } from './legend';
 export { ListItem } from './list-item';
@@ -57,7 +51,6 @@ export { SegmentedControl } from './segmented-control';
 export { SidePanel } from './side-panel';
 export { Spinner } from './spinner';
 export { StatTile } from './stat-tile';
-export { StatusBanner } from './status-banner';
 export { StatusText } from './status-text';
 export { Tag } from './tag';
 export { type LineStyle, TONES, type Tone, toneLineStyle } from './tone';

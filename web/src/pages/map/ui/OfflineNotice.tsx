@@ -1,6 +1,6 @@
 import type { Coordinates } from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
-import { StatusBanner } from '@/shared/ui';
+import { Banner } from '@/shared/ui';
 import { useNearbyAvailability } from '@/widgets/station-list';
 
 type OfflineNoticeProps = { center: Coordinates | undefined };
@@ -11,14 +11,20 @@ function useIsSavedList(center: Coordinates | undefined): boolean {
   return useNearbyAvailability(center, need).isSaved;
 }
 
+const OFFLINE_TITLE = 'Sin conexión a internet.';
+
 // Under the app header, across the whole page.
 export function OfflineBar({ center }: OfflineNoticeProps) {
   if (!useIsSavedList(center)) return null;
   return (
-    <StatusBanner variant="offline" shape="bar">
-      <strong>Sin conexión a internet.</strong> Mostramos los últimos datos guardados; se
-      actualizará solo al volver a conectarte.
-    </StatusBanner>
+    <Banner
+      tone="inverse"
+      icon="wifi-off"
+      announce="assertive"
+      layout="bar"
+      title={OFFLINE_TITLE}
+      message="Mostramos los últimos datos guardados; se actualizará solo al volver a conectarte."
+    />
   );
 }
 
@@ -26,8 +32,12 @@ export function OfflineBar({ center }: OfflineNoticeProps) {
 export function OfflineBanner({ center }: OfflineNoticeProps) {
   if (!useIsSavedList(center)) return null;
   return (
-    <StatusBanner variant="offline">
-      <strong>Sin conexión a internet.</strong> Se actualizará solo al volver a conectarte.
-    </StatusBanner>
+    <Banner
+      tone="inverse"
+      icon="wifi-off"
+      announce="assertive"
+      title={OFFLINE_TITLE}
+      message="Se actualizará solo al volver a conectarte."
+    />
   );
 }

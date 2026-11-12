@@ -1,6 +1,6 @@
 import { nearbyStationsFixture, staleStationsFixture } from '@/shared/api/mocks/fixtures';
 import { formatClock } from '@/shared/lib';
-import { findStaleNotice } from '../../../../test/staleNotice';
+import { findStaleNotice, staleRetryButton } from '../../../../test/staleNotice';
 import { onlineManager } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/shared/api/mocks/node';
@@ -9,6 +9,7 @@ import userEvent from '@testing-library/user-event';
 import { env, FAVORITES_STORAGE_KEY } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
+import { firstIconPath, iconPath } from '../../../../test/iconPath';
 import { stubMatchMedia } from '../../../../test/matchMedia';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 
@@ -467,12 +468,21 @@ describe('DesktopMapPage', () => {
         'Sin conexión a internet. Mostramos los últimos datos guardados; se actualizará solo al volver a conectarte.',
       );
       expect(within(bar).getByText('Sin conexión a internet.').tagName).toBe('STRONG');
-      expect(screen.getByRole('banner').nextElementSibling).toBe(bar);
+      expect(screen.getByRole('banner').nextElementSibling).toBe(bar.parentElement);
       expect(screen.getByRole('main')).not.toContainElement(bar);
       expect(
         within(panel()).getByRole('region', { name: 'Últimos datos guardados' }),
       ).toBeInTheDocument();
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+    });
+
+    it('draws the bar dark and square across the page, with the connection icon', async () => {
+      await goOffline();
+
+      const bar = (await screen.findByRole('alert')).parentElement;
+      expect(bar).toHaveClass('bg-tone-inverse', 'w-full', 'rounded-none');
+      expect(firstIconPath(bar)).toBe(iconPath('wifi-off'));
+      expect(within(bar ?? document.body).queryByRole('button')).toBeNull();
     });
 
     it('drops the bar and the saved heading when the connection returns', async () => {
@@ -508,7 +518,7 @@ describe('DesktopMapPage', () => {
       expect(notice).toHaveTextContent(
         `No hemos podido actualizar. Mostramos los datos de las ${formatClock(new Date(staleStationsFixture.updatedAt))}; puede que ya no sean exactos.`,
       );
-      expect(within(notice).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+      expect(staleRetryButton(notice)).toBeInTheDocument();
       expect(screen.getByText('Gris = dato sin confirmar')).toBeInTheDocument();
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });

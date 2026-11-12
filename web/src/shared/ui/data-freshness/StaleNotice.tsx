@@ -1,7 +1,6 @@
-import type { ReactNode } from 'react';
 import { NOW_TICK_MS } from '@/shared/config';
 import { formatClock, formatMinutesAgo, useNow, usePendingAction } from '@/shared/lib';
-import { StatusBanner } from '../status-banner';
+import { Banner } from '../banner';
 
 type StaleLayout = 'desktop' | 'mobile';
 
@@ -13,43 +12,36 @@ type StaleNoticeProps = {
   onRetry: () => unknown;
 };
 
-type StaleTextProps = { updatedAt: Date | undefined };
+type StaleText = { title: string; message: string };
 
 // Desktop has room for the time; mobile leads with the age, which reads faster.
-function DesktopText({ updatedAt }: StaleTextProps) {
-  return (
-    <>
-      <strong>No hemos podido actualizar.</strong>{' '}
-      {updatedAt
-        ? `Mostramos los datos de las ${formatClock(updatedAt)}; puede que ya no sean exactos.`
-        : 'Puede que los datos ya no sean exactos.'}
-    </>
-  );
+function desktopText(updatedAt: Date | undefined): StaleText {
+  return {
+    title: 'No hemos podido actualizar.',
+    message: updatedAt
+      ? `Mostramos los datos de las ${formatClock(updatedAt)}; puede que ya no sean exactos.`
+      : 'Puede que los datos ya no sean exactos.',
+  };
 }
 
-function MobileText({ updatedAt }: StaleTextProps) {
-  const now = useNow(NOW_TICK_MS);
-  return (
-    <>
-      <strong>
-        {updatedAt ? `Datos de ${formatMinutesAgo(updatedAt, now)}.` : 'Datos sin confirmar.'}
-      </strong>{' '}
-      No hemos podido actualizar; puede que ya no sean exactos.
-    </>
-  );
+function mobileText(updatedAt: Date | undefined, now: Date): StaleText {
+  return {
+    title: updatedAt ? `Datos de ${formatMinutesAgo(updatedAt, now)}.` : 'Datos sin confirmar.',
+    message: 'No hemos podido actualizar; puede que ya no sean exactos.',
+  };
 }
-
-const TEXTS = { desktop: DesktopText, mobile: MobileText } as const satisfies Record<
-  StaleLayout,
-  (props: StaleTextProps) => ReactNode
->;
 
 export function StaleNotice({ layout, updatedAt, onRetry }: StaleNoticeProps) {
   const { isPending, run } = usePendingAction(onRetry);
-  const Text = TEXTS[layout];
+  const now = useNow(NOW_TICK_MS);
+  const text = layout === 'desktop' ? desktopText(updatedAt) : mobileText(updatedAt, now);
   return (
-    <StatusBanner variant="stale" action={{ label: 'Reintentar', onClick: run, isPending }}>
-      <Text updatedAt={updatedAt} />
-    </StatusBanner>
+    <Banner
+      tone="warning"
+      icon="clock"
+      announce="polite"
+      {...text}
+      action={{ label: 'Reintentar', onClick: run, busy: isPending }}
+    />
   );
 }

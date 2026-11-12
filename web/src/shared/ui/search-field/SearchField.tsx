@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useId, useRef } from 'react';
+import { type KeyboardEvent, type Ref, useId, useRef } from 'react';
 import { Icon } from '../icons';
 import { IconButton } from '../icon-button';
 import { Spinner } from '../spinner';
@@ -7,6 +7,7 @@ type SearchFieldShape = 'box' | 'pill';
 type FieldState = 'normal' | 'error' | 'disabled';
 
 type SearchFieldProps = {
+  ref?: Ref<HTMLInputElement>;
   label: string;
   labelVisible?: boolean;
   value: string;
@@ -15,9 +16,15 @@ type SearchFieldProps = {
   clearLabel: string;
   onClear?: () => void;
   hint?: string;
+  // Hidden, the hint still describes the box for assistive technology.
+  hintVisible?: boolean;
   // Replaces the hint. Not a live region: the results announce the outcome.
   error?: string;
-  inputMode?: 'search' | 'numeric';
+  inputMode?: 'search' | 'numeric' | 'text';
+  // Called after the field's own Escape handling, which marks the event as handled.
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+  // Ids of more descriptions, read after the hint or the error.
+  describedBy?: string;
   busy?: boolean;
   disabled?: boolean;
   shape?: SearchFieldShape;
@@ -59,9 +66,9 @@ function Magnifier({ busy, state }: { busy: boolean; state: FieldState }) {
   return <Icon name="search" className={`${position} ${MAGNIFIER_CLASSES[state]}`} />;
 }
 
-type FieldMessageProps = { id: string; hint?: string; error?: string };
+type FieldMessageProps = Pick<SearchFieldProps, 'hint' | 'hintVisible' | 'error'> & { id: string };
 
-function FieldMessage({ id, hint, error }: FieldMessageProps) {
+function FieldMessage({ id, hint, hintVisible = true, error }: FieldMessageProps) {
   if (error) {
     return (
       <p id={id} className="flex items-center gap-1.5 text-meta text-tone-danger-label">
@@ -72,19 +79,32 @@ function FieldMessage({ id, hint, error }: FieldMessageProps) {
   }
   if (!hint) return null;
   return (
-    <p id={id} className="text-meta text-fg-muted">
+    <p id={id} className={hintVisible ? 'text-meta text-fg-muted' : 'sr-only'}>
       {hint}
     </p>
   );
 }
 
-type ClearableInput = Pick<SearchFieldProps, 'value' | 'onChange' | 'onClear' | 'disabled'>;
+type ClearableInput = Pick<
+  SearchFieldProps,
+  'ref' | 'value' | 'onChange' | 'onClear' | 'disabled' | 'onKeyDown'
+>;
+
+function assignRef<T>(ref: Ref<T> | undefined, node: T | null) {
+  if (typeof ref === 'function') ref(node);
+  else if (ref) ref.current = node;
+}
 
 // Clearing, by button or by Escape, leaves the focus in the box: the button disappears with the
 // text it cleared.
-function useClearableInput({ value, onChange, onClear, disabled }: ClearableInput) {
+function useClearableInput({ ref, value, onChange, onClear, disabled, onKeyDown }: ClearableInput) {
   const inputRef = useRef<HTMLInputElement>(null);
   const canClear = value !== '' && disabled !== true;
+
+  function setInputRef(node: HTMLInputElement | null) {
+    inputRef.current = node;
+    assignRef(ref, node);
+  }
 
   function clear() {
     if (onClear) onClear();
@@ -92,13 +112,15 @@ function useClearableInput({ value, onChange, onClear, disabled }: ClearableInpu
     inputRef.current?.focus();
   }
 
-  function clearOnEscape(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Escape' || !canClear) return;
-    event.preventDefault();
-    clear();
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Escape' && canClear) {
+      event.preventDefault();
+      clear();
+    }
+    onKeyDown?.(event);
   }
 
-  return { inputRef, canClear, clear, clearOnEscape };
+  return { setInputRef, canClear, clear, handleKeyDown };
 }
 
 function inputClassesOf(shape: SearchFieldShape, state: FieldState, canClear: boolean) {
@@ -111,20 +133,20 @@ function inputClassesOf(shape: SearchFieldShape, state: FieldState, canClear: bo
   ].join(' ');
 }
 
-type SearchBoxProps = SearchFieldProps & { inputId: string; describedBy?: string };
+type SearchBoxProps = SearchFieldProps & { inputId: string };
 
 // The browser's own clear button is hidden: ours has a name and returns the focus to the box.
 function SearchBox(props: SearchBoxProps) {
   const { inputId, describedBy, value, onChange, placeholder, clearLabel, error } = props;
   const { inputMode = 'search', busy = false, disabled = false, shape = 'box' } = props;
-  const { inputRef, canClear, clear, clearOnEscape } = useClearableInput(props);
+  const { setInputRef, canClear, clear, handleKeyDown } = useClearableInput(props);
   const state = fieldStateOf(error, disabled);
 
   return (
     <div className="relative">
       <Magnifier busy={busy} state={state} />
       <input
-        ref={inputRef}
+        ref={setInputRef}
         id={inputId}
         type="search"
         inputMode={inputMode}
@@ -135,7 +157,7 @@ function SearchBox(props: SearchBoxProps) {
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}
-        onKeyDown={clearOnEscape}
+        onKeyDown={handleKeyDown}
         className={inputClassesOf(shape, state, canClear)}
       />
       {canClear && (
@@ -158,10 +180,16 @@ function SearchBox(props: SearchBoxProps) {
   );
 }
 
+function describedByOf(messageId: string | undefined, describedBy: string | undefined) {
+  const ids = [messageId, describedBy].filter(Boolean).join(' ');
+  return ids || undefined;
+}
+
 export function SearchField(props: SearchFieldProps) {
-  const { label, labelVisible = true, hint, error } = props;
+  const { label, labelVisible = true, hint, hintVisible, error, describedBy } = props;
   const inputId = useId();
   const messageId = `${inputId}-message`;
+  const ownMessageId = error || hint ? messageId : undefined;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -171,8 +199,12 @@ export function SearchField(props: SearchFieldProps) {
       >
         {label}
       </label>
-      <SearchBox {...props} inputId={inputId} describedBy={error || hint ? messageId : undefined} />
-      <FieldMessage id={messageId} hint={hint} error={error} />
+      <SearchBox
+        {...props}
+        inputId={inputId}
+        describedBy={describedByOf(ownMessageId, describedBy)}
+      />
+      <FieldMessage id={messageId} hint={hint} hintVisible={hintVisible} error={error} />
     </div>
   );
 }

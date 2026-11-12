@@ -219,13 +219,13 @@ describe('EmptyState', () => {
       expectOutside(region);
     });
 
-    it('is an <output> holding only the message as status, with the heading outside', () => {
+    it('is an <output> holding the heading and the message as status', () => {
       renderEverything('status');
       const region = screen.getByRole('status');
 
       expect(region.tagName).toBe('OUTPUT');
-      expect(region).toHaveTextContent(API_DOWN.message);
-      expect(region).not.toContainElement(heading());
+      expect(region).toContainElement(heading());
+      expect(region).toHaveTextContent(`${API_DOWN.title} ${API_DOWN.message}`);
       expectOutside(region);
     });
 
@@ -237,6 +237,22 @@ describe('EmptyState', () => {
       expect(document.querySelector('output, [aria-live]')).toBeNull();
     });
   });
+
+  it.each(['alert', 'status', 'none'] as const)(
+    'gives its heading and message an id as %s, to describe a field with',
+    (announce) => {
+      render(
+        <>
+          <input aria-label="Buscar parada" aria-describedby="not-found" />
+          <EmptyState {...STOP_NOT_FOUND} announce={announce} messageId="not-found" />
+        </>,
+      );
+
+      expect(screen.getByRole('textbox')).toHaveAccessibleDescription(
+        `${STOP_NOT_FOUND.title} ${STOP_NOT_FOUND.message}`,
+      );
+    },
+  );
 
   it.each([
     ['danger with action and note', { action: retryAction(), note: NOTE }],
