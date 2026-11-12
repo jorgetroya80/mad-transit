@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.11.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.10.0...web-v0.11.0) (2026-11-12)
+
+
+### Features
+
+* **web:** draw the map with the component library ([#119](https://github.com/jorgetroya80/mad-transit/issues/119)) ([a70e93d](https://github.com/jorgetroya80/mad-transit/commit/a70e93dcf4e3c3f02a31fe4f82680143c65b1f98))
+* **web:** draw the search and panel with the component library ([#118](https://github.com/jorgetroya80/mad-transit/issues/118)) ([66c9938](https://github.com/jorgetroya80/mad-transit/commit/66c9938aad8e1350f46a95a9d8abe45f852070e7))
+* **web:** draw the station card with the component library ([#117](https://github.com/jorgetroya80/mad-transit/issues/117)) ([1e33e9b](https://github.com/jorgetroya80/mad-transit/commit/1e33e9b878ed28ba259e51eb94b672bf5f068ad3))
+* **web:** draw the station list with the component library ([#115](https://github.com/jorgetroya80/mad-transit/issues/115)) ([a314cd5](https://github.com/jorgetroya80/mad-transit/commit/a314cd573983bddebf0667382839dbeeeadec99e))
+
+
+### Bug Fixes
+
+* **web:** hide the station distance when there is no location ([#122](https://github.com/jorgetroya80/mad-transit/issues/122)) ([437ecb1](https://github.com/jorgetroya80/mad-transit/commit/437ecb147b194f1b2ca3d99799d72486793648b7))
+* **web:** keep the recenter button above the mobile sheet ([#123](https://github.com/jorgetroya80/mad-transit/issues/123)) ([619db2a](https://github.com/jorgetroya80/mad-transit/commit/619db2a50829c51464f2a0dfb5cc2ab3de13e6eb))
+
 ## [0.10.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.9.0...web-v0.10.0) (2026-11-09)
 
 
