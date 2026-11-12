@@ -1,4 +1,8 @@
-import { availabilityCountText, availabilityText } from './availabilityText';
+import {
+  availabilityCountText,
+  availabilitySpokenText,
+  availabilityText,
+} from './availabilityText';
 
 describe('availabilityText', () => {
   it.each([
@@ -34,5 +38,17 @@ describe('availabilityCountText', () => {
     [0, 'docks', '0 anclajes libres'],
   ] as const)('says %i %s as "%s"', (count, need, expected) => {
     expect(availabilityCountText(count, need)).toBe(expected);
+  });
+});
+
+describe('availabilitySpokenText', () => {
+  it.each([
+    { level: 'good', count: 12, need: 'bikes', text: '12 bicis, Disponible' },
+    { level: 'low', count: 1, need: 'bikes', text: '1 bici, Pocas' },
+    { level: 'empty', count: 0, need: 'docks', text: '0 anclajes libres, Sin hueco' },
+    { level: 'unconfirmed', count: 3, need: 'bikes', text: '3 bicis, Sin confirmar' },
+    { level: 'off', count: 7, need: 'bikes', text: 'Fuera de servicio' },
+  ] as const)('says $level $count $need as "$text"', ({ level, count, need, text }) => {
+    expect(availabilitySpokenText(level, count, need)).toBe(text);
   });
 });

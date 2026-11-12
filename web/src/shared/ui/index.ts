@@ -15,7 +15,6 @@ export { DataAttribution } from './data-attribution';
 export { StaleNotice, UpdatedAt, UpdatedIndicator } from './data-freshness';
 export { Disclosure } from './disclosure';
 export { EmptyState } from './empty-state';
-export { ErrorState } from './error-state';
 export { IconButton } from './icon-button';
 export {
   ICON_NAMES,
@@ -60,6 +59,5 @@ export { Spinner } from './spinner';
 export { StatTile } from './stat-tile';
 export { StatusBanner } from './status-banner';
 export { StatusText } from './status-text';
-export { MessageAction, StateMessage } from './state-message';
 export { Tag } from './tag';
 export { type LineStyle, TONES, type Tone, toneLineStyle } from './tone';

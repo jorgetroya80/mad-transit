@@ -1,10 +1,14 @@
 import {
-  AvailabilityBadge,
   availabilityFor,
+  availabilityLabel,
+  availabilitySpokenText,
+  availabilityStatusText,
+  availabilityTone,
   type DataStatus,
   type Need,
   type Station,
 } from '@/entities/station';
+import { StatTile } from '@/shared/ui';
 
 type CardAvailabilityProps = { station: Station; status: DataStatus };
 
@@ -16,22 +20,24 @@ const CAPTIONS = {
 
 const NEEDS = ['bikes', 'docks'] as const satisfies readonly Need[];
 
+// The hidden term names each count; the tile's srText reads it with its status.
 export function CardAvailability({ station, status }: CardAvailabilityProps) {
   return (
     <dl className="grid grid-cols-2 gap-2">
       {NEEDS.map((need) => {
-        const { level, count } = availabilityFor(station, need, status);
+        const availability = availabilityFor(station, need, status);
+        const { level, count } = availability;
         return (
-          <div
-            key={need}
-            className="flex flex-col items-center gap-1 rounded-control bg-chip px-3 py-2.5"
-          >
+          <div key={need}>
             <dt className="sr-only">{CAPTIONS[need]}</dt>
             <dd>
-              <AvailabilityBadge level={level} count={count} need={need} align="center" />
-            </dd>
-            <dd aria-hidden="true" className="text-center text-sm text-fg-muted">
-              {CAPTIONS[need]}
+              <StatTile
+                value={availabilityLabel(availability)}
+                label={CAPTIONS[need]}
+                tone={availabilityTone(level)}
+                statusLabel={availabilityStatusText(level, need)}
+                srText={availabilitySpokenText(level, count, need)}
+              />
             </dd>
           </div>
         );

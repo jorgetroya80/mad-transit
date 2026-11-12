@@ -226,6 +226,17 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(document.body).toHaveFocus();
   });
 
+  it('draws both availabilities as tiles in two columns', async () => {
+    await renderSheet();
+    await title();
+
+    const caption = within(sheet()).getByText('bicis disponibles', { ignore: '.sr-only' });
+    const box = caption.closest('div');
+    expect(box).toHaveClass('bg-tone-success-soft', 'border-tone-success-line');
+    expect(box?.closest('dl')).toHaveClass('grid', 'grid-cols-2');
+    expect(within(sheet()).getByText('12 bicis, Disponible')).toHaveClass('sr-only');
+  });
+
   it('keeps both availabilities whatever the mode', async () => {
     await renderSheet('/?station=1a&need=docks');
     await title();
@@ -340,7 +351,7 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(backButton()).toBeInTheDocument();
 
     server.resetHandlers();
-    await user.click(within(alert).getByRole('button', { name: 'Reintentar' }));
+    await user.click(within(sheet()).getByRole('button', { name: 'Reintentar' }));
 
     expect(await title()).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -384,7 +395,9 @@ describe('StationSheetHeader and StationSheetBody', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('No se pudo cargar la estación');
-    expect(within(alert).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    // The action sits beside the alert, so it is not read out with it.
+    const retry = within(sheet()).getByRole('button', { name: 'Reintentar' });
+    expect(alert).not.toContainElement(retry);
   });
 
   it('has no axe violations when the station cannot be loaded', async () => {
