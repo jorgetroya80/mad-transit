@@ -50,18 +50,12 @@ describe('FavoriteButton', () => {
   it('hides the star from assistive technology', () => {
     render(<FavoriteButton number="538" />);
 
-    expect(screen.getByText('☆')).toHaveAttribute('aria-hidden', 'true');
-  });
-
-  it('forwards native button props', () => {
-    render(<FavoriteButton number="538" className="extra" data-testid="favorite" />);
-
-    expect(screen.getByTestId('favorite')).toHaveClass('extra');
+    expect(favoriteButton().querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
   });
 
   describe('as an icon', () => {
     it('keeps the name «Favorita» and tells the action in its tooltip', async () => {
-      render(<FavoriteButton number="538" variant="icon" />);
+      render(<FavoriteButton number="538" />);
 
       const button = screen.getByRole('button', { name: 'Favorita' });
       expect(button).toHaveAttribute('aria-pressed', 'false');
@@ -76,17 +70,16 @@ describe('FavoriteButton', () => {
     });
 
     it('fills the star only when pressed', async () => {
-      render(<FavoriteButton number="538" variant="icon" />);
+      render(<FavoriteButton number="538" />);
       const button = screen.getByRole('button');
-      const star = button.querySelector('svg');
 
-      expect(star).not.toHaveClass('fill-current');
+      expect(button.querySelector('svg')).toHaveAttribute('fill', 'none');
       await userEvent.click(button);
-      expect(star).toHaveClass('fill-current');
+      expect(button.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
     });
 
     it('has no axe violations', async () => {
-      const { container } = render(<FavoriteButton number="538" variant="icon" />);
+      const { container } = render(<FavoriteButton number="538" />);
 
       await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
     });

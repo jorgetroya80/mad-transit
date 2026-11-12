@@ -18,3 +18,13 @@ export function availabilityText(level: AvailabilityLevel, count: number, need: 
   const suffix = level === 'unconfirmed' ? UNCONFIRMED_SUFFIX : '';
   return `${availabilityCountText(count, need)}${suffix}`;
 }
+
+// What a screen reader hears for a count drawn with its status word beside it.
+export function availabilitySpokenText(
+  level: AvailabilityLevel,
+  count: number,
+  need: Need,
+): string {
+  const status = availabilityStatusText(level, need);
+  return level === 'off' ? status : `${availabilityCountText(count, need)}, ${status}`;
+}

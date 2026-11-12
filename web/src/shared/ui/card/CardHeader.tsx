@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 type TitleLevel = 2 | 3;
 
@@ -11,6 +11,7 @@ type CardHeaderProps = {
   leadingAction?: ReactNode;
   cornerActions?: ReactNode;
   titleAction?: ReactNode;
+  titleRef?: Ref<HTMLHeadingElement>;
 };
 
 const TITLE_TAGS = { 2: 'h2', 3: 'h3' } as const satisfies Record<TitleLevel, string>;
@@ -34,9 +35,9 @@ function MetaRow({ meta, cornerActions }: MetaRowProps) {
 // Each action is a 44 px IconButton pulled 10 px toward its corner, so its icon lines up with the
 // text. The DOM order (leading action, corner actions, title action) is the Tab order. The title
 // takes programmatic focus (tabIndex -1, no ring and no tab stop), so a page can move the focus
-// back to it.
+// back to it through titleRef.
 export function CardHeader(props: CardHeaderProps) {
-  const { titleId, title, titleLevel = 2, leadingAction, titleAction } = props;
+  const { titleId, title, titleLevel = 2, leadingAction, titleAction, titleRef } = props;
   const Title = TITLE_TAGS[titleLevel];
   return (
     <div className="flex items-start gap-1">
@@ -44,7 +45,7 @@ export function CardHeader(props: CardHeaderProps) {
       <div className="flex min-w-0 flex-1 flex-col">
         <MetaRow {...props} />
         <div className={`flex items-center gap-2 ${titleAction ? '-mr-2.5' : ''}`}>
-          <Title id={titleId} tabIndex={-1} className={TITLE_CLASSES}>
+          <Title ref={titleRef} id={titleId} tabIndex={-1} className={TITLE_CLASSES}>
             {title}
           </Title>
           {titleAction ? <div className="ml-auto flex shrink-0">{titleAction}</div> : null}

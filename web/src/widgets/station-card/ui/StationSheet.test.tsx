@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { onlineManager } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
+import { createRef } from 'react';
 import type { Coordinates } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
 import { stationsFixture } from '@/shared/api/mocks/fixtures';
@@ -154,9 +155,12 @@ describe('StationSheetHeader and StationSheetBody', () => {
     const meta = await screen.findByText('Estación 1a · 12 m');
 
     expect(meta.compareDocumentPosition(heading)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(meta.parentElement).toBe(heading.parentElement);
-    expect(backButton().parentElement).toHaveClass('flex', 'items-center');
-    expect(backButton().parentElement).toBe(heading.parentElement?.parentElement);
+    const column = heading.parentElement?.parentElement;
+    expect(column).toContainElement(meta);
+    expect(backButton().parentElement?.nextElementSibling).toBe(column);
+    expect(screen.getByRole('button', { name: 'Favorita' }).parentElement?.parentElement).toBe(
+      heading.parentElement,
+    );
   });
 
   it('draws «Volver a la lista» as a 44 px primary arrow', async () => {
@@ -166,6 +170,22 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(backButton()).toHaveClass('size-11', 'text-primary');
     expect(backButton()).toHaveTextContent('');
     expect(backButton().querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(backButton().querySelector('svg')).toHaveAttribute('width', '22');
+  });
+
+  it('hands its title to headingRef, so the page can move the focus there', async () => {
+    const headingRef = createRef<HTMLHeadingElement>();
+    await renderWithRouter(
+      <StationSheetHeader number="1a" center={SOL} headingRef={headingRef} />,
+      {
+        initialEntries: ['/?station=1a'],
+      },
+    );
+    const heading = await title();
+
+    headingRef.current?.focus();
+
+    expect(heading).toHaveFocus();
   });
 
   it('goes back to the list with «Volver a la lista», keeping need', async () => {
@@ -204,6 +224,17 @@ describe('StationSheetHeader and StationSheetBody', () => {
     await title();
 
     expect(document.body).toHaveFocus();
+  });
+
+  it('draws both availabilities as tiles in two columns', async () => {
+    await renderSheet();
+    await title();
+
+    const caption = within(sheet()).getByText('bicis disponibles', { ignore: '.sr-only' });
+    const box = caption.closest('div');
+    expect(box).toHaveClass('bg-tone-success-soft', 'border-tone-success-line');
+    expect(box?.closest('dl')).toHaveClass('grid', 'grid-cols-2');
+    expect(within(sheet()).getByText('12 bicis, Disponible')).toHaveClass('sr-only');
   });
 
   it('keeps both availabilities whatever the mode', async () => {
@@ -320,7 +351,7 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(backButton()).toBeInTheDocument();
 
     server.resetHandlers();
-    await user.click(within(alert).getByRole('button', { name: 'Reintentar' }));
+    await user.click(within(sheet()).getByRole('button', { name: 'Reintentar' }));
 
     expect(await title()).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -364,7 +395,9 @@ describe('StationSheetHeader and StationSheetBody', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('No se pudo cargar la estación');
-    expect(within(alert).getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    // The action sits beside the alert, so it is not read out with it.
+    const retry = within(sheet()).getByRole('button', { name: 'Reintentar' });
+    expect(alert).not.toContainElement(retry);
   });
 
   it('has no axe violations when the station cannot be loaded', async () => {

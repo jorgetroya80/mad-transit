@@ -1,6 +1,6 @@
 import { availabilityFor, type StationDetailState } from '@/entities/station';
 import { usePendingAction } from '@/shared/lib';
-import { MessageAction, StateMessage } from '@/shared/ui';
+import { Banner, Button, Card } from '@/shared/ui';
 import { CardAvailability } from './CardAvailability';
 
 type CardBodyProps = {
@@ -12,54 +12,43 @@ type CardBodyProps = {
 
 function NotFound({ number, onClose }: Omit<CardBodyProps, 'detail'>) {
   return (
-    <div className="flex flex-col gap-3">
-      <p role="alert" className="text-sm text-fg">
+    <div className="flex flex-col items-start gap-3">
+      <p role="alert" className="text-label leading-normal font-normal text-fg-muted">
         {`No hay ninguna estación de BiciMAD con el número ${number}. Puede que el enlace sea antiguo o que la estación se haya retirado.`}
       </p>
-      <button
-        type="button"
-        onClick={onClose}
-        className="min-h-11 rounded-control bg-primary px-4 font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-      >
-        Volver a la lista
-      </button>
+      <Button label="Volver a la lista" onClick={onClose} />
     </div>
   );
 }
 
-// Compact, like the card: StateMessage rather than the list's large ErrorState. Offline without
+// Compact, like the card: a notice rather than the list's large EmptyState. Offline without
 // data reads the same, as the detail has no texts of its own for it.
 function LoadError({ retry }: { retry: () => unknown }) {
   const { isPending, run } = usePendingAction(retry);
   return (
-    <StateMessage variant="error" title="No se pudo cargar la estación">
-      <p>El servicio de BiciMAD no está respondiendo. Suele ser temporal.</p>
-      <MessageAction
-        aria-busy={isPending || undefined}
-        aria-disabled={isPending || undefined}
-        onClick={isPending ? undefined : run}
-        className="-ml-3 aria-disabled:cursor-wait"
-      >
-        Reintentar
-      </MessageAction>
-    </StateMessage>
+    <Banner
+      tone="danger"
+      icon="cloud-alert"
+      title="No se pudo cargar la estación"
+      message="El servicio de BiciMAD no está respondiendo. Suele ser temporal."
+      action={{ label: 'Reintentar', onClick: run, busy: isPending }}
+      announce="assertive"
+    />
   );
 }
 
-// Instead of two counts that mean nothing: an off station takes and gives no bikes.
+// Instead of two counts that mean nothing: an off station takes and gives no bikes. No library
+// piece draws it: Banner has no neutral tone and StatTile holds a single count.
 function OutOfService() {
   return (
     <output className="flex flex-col gap-1 rounded-control bg-chip px-3 py-2.5">
-      <span className="font-semibold text-availability-off-label">Fuera de servicio</span>{' '}
+      <span className="font-semibold text-tone-neutral-label">Fuera de servicio</span>{' '}
       <span className="text-sm text-fg-muted">No se pueden sacar ni dejar bicis.</span>
     </output>
   );
 }
 
-export function CardBody({ number, detail, onClose }: CardBodyProps) {
-  if (detail.status === 'loading') {
-    return <StateMessage variant="loading" title="Cargando estación…" />;
-  }
+function BodyContent({ number, detail, onClose }: CardBodyProps) {
   if (detail.status === 'not-found') return <NotFound number={number} onClose={onClose} />;
   if (detail.station === undefined) return <LoadError retry={detail.retry} />;
   // Off does not depend on the mode; unconfirmed data greys it out like any other count.
@@ -67,4 +56,13 @@ export function CardBody({ number, detail, onClose }: CardBodyProps) {
     return <OutOfService />;
   }
   return <CardAvailability station={detail.station} status={detail.status} />;
+}
+
+// Busy swaps the content for the spinner, so BodyContent never renders while loading.
+export function CardBody(props: CardBodyProps) {
+  return (
+    <Card.Body busy={props.detail.status === 'loading'} busyLabel="Cargando estación…">
+      <BodyContent {...props} />
+    </Card.Body>
+  );
 }

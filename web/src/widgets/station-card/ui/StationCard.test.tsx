@@ -87,12 +87,12 @@ describe('StationCard', () => {
     const close = within(region).getByRole('button', { name: 'Cerrar' });
     const star = within(region).getByRole('button', { name: 'Favorita' });
 
-    expect(close).toHaveClass('row-start-1', 'col-start-2');
-    expect(star).toHaveClass('row-start-2', 'col-start-2', 'self-center');
-    expect(within(region).getByRole('heading', { level: 2 })).toHaveClass(
-      'row-start-2',
-      'self-center',
-    );
+    const meta = await within(region).findByText('Estación 1a · 12 m');
+    const heading = within(region).getByRole('heading', { level: 2 });
+
+    expect(close.parentElement?.parentElement).toContainElement(meta);
+    expect(meta.compareDocumentPosition(heading)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(star.parentElement?.parentElement).toBe(heading.parentElement);
     await userEvent.tab();
     expect(close).toHaveFocus();
     await userEvent.tab();
@@ -120,10 +120,46 @@ describe('StationCard', () => {
     );
     for (const caption of captions) {
       const box = caption.closest('div');
-      expect(box).toHaveClass('rounded-control', 'bg-chip', 'items-center');
-      expect(caption).toHaveClass('text-center');
+      expect(box).toHaveClass('rounded-control', 'items-center', 'text-center');
+      expect(box).toHaveClass('bg-tone-success-soft', 'border-2', 'border-tone-success-line');
     }
-    expect(captions[0]?.closest('div')?.parentElement).toHaveClass('grid', 'grid-cols-2');
+    expect(captions[0]?.closest('dl')).toHaveClass('grid', 'grid-cols-2');
+  });
+
+  it('tells screen readers each count with its status, under its caption', async () => {
+    await renderCard('/?station=1b');
+    const region = await card('Puerta del Sol B');
+
+    const terms = within(region).getAllByRole('term');
+    expect(terms.map((term) => term.textContent)).toEqual(['bicis disponibles', 'anclajes libres']);
+    for (const [index, text] of ['2 bicis, Pocas', '22 anclajes libres, Disponible'].entries()) {
+      const spoken = within(region).getByText(text);
+      expect(spoken).toHaveClass('sr-only');
+      expect(spoken.closest('dd')).toBe(terms[index]?.nextElementSibling);
+    }
+  });
+
+  it('draws an empty count in a white box with a dashed red border', async () => {
+    await renderCard('/?station=3');
+    const region = await card('Plaza Conde Suchil');
+
+    const box = within(region).getByText('Sin bicis').closest('div');
+    expect(box).toHaveClass('bg-surface', 'border-dashed', 'border-tone-danger-line');
+    expect(within(region).getByText('0 bicis, Sin bicis')).toHaveClass('sr-only');
+  });
+
+  it('shows a spinner and says what it waits for while the station loads', async () => {
+    server.use(
+      http.get(STATION_URL, () => delay('infinite')),
+      http.get(STATIONS_URL, () => delay('infinite')),
+    );
+    await renderCard();
+
+    const region = await card('Estación 1a');
+    const label = within(region).getByText('Cargando estación…');
+    expect(label).toHaveClass('sr-only');
+    expect(label.parentElement).toHaveAttribute('aria-busy', 'true');
+    expect(label.parentElement?.querySelector('svg')).toHaveClass('animate-spin');
   });
 
   it('shows only the number when the station has no distance', async () => {
@@ -148,6 +184,10 @@ describe('StationCard', () => {
 
     const region = await card('Puerta del Sol A');
     expect(await within(region).findAllByText('Sin confirmar')).toHaveLength(2);
+    for (const label of within(region).getAllByText('Sin confirmar')) {
+      expect(label.closest('div')).toHaveClass('bg-tone-muted', 'border-tone-muted-line');
+    }
+    expect(within(region).getByText('12 bicis, Sin confirmar')).toHaveClass('sr-only');
   });
 
   it('closes with «Cerrar»', async () => {
@@ -202,6 +242,15 @@ describe('StationCard', () => {
     expect(searchOf(router).station).toBeUndefined();
   });
 
+  it('draws «Volver a la lista» as the library primary button', async () => {
+    await renderCard('/?station=999');
+
+    const back = within(await card('Estación no encontrada')).getByRole('button', {
+      name: 'Volver a la lista',
+    });
+    expect(back).toHaveClass('focus-ring', 'h-11', 'bg-primary', 'text-primary-foreground');
+  });
+
   it('says a station out of service cannot be used, instead of its counts (SC6)', async () => {
     await renderCard('/?station=2');
 
@@ -210,6 +259,16 @@ describe('StationCard', () => {
     expect(notice).toHaveTextContent('Fuera de servicio No se pueden sacar ni dejar bicis.');
     expect(within(region).queryByText('bicis disponibles')).not.toBeInTheDocument();
     expect(within(region).getByText(FOOTER)).toHaveTextContent('Actualizado hace 5 minutos');
+  });
+
+  it('writes «Fuera de servicio» in the neutral label color', async () => {
+    await renderCard('/?station=2');
+
+    const region = await card('Miguel Moya');
+    expect(within(region).getByText('Fuera de servicio')).toHaveClass(
+      'font-semibold',
+      'text-tone-neutral-label',
+    );
   });
 
   it('dates the station at its foot', async () => {
@@ -258,6 +317,23 @@ describe('StationCard', () => {
     await userEvent.click(retry);
 
     expect(retry).toHaveAttribute('aria-busy', 'true');
+    expect(retry).toHaveFocus();
+  });
+
+  it('frames the load error as a danger notice with its icon and a secondary «Reintentar»', async () => {
+    failEverything();
+    await renderCard();
+    const region = await card('Estación 1a');
+
+    const alert = await within(region).findByRole('alert');
+    const notice = alert.parentElement;
+    expect(notice).toHaveClass('bg-tone-danger-soft');
+    expect(notice?.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(within(region).getByRole('button', { name: 'Reintentar' })).toHaveClass(
+      'bg-surface',
+      'text-primary',
+      'border-primary',
+    );
   });
 
   it('has no axe violations when the station cannot be loaded', async () => {

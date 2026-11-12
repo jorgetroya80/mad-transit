@@ -1,6 +1,5 @@
 import { render } from '@testing-library/react';
 import {
-  ArrowLeftIcon,
   BikeIcon,
   ChevronIcon,
   ClearIcon,
@@ -11,7 +10,6 @@ import {
   OfflineIcon,
   PlusIcon,
   RefreshIcon,
-  StarIcon,
   WarningIcon,
 } from '.';
 
@@ -23,9 +21,7 @@ const DECORATIVE_ICONS = [
   OfflineIcon,
   InfoIcon,
   LocationIcon,
-  StarIcon,
   ChevronIcon,
-  ArrowLeftIcon,
   PlusIcon,
   MinusIcon,
   RefreshIcon,
