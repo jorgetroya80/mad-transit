@@ -80,13 +80,39 @@ export const nearbyStationsFixture: StationsResponse = {
   ],
 };
 
+// The bodies of the API's ProblemDetailsHandler, with a fixed request id.
+const REQUEST_ID = 'mock-request';
+
 export function stationNotFoundProblem(number: string): Problem {
   return {
     type: 'about:blank',
     title: 'Not Found',
     status: 404,
-    detail: `No station with number ${number}`,
+    detail: 'Not Found',
     instance: `/v1/bicimad/stations/${number}`,
-    requestId: 'mock-request',
+    requestId: REQUEST_ID,
+  };
+}
+
+// EMT Madrid failed or could not be reached.
+export function emtUnavailableProblem(instance: string): Problem {
+  return {
+    type: 'urn:mad-transit:problem:emt-unavailable',
+    title: 'EMT unavailable',
+    status: 503,
+    detail: 'EMT Madrid is not available right now.',
+    instance,
+    requestId: REQUEST_ID,
+  };
+}
+
+export function internalErrorProblem(instance: string): Problem {
+  return {
+    type: 'urn:mad-transit:problem:internal',
+    title: 'Internal error',
+    status: 500,
+    detail: 'An unexpected error occurred.',
+    instance,
+    requestId: REQUEST_ID,
   };
 }

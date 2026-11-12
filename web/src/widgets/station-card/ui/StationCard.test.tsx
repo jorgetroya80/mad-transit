@@ -2,7 +2,8 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import type { Coordinates } from '@/entities/station';
-import { stationsFixture } from '@/shared/api/mocks/fixtures';
+import { internalErrorProblem, stationsFixture } from '@/shared/api/mocks/fixtures';
+import { problemResponse } from '@/shared/api/mocks/handlers';
 import { server } from '@/shared/api/mocks/node';
 import { env } from '@/shared/config';
 import { formatClock } from '@/shared/lib';
@@ -15,7 +16,6 @@ const STATION_URL = `${STATIONS_URL}/:number`;
 const SOL: Coordinates = { lat: 40.41702, lng: -3.70243 };
 // Five minutes after the fixtures' `updatedAt`: their data is still confirmed.
 const NOW = new Date('2026-10-13T10:20:00Z');
-const SERVER_ERROR = 500;
 const [puertaDelSolA] = stationsFixture.stations;
 const NOT_FOUND_TEXT =
   'No hay ninguna estación de BiciMAD con el número 999. Puede que el enlace sea antiguo o que la estación se haya retirado.';
@@ -35,9 +35,7 @@ function respondStaleStation() {
 
 function failEverything() {
   server.use(
-    http.get(STATION_URL, () =>
-      HttpResponse.json({ status: SERVER_ERROR }, { status: SERVER_ERROR }),
-    ),
+    http.get(STATION_URL, () => problemResponse(internalErrorProblem('/v1/bicimad/stations/1a'))),
     http.get(STATIONS_URL, () => HttpResponse.error()),
   );
 }

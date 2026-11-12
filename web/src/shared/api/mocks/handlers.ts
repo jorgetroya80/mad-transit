@@ -8,7 +8,6 @@ import { env } from '@/shared/config';
 import { nearbyStationsFixture, stationNotFoundProblem, stationsFixture } from './fixtures';
 
 const STATIONS_URL = `${env.apiBaseUrl}/v1/bicimad/stations`;
-const NOT_FOUND = 404;
 
 function findStation(number: string) {
   const wanted = number.toLowerCase();
@@ -19,6 +18,14 @@ type HandlerOptions = {
   // Dates every response; without it the fixtures keep their fixed date, which tests rely on.
   updatedAt?: () => string;
 };
+
+// Every API error is a problem+json body with its own status.
+export function problemResponse(problem: Problem) {
+  return HttpResponse.json<Problem>(problem, {
+    status: problem.status,
+    headers: { 'Content-Type': 'application/problem+json' },
+  });
+}
 
 // The API writes `updatedAt` in whole seconds.
 export function apiTimestamp(date: Date): string {
@@ -38,12 +45,7 @@ export function createHandlers({ updatedAt }: HandlerOptions = {}) {
       `${STATIONS_URL}/:number`,
       ({ params }) => {
         const station = findStation(params.number);
-        if (!station) {
-          return HttpResponse.json(stationNotFoundProblem(params.number), {
-            status: NOT_FOUND,
-            headers: { 'Content-Type': 'application/problem+json' },
-          });
-        }
+        if (!station) return problemResponse(stationNotFoundProblem(params.number));
         const { updatedAt: fixtureUpdatedAt, stale, source } = stationsFixture;
         return HttpResponse.json(dated({ station, updatedAt: fixtureUpdatedAt, stale, source }));
       },

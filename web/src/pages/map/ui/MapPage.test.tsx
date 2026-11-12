@@ -1,7 +1,12 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { nearbyStationsFixture, stationsFixture } from '@/shared/api/mocks/fixtures';
+import {
+  internalErrorProblem,
+  nearbyStationsFixture,
+  stationsFixture,
+} from '@/shared/api/mocks/fixtures';
+import { problemResponse } from '@/shared/api/mocks/handlers';
 import { server } from '@/shared/api/mocks/node';
 import { env, FAVORITES_STORAGE_KEY, MADRID_CENTER } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
@@ -642,7 +647,7 @@ describe('MapPage', () => {
       [
         'failed to load',
         'No se pudo cargar la estación',
-        () => HttpResponse.json({ status: 500 }, { status: 500 }),
+        () => problemResponse(internalErrorProblem('/v1/bicimad/stations/99')),
       ],
     ])('names the station by its number while it %s', async (_state, bodyText, resolver) => {
       stubGeolocation('granted');

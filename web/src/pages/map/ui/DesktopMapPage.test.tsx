@@ -1,8 +1,13 @@
-import { nearbyStationsFixture, staleStationsFixture } from '@/shared/api/mocks/fixtures';
 import { formatClock } from '@/shared/lib';
 import { findStaleNotice, staleRetryButton } from '../../../../test/staleNotice';
 import { onlineManager } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
+import {
+  emtUnavailableProblem,
+  nearbyStationsFixture,
+  staleStationsFixture,
+} from '@/shared/api/mocks/fixtures';
+import { problemResponse } from '@/shared/api/mocks/handlers';
 import { server } from '@/shared/api/mocks/node';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -431,7 +436,7 @@ describe('DesktopMapPage', () => {
     it('says the service fails, with the search off and a notice over the map (SC1)', async () => {
       server.use(
         http.get(`${env.apiBaseUrl}/v1/bicimad/stations`, () =>
-          HttpResponse.json({ title: 'Service Unavailable', status: 503 }, { status: 503 }),
+          problemResponse(emtUnavailableProblem('/v1/bicimad/stations')),
         ),
       );
       const { container } = await renderPage();
@@ -573,7 +578,11 @@ describe('DesktopMapPage', () => {
       {
         state: 'error without data',
         arrange: async () => {
-          server.use(http.get(STATIONS, () => HttpResponse.json({ status: 503 }, { status: 503 })));
+          server.use(
+            http.get(STATIONS, () =>
+              problemResponse(emtUnavailableProblem('/v1/bicimad/stations')),
+            ),
+          );
           await renderPage();
           await screen.findByText(/Volveremos a intentarlo/);
         },
@@ -644,7 +653,9 @@ describe('DesktopMapPage', () => {
     });
 
     it('keeps the countdown and the map notice out of every live region', async () => {
-      server.use(http.get(STATIONS, () => HttpResponse.json({ status: 503 }, { status: 503 })));
+      server.use(
+        http.get(STATIONS, () => problemResponse(emtUnavailableProblem('/v1/bicimad/stations'))),
+      );
       await renderPage();
 
       const LIVE =
