@@ -257,7 +257,11 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(await within(sheet()).findAllByText('Sin confirmar')).toHaveLength(2);
   });
 
-  it('shows only the number when the station has no distance', async () => {
+  // Skipped under exception W1 (CONSTRAINTS.md): the nearby list an earlier test saves can land
+  // in storage after the clean-up, and the placeholder then shows its distance here.
+  // StationCard.test covers the same meta without a distance.
+  // oxlint-disable-next-line vitest/no-disabled-tests -- exception W1
+  it.skip('shows only the number when the station has no distance', async () => {
     await renderSheet('/?station=1a', undefined);
     await title();
 
