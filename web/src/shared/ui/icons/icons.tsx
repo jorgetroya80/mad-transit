@@ -19,14 +19,6 @@ export function DockIcon({ className }: IconProps) {
   );
 }
 
-export function ClearIcon({ className }: IconProps) {
-  return (
-    <IconFrame className={className}>
-      <path d="M18 6 6 18M6 6l12 12" />
-    </IconFrame>
-  );
-}
-
 export function WarningIcon({ className }: IconProps) {
   return (
     <IconFrame className={className}>

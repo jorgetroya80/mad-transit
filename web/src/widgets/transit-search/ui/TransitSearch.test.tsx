@@ -219,16 +219,17 @@ describe('TransitSearch', () => {
       return { user, ...view };
     }
 
-    it('is a 44 px round field with a floating shadow', async () => {
+    it('is a 44 px pill with its shadow', async () => {
       await renderFloatingSearch();
 
-      expect(searchBox()).toHaveClass('h-11', 'rounded-full', 'bg-surface', 'shadow-float');
+      expect(searchBox()).toHaveClass('h-11', 'rounded-full', 'bg-surface', 'shadow-pill');
     });
 
     it('hides its label visually and keeps the help as its description', async () => {
       await renderFloatingSearch();
 
       expect(screen.getByText('Buscar estación')).toHaveClass('sr-only');
+      expect(screen.getByText('Busca por número de estación.')).toHaveClass('sr-only');
       expect(searchBox()).toHaveAccessibleDescription('Busca por número de estación.');
     });
 

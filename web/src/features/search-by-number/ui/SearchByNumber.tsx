@@ -100,6 +100,7 @@ export function SearchByNumber({ sources, variant = 'inline' }: SearchByNumberPr
         onKeyDown={onInputKeyDown}
         onClear={clearAndFocusInput}
         placeholder={source.placeholder}
+        busy={source.status === 'loading' && query.trim() !== ''}
         unavailableText={source.unavailableText}
         describedBy={search.hasNoResults ? noResultsId : undefined}
       />

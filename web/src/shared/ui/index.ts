@@ -24,7 +24,6 @@ export {
   type IconSize,
   BikeIcon,
   ChevronIcon,
-  ClearIcon,
   DockIcon,
   InfoIcon,
   LocationIcon,

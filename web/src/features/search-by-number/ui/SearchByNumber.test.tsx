@@ -72,6 +72,14 @@ describe('SearchByNumber', () => {
       expect(searchBox()).toHaveAttribute('inputmode', 'text');
     });
 
+    it('is a 48 px box with its label and help shown', () => {
+      render(<SearchByNumber sources={[bicimadSource()]} />);
+
+      expect(searchBox()).toHaveClass('h-12', 'rounded-control');
+      expect(screen.getByText('Buscar estación')).not.toHaveClass('sr-only');
+      expect(screen.getByText('Busca por número de estación.')).not.toHaveClass('sr-only');
+    });
+
     it('describes the box with how to search', () => {
       render(<SearchByNumber sources={[bicimadSource()]} />);
 
@@ -307,6 +315,24 @@ describe('SearchByNumber', () => {
   });
 
   describe('states', () => {
+    it('swaps the magnifier for a spinner while a typed search waits for the data', async () => {
+      const { container } = render(
+        <SearchByNumber sources={[bicimadSource({ items: [], status: 'loading' })]} />,
+      );
+
+      await userEvent.type(searchBox(), '1');
+
+      expect(container.querySelector('svg')).toHaveClass('animate-spin');
+    });
+
+    it('keeps the magnifier while loading with an empty box', () => {
+      const { container } = render(
+        <SearchByNumber sources={[bicimadSource({ items: [], status: 'loading' })]} />,
+      );
+
+      expect(container.querySelector('svg')).not.toHaveClass('animate-spin');
+    });
+
     it('announces loading with the plural item label', async () => {
       render(<SearchByNumber sources={[bicimadSource({ items: [], status: 'loading' })]} />);
 
@@ -363,7 +389,20 @@ describe('SearchByNumber', () => {
 
       expect(noResultsMessage()).toHaveRole('status');
       expect(noResultsMessage()).toHaveTextContent(MESSAGE);
-      expect(screen.getByRole('heading', { level: 2, name: 'Prueba con' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 3, name: 'Prueba con' })).toBeInTheDocument();
+    });
+
+    it('heads the message with the query and offers the suggestions under it', async () => {
+      await searchNothing();
+      const title = screen.getByRole('heading', {
+        level: 2,
+        name: 'No hay ninguna estación «99Z»',
+      });
+
+      expect(noResultsMessage()).toContainElement(title);
+      expect(title.compareDocumentPosition(screen.getByRole('heading', { level: 3 }))).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
     });
 
     it('announces it once: in its block, not in the results count', async () => {

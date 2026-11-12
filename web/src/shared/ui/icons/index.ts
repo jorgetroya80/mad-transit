@@ -3,7 +3,6 @@ export { ICON_DRAWINGS, ICON_NAMES, type IconDrawing, type IconName } from './ic
 export {
   BikeIcon,
   ChevronIcon,
-  ClearIcon,
   DockIcon,
   InfoIcon,
   LocationIcon,
