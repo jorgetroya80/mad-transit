@@ -1,7 +1,7 @@
 # Spec: web-bus
 
 - Created: 2026-10-30
-- Status: **approved** (2026-10-30)
+- Status: **approved** (2026-11-12)
 - Plan: [PLAN-web-bus.md](../plans/PLAN-web-bus.md)
 
 Módulo `web-bus` del [Capability Map](CAPABILITY-MAP.md). Sobre la SPA de [web-shell](SPEC-web-shell.md) y junto a [web-bicimad](SPEC-web-bicimad.md), añade las paradas de autobús EMT: icono de bus en el mapa, resumen al tocarlo, lista de cercanas y detalle con llegadas en el panel. Consume [api-bus](SPEC-api-bus.md) con `@jorgetroya80/mad-transit-client`.
@@ -28,6 +28,9 @@ Que un usuario sepa en menos de 5 segundos qué parada de autobús tiene cerca y
 5. **Un solo selector de servicio.** El buscador sigue al selector de arriba y su `SourcePicker` se oculta.
 6. **La lista no muestra llegadas.** Se decidió tras ver los datos reales: a ≤ 500 m hay entre 25 y 41 paradas. Con una llegada por fila serían hasta 41 llamadas cada 30 s por zona, unas 4.900 por hora (unas 118.000 al día) para una sola zona, frente al cupo de 150.000 al día de las llegadas. Las llegadas salen solo en el popup y en el detalle.
 7. **Dónde está el autobús.** Cada llegada del detalle tiene un botón "Ver en el mapa", como el "Ver ubicación" del visor PMV de la EMT. El dato sale de la llamada de llegadas, sin peticiones extra.
+8. **Sin ubicación.** Igual que BiciMAD (`useMapLocation`). Si el permiso se deniega o no hay posición, el centro es la Puerta del Sol: el mapa, la lista y las distancias se calculan desde ahí y las distancias se muestran. Mientras se pide la ubicación, sin respuesta todavía, no hay centro y no hay distancias (como #122 en BiciMAD). En escritorio, un aviso dice «Mostrando paradas cerca de la Puerta del Sol porque no tenemos tu ubicación» con el botón «Usar mi ubicación»; si el permiso está denegado, dice «No has dado permiso de ubicación: mostrando paradas cerca de la Puerta del Sol». En móvil, el aviso es «Sin tu ubicación: cerca de la Puerta del Sol» con el botón «Activar», y el encabezado de la lista dice «A 500 m de la Puerta del Sol». El aviso reutiliza `ApproximateLocationNotice` de BiciMAD; el botón vuelve a pedir la ubicación.
+9. **Detalle en escritorio y en móvil.** En escritorio, las líneas van en una tabla con cabeceras «Línea», «Hacia», «Horario» y «Cada». En móvil, van en una lista con una fila por línea. Los datos son los mismos.
+10. **Cupo agotado.** Un `429` con `Retry-After` en las llegadas muestra «Llegadas no disponibles» con el texto «Hoy se ha alcanzado el límite de consultas a la EMT. Las llegadas volverán solas; los horarios de abajo siguen siendo válidos.». No tiene botón «Reintentar»: el sondeo vuelve solo cuando pasa el `Retry-After`.
 
 ## Assumptions
 
@@ -35,22 +38,23 @@ Que un usuario sepa en menos de 5 segundos qué parada de autobús tiene cerca y
 2. **Mapa.** Solo las paradas cercanas (`GET /v1/bus/stops?near=…&radius=500`), no las 4.900: es lo que pidió el usuario y evita pintar miles de iconos. Cada parada es un icono de autobús (capa `symbol`), sin color de disponibilidad. La seleccionada se dibuja más grande y con borde. Una parada abierta desde un enlace o desde el buscador, fuera de los 500 m, se añade al mapa con los datos de `useStop`, y el mapa se centra en ella (`useUserFocus`, como con `?station`).
 3. **Popup.** Muestra número y nombre, las líneas y las 3 primeras llegadas ("3 → San Amaro · 2 min"). Usa la misma query de llegadas que el detalle (misma clave), así que no hace peticiones extra. Se cierra con su botón, con `Escape`, al tocar otro punto o al cerrar el detalle. No es accesible por teclado desde el mapa, igual que los puntos: el camino accesible es la lista y el buscador, y el panel muestra todo lo del popup. Por debajo de `md`, `focusPadding` deja el icono y el popup encima del bottom sheet.
 4. **Lista.** "Paradas cercanas", por distancia (orden del API). Cada fila: número, nombre, líneas y distancia. Estados cargando, vacío ("Ninguna parada a 500 m"), error y `stale`, como en BiciMAD.
-5. **Detalle.** Número, nombre, dirección y distancia; llegadas por orden ("Llegando" con 0 min, "Sin estimación" con `noEstimate`); y una tabla de líneas con cabeceras, horario y frecuencia. Las nocturnas (`N…`) muestran su horario tal cual ("23:30–05:30") y una etiqueta "Nocturno" en texto, no solo con color. Un número inexistente muestra "Parada no encontrada". La distancia sale de la lista de cercanas (como `useStationDistance`); fuera de los 500 m no se muestra. Si fallan solo las llegadas (por ejemplo, un `503` porque tienen más de 2 min), el detalle se sigue mostrando con el aviso "Llegadas no disponibles" y un botón para reintentar. El panel se titula "Paradas" con Bus elegido.
+5. **Detalle.** Número, nombre, dirección y distancia; llegadas por orden ("Llegando" con 0 min, "Sin estimación" con `noEstimate`); y las líneas con horario y frecuencia, en tabla en escritorio y en lista en móvil (decisión 9). Las nocturnas (`N…`) muestran su horario tal cual ("23:30–05:30") y una etiqueta "Nocturno" en texto, no solo con color. Un número inexistente muestra "Parada no encontrada". La distancia sale de la lista de cercanas (como `useStationDistance`); fuera de los 500 m no se muestra. Si fallan solo las llegadas (por ejemplo, un `503` porque tienen más de 2 min), el detalle se sigue mostrando con el aviso "Llegadas no disponibles" y un botón para reintentar. El panel se titula "Paradas" con Bus elegido.
 6. **Datos y polling.** Las paradas cercanas casi no cambian: `staleTime` de 1 h, sin `refetchInterval`. Las llegadas se piden solo con una parada abierta, cada 30 s (el TTL del API) y no con la pestaña oculta.
 7. **Buscador.** `transit-search` añade una fuente `bus` (`useBusSource`) con todas las paradas (`GET /v1/bus/stops` sin `near`). La pide solo cuando el usuario elige Bus, no al cargar la app. `SearchByNumber` recibe la fuente activa según `?service`. Con una sola fuente no pinta `SourcePicker`, así BiciMAD queda igual que hoy, pero sin su selector (decisión 5).
-9. **Autobús en el mapa.** "Ver en el mapa" pinta el autobús con un icono distinto del de parada (vehículo en un círculo, con su línea como texto) y encuadra la parada y el autobús juntos. La posición se mueve con cada sondeo de 30 s. Solo se muestra un autobús a la vez, y se quita al cerrar el detalle o al elegir otra llegada. No va en la URL: es un estado de la vista. Una llegada sin posición (`busLat` a `null`) no muestra el botón. El botón dice qué hace con texto accesible: "Ver en el mapa el autobús de la línea 27".
-8. **Cliente.** Los tipos y las funciones salen de la versión de `@jorgetroya80/mad-transit-client` que publique api-bus, así que web-bus empieza cuando esa release esté publicada. MSW sirve fixtures con esos tipos para desarrollar y testear sin el API.
+8. **Autobús en el mapa.** "Ver en el mapa" pinta el autobús con un icono distinto del de parada (vehículo en un círculo, con su línea como texto) y encuadra la parada y el autobús juntos. La posición se mueve con cada sondeo de 30 s. Solo se muestra un autobús a la vez, y se quita al cerrar el detalle o al elegir otra llegada. No va en la URL: es un estado de la vista. Una llegada sin posición (`busLat` a `null`) no muestra el botón. El botón dice qué hace con texto accesible: "Ver en el mapa el autobús de la línea 27".
+9. **Cliente.** Los tipos y las funciones salen de la versión `0.9.0` de `@jorgetroya80/mad-transit-client` (release de api-bus, api 0.9.0). MSW sirve fixtures con esos tipos para desarrollar y testear sin el API.
 
 ### Errores: qué ve el usuario y qué hace la app
 
-La regla general es **mostrar lo último bueno, decir que es antiguo y no inventar**. Unas llegadas viejas engañan más que no tenerlas. Los textos y componentes son los de BiciMAD (`StateMessage`, `StaleNotice`, `PanelNotice`). TanStack Query reintenta una vez (`QUERY_RETRY_COUNT`) los fallos de red y los 5xx, pero nunca un 4xx.
+La regla general es **mostrar lo último bueno, decir que es antiguo y no inventar**. Unas llegadas viejas engañan más que no tenerlas. Los textos son los de BiciMAD; los componentes son los de `shared/ui` (`StatusText`, `EmptyState`, `Banner`, `StaleNotice`). Los fallos de red y los 5xx se reintentan con la pauta de BiciMAD (`retryDelayMs`, `RETRY_DELAYS_MS`); un 4xx nunca se reintenta.
 
 | Lo que responde el API                       | Paradas cercanas y mapa                                                         | Detalle                                                    | Llegadas (detalle y popup)                                                         |
 | -------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `200` con `stale: true`                      | Lista y mapa normales + `StaleNotice` ("Datos de hace X min: la EMT no responde") | Igual, con `StaleNotice`                                   | Igual, con "Actualizado hace X"                                                      |
 | `200` con `arrivals: []`                     | —                                                                               | —                                                          | "No hay autobuses previstos"                                                       |
 | `404`                                        | —                                                                               | "Parada no encontrada" + "Volver a la lista"; sin reintento | No se pide (la parada no existe)                                                   |
-| `429`, `502`, `503`, `504` o sin red         | `StateMessage` "No se pudieron cargar las paradas cercanas" + "Reintentar"; el mapa queda sin iconos | "No se pudo cargar la parada" + "Reintentar" | "Llegadas no disponibles" + "Reintentar"; el resto del detalle sigue visible |
+| `429` con `Retry-After` (cupo agotado)       | Como un `5xx`, pero "Reintentar" no actúa antes del `Retry-After`                  | Igual                                                      | Decisión 10: «Llegadas no disponibles» con el texto del cupo; sin botón                |
+| `502`, `503`, `504` o sin red                | `StatusText` "No se pudieron cargar las paradas cercanas" + "Reintentar"; el mapa queda sin iconos | "No se pudo cargar la parada" + "Reintentar" | "Llegadas no disponibles" + "Reintentar"; el resto del detalle sigue visible |
 | Falla un sondeo con datos ya cargados        | Se mantienen los datos; `StaleNotice` si superan 1 h                            | Se mantienen                                               | Se mantienen como mucho 2 min desde su `updatedAt` (con `useNow`); después, "Llegadas no disponibles" y el autobús desaparece del mapa |
 | `400` o `500`                                | Como un `5xx`: es un fallo nuestro, no del usuario                              | Igual                                                      | Igual                                                                              |
 
@@ -61,12 +65,12 @@ La regla general es **mostrar lo último bueno, decir que es antiguo y no invent
 
 ## Tech Stack
 
-El de [web-bicimad](SPEC-web-bicimad.md#tech-stack), sin dependencias nuevas. El cliente sube a la versión con las operaciones de bus. El icono es un SVG escrito a mano.
+El de [web-bicimad](SPEC-web-bicimad.md#tech-stack), sin dependencias nuevas. El cliente sube a la versión con las operaciones de bus. Los iconos salen de `shared/ui/icons` (`bus`, `pin`, `clock`); no se escriben SVG nuevos.
 
 ## Commands
 
 ```bash
-pnpm --filter web add @jorgetroya80/mad-transit-client@<versión de api-bus>   # exacta, sin ^
+pnpm --filter web add @jorgetroya80/mad-transit-client@0.9.0   # exacta, sin ^
 pnpm --filter web dev:mock       # sin backend: fixtures de bus en MSW
 pnpm --filter web dev            # contra ./gradlew bootRun
 pnpm --filter web test
@@ -98,7 +102,7 @@ web/src/
     bus-stop/
       api/                           query keys + useNearbyStops, useAllStops, useStop, useArrivals
       model/                         tipos (reexporta los del cliente), formatArrival
-      ui/                            StopRow, ArrivalRow, LineBadge
+      ui/                            StopRow, ArrivalRow (sobre `ListItem` y `Tag` de shared/ui)
   shared/
     ui/base-map/                     + puntos con icono y popup genérico (ver abajo)
     api/mocks/                       + handlers y fixtures de /v1/bus/stops/**
@@ -106,7 +110,7 @@ web/src/
 
 ### Cambios en `shared/ui/base-map` (genéricos, sin conocer paradas)
 
-- `MapPoint` admite `icon?: 'bus-stop' | 'bus'` (parada o vehículo). Los puntos con icono se pintan en una capa `symbol` aparte; los demás siguen como círculos. El SVG del autobús vive en `base-map` y se registra con `map.addImage` al cargar el estilo.
+- Los puntos usan `MapPointParams` de `shared/ui/map-point`, como hoy en BiciMAD: parada = `shape: 'square'` con icono `bus`, y la seleccionada más grande. Ya van en la capa `symbol` `point-images`; `map-point` dibuja las imágenes bajo demanda, sin `map.addImage` a mano.
 - `fitPoints?: readonly LngLat[]`: encuadra varios puntos (`fitBounds`, sin animación con `prefers-reduced-motion`). Se usa para la parada y su autobús.
 - `popup?: { at: LngLat; content: ReactNode; onClose: () => void }`. Usa `maplibregl.Popup` y pinta `content` con un portal de React, así que el contenido es React normal y testeable. `maplibre-gl` sigue solo en `base-map`.
 
@@ -141,7 +145,7 @@ export function formatArrival({ minutes, noEstimate }: Arrival): string {
 ## Boundaries
 
 - **Siempre:** el API calcula distancias y orden; textos en español; color nunca solo.
-- **Preguntar antes:** añadir dependencias (iconos incluidos: el SVG se escribe a mano); cambiar el comportamiento de BiciMAD.
+- **Preguntar antes:** añadir dependencias (incluidos iconos nuevos); cambiar el comportamiento de BiciMAD.
 - **Nunca:** `maplibre-gl` fuera de `base-map`; tipos del API escritos a mano; `window.location`.
 
 ## Success Criteria
@@ -157,7 +161,7 @@ export function formatArrival({ minutes, noEstimate }: Arrival): string {
 
 ## Open Questions
 
-Ninguna.
+1. **Vehículo en el mapa.** `MapPointParams` admite icono o texto, no los dos. El vehículo necesita icono `bus` y la línea como texto. El plan decide cómo se pinta.
 
 ## Changelog
 
@@ -168,3 +172,4 @@ Ninguna.
 - 2026-10-30: aprobada por el usuario.
 - 2026-10-30: se quita `inService` (el API responde `502` estándar); ese caso entra en la fila de errores 5xx.
 - 2026-10-30: el cupo de llegadas pasa a 150.000 al día (revisión del PR #87); la decisión 6 se mantiene.
+- 2026-11-12: cruce con el diseño del canvas «Mad Transit · rediseño» y con el código actual. Decisiones 8 (sin ubicación desde Sol, con distancias y «Usar mi ubicación»), 9 (tabla en escritorio, lista en móvil) y 10 (cupo agotado con copy). Supuestos renumerados. Se cambian referencias a componentes y a iconos que ya no existen (`StateMessage`, `PanelNotice`, `QUERY_RETRY_COUNT`, `LineBadge`, SVG a mano), y el cliente fijado en 0.9.0. Aprobada por el usuario el mismo día, tras la corrección de la decisión 8.
