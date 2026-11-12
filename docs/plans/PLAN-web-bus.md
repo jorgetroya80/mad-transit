@@ -26,7 +26,7 @@ Selector "BiciMAD / Bus", paradas cercanas con icono de bus en el mapa, popup de
   - Puntos del mapa: `MapPointParams` de `shared/ui/map-point` (parada = `shape: 'square'`, `icon: 'bus'`). Sin `map.addImage` a mano.
   - Componentes: `ListItem`, `Tag`, `StatusText`, `EmptyState`, `Banner`, `StaleNotice`, `ApproximateLocationNotice`.
   - Reintentos: la pauta de BiciMAD (`retryDelayMs`, `RETRY_DELAYS_MS`, `POLL_INTERVAL_MS` de `shared/config`).
-- **Respetar `Retry-After`**: en las queries de bus, un 4xx no se reintenta y un `429` con `Retry-After` no reintenta antes de ese tiempo. Si sirve también para BiciMAD, va en otro PR (`fix(web)`) para no cambiar su comportamiento aquí.
+- **Respetar `Retry-After`**: en las queries de bus, un 4xx no se reintenta y un `503` con `Retry-After` (cupo EMT) o un `429` con `Retry-After` (límite del API) no reintentan antes de ese tiempo. Si sirve también para BiciMAD, va en otro PR (`fix(web)`) para no cambiar su comportamiento aquí.
 
 ## Grafo de dependencias
 
@@ -71,10 +71,10 @@ T1-T9 ─► T10 cierre
 ### Fase 1: Base
 
 - [ ] **T1: Cliente 0.9.0, fixtures de MSW y `entities/bus-stop`** (M, ~1 h 30 min)
-  - Descripción: subir `@jorgetroya80/mad-transit-client` a `0.9.0` (`listBusStops`, `getBusStop`, `getBusStopArrivals`). Handlers de MSW con el mismo patrón que `createHandlers({ updatedAt })` y fixtures de `/v1/bus/stops`, `/v1/bus/stops/{number}` (200 y 404) y `/arrivals` (normal, `noEstimate`, vacía, `429` con `Retry-After`, `502`). `entities/bus-stop`: query keys; `useNearbyStops` (`staleTime` 1 h, sin `refetchInterval`), `useAllStops` (solo con Bus), `useStop` y `useArrivals` (30 s, sin pestaña oculta, con `retryDelayMs` y `Retry-After`); tipos reexportados del cliente y `formatArrival`.
+  - Descripción: subir `@jorgetroya80/mad-transit-client` a `0.9.0` (`listBusStops`, `getBusStop`, `getBusStopArrivals`). Handlers de MSW con el mismo patrón que `createHandlers({ updatedAt })` y fixtures de `/v1/bus/stops`, `/v1/bus/stops/{number}` (200 y 404) y `/arrivals` (normal, `noEstimate`, vacía, `503` con `Retry-After` (cupo), `429` con `Retry-After`, `502`). `entities/bus-stop`: query keys; `useNearbyStops` (`staleTime` 1 h, sin `refetchInterval`), `useAllStops` (solo con Bus), `useStop` y `useArrivals` (30 s, sin pestaña oculta, con `retryDelayMs` y `Retry-After`); tipos reexportados del cliente y `formatArrival`.
   - Aceptación:
     - `formatArrival`: "Llegando" con 0, "N min" y "Sin estimación" con `noEstimate`.
-    - `useArrivals` no reintenta un `404` ni un 4xx; reintenta un `502` con `RETRY_DELAYS_MS`; con `429` y `Retry-After` no pide antes de ese tiempo (test con MSW).
+    - `useArrivals` no reintenta un `404` ni un 4xx; reintenta un `502` con `RETRY_DELAYS_MS`; con `503` por cupo o `429` y `Retry-After` no pide antes de ese tiempo (test con MSW).
     - `pnpm --filter web typecheck` en verde con el cliente nuevo; no hay tipos del API escritos a mano.
   - Verificación: `pnpm --filter web exec vitest run src/entities/bus-stop`; `pnpm --filter web typecheck`.
   - Archivos: `web/package.json`, `shared/api/mocks/{handlers,fixtures}.ts`, `entities/bus-stop/{api,model,index.ts}`.
@@ -113,7 +113,7 @@ T1-T9 ─► T10 cierre
     - SC1: con Bus, el mapa recibe un punto de parada por cada parada cercana del fixture.
     - Tocar un icono o una fila escribe `?stop=<número>` y despliega el panel por debajo de `md`.
     - Sin permiso, la lista se calcula desde Sol, muestra las distancias y el aviso de BiciMAD con su texto (decisión 8).
-    - Errores de la spec (5xx, sin red) muestran "No se pudieron cargar las paradas cercanas" + "Reintentar"; un `429` con `Retry-After` muestra lo mismo sin «Reintentar» activo hasta ese tiempo.
+    - Errores de la spec (5xx, sin red) muestran "No se pudieron cargar las paradas cercanas" + "Reintentar"; un `503` por cupo o un `429` con `Retry-After` muestran lo mismo sin «Reintentar» activo hasta ese tiempo.
   - Verificación: `pnpm --filter web test`; `pnpm --filter web depcruise`.
   - Archivos: `features/select-stop/*`, `widgets/bus-stops-map/*`, `widgets/bus-stop-list/*`, `pages/map/ui/MapPage.tsx`.
   - Dependencias: T2, T3.
@@ -129,11 +129,11 @@ T1-T9 ─► T10 cierre
   - Dependencias: T4.
 
 - [ ] **T6: Llegadas en el detalle** (M, ~1 h 30 min)
-  - Descripción: lista de llegadas con `ArrivalRow` (línea, destino, `formatArrival`), sondeo cada 30 s. Estados de la tabla de errores de la spec: `stale` con «Actualizado hace X»; `[]` → "No hay autobuses previstos"; `404` no pide llegadas; `502`, `503`, `504`, `400`, `500` o sin red → "Llegadas no disponibles" + "Reintentar"; un fallo de sondeo mantiene las llegadas como mucho 2 min desde su `updatedAt` (`useNow`), luego "Llegadas no disponibles" y el autobús desaparece del mapa; `429` con cupo agotado → texto de decisión 10 de la spec, sin botón. Un error en las llegadas no oculta el resto del detalle.
+  - Descripción: lista de llegadas con `ArrivalRow` (línea, destino, `formatArrival`), sondeo cada 30 s. Estados de la tabla de errores de la spec: `stale` con «Actualizado hace X»; `[]` → "No hay autobuses previstos"; `404` no pide llegadas; `502`, `503`, `504`, `400`, `500` o sin red → "Llegadas no disponibles" + "Reintentar"; un fallo de sondeo mantiene las llegadas como mucho 2 min desde su `updatedAt` (`useNow`), luego "Llegadas no disponibles" y el autobús desaparece del mapa; `503` con `Retry-After` (cupo EMT) → texto de decisión 10 de la spec, sin botón; `429` con `Retry-After` → como un 5xx, con «Reintentar» tras el `Retry-After`. Un error en las llegadas no oculta el resto del detalle.
   - Aceptación:
     - SC3: con temporizadores falsos, una segunda petición a los 30 s; ninguna sin parada abierta; no hay polling con la pestaña oculta.
     - Con el sondeo fallando, las llegadas siguen 2 min y después aparece "Llegadas no disponibles" + "Reintentar".
-    - `429` muestra el copy del cupo y ningún botón; vuelve solo tras `Retry-After`.
+    - `503` con `Retry-After` muestra el copy del cupo y ningún botón; vuelve solo tras `Retry-After`. `503` sin `Retry-After` se trata como 5xx.
   - Verificación: `pnpm --filter web exec vitest run src/widgets/bus-stop-detail src/entities/bus-stop`.
   - Archivos: `widgets/bus-stop-detail/ui/Arrivals.tsx`, `widgets/bus-stop-detail/model/useFreshArrivals.ts`, `entities/bus-stop/ui/ArrivalRow.tsx` (+ tests).
   - Dependencias: T5.
@@ -215,3 +215,4 @@ Unas 14 h en total. Fase 1 ~4 h 30 min, fase 2 ~5 h y fase 3 ~4 h 30 min. T8 pue
 - 2026-11-12: un PR por fase (cuatro PRs pequeños) en vez de uno solo, con un commit por tarea.
 - 2026-11-12: fase 0 añadida (T0a y T0b, refactor previo a bus), tras la revisión de huecos entre plan y código.
 - 2026-11-12: plan actualizado con la spec revisada (decisiones 8 a 10, supuestos renumerados). Cambios: cliente 0.9.0 (api-bus ya implementado); reutilización de `shared/ui/icons`, `map-point`, `ListItem`, `Tag`, `StatusText`, `EmptyState`, `Banner`, `ApproximateLocationNotice` y la pauta de reintentos de BiciMAD; T3 sin SVG a mano; T4 sin ubicación desde Sol; T5 tabla en escritorio y lista en móvil; T6 con el estado de cupo (`429`); T8 con la pregunta abierta del vehículo. Aprobado por el usuario el mismo día.
+- 2026-11-12: corrección de códigos verificada en el API: cupo EMT agotado = `503` con `Retry-After`; `429` con `Retry-After` = límite por IP del API. Tareas T1 y T6 actualizadas.
