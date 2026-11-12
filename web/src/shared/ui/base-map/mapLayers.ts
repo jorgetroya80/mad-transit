@@ -1,14 +1,23 @@
-import type { GeoJSONSource, Map } from 'maplibre-gl';
-import { readMapColors, readMapFontFamily } from './mapColors';
-import { createPointImage, labelFont, type PointStyle } from './pointImage';
+import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import {
-  parsePointImageId,
+  drawMapPoint,
+  type MapPointDrawing,
+  type MapPointParams,
+  type MapPointStyle,
+  mapPointImageId,
+  mapPointSize,
+  mapPointValueFont,
+  readMapPointStyle,
+} from '../map-point';
+import { readMapColors } from './mapColors';
+import {
   POINT_LAYER_ID,
   POINTS_SOURCE_ID,
   pointLayer,
   toFeatureCollection,
   toUserLocationCollection,
   USER_LOCATION_SOURCE_ID,
+  userLocationHaloLayer,
   userLocationLayer,
 } from './points';
 
@@ -17,63 +26,83 @@ const DEFAULT_CURSOR = '';
 // Sharp on most screens; a higher ratio only makes every image bigger in memory.
 const MAX_PIXEL_RATIO = 2;
 
-type MissingImageResolver = (id: string) => void;
+type MissingImageResolver = (id: string) => Promise<void>;
 
 export type PointImageHost = {
   hasImage(id: string): boolean;
   addImage(id: string, image: ImageData, options: { pixelRatio: number }): void;
-  updateImage(id: string, image: ImageData): void;
   setMissingStyleImageResolver(resolver: MissingImageResolver | null): unknown;
 };
 
-// Paints each point image the first time the layer asks for it; returns how to stop. MapLibre 6
-// calls the resolver before laying the tile out, while `styleimagemissing` comes too late: an image
-// added there only shows on the next layout, so a newly selected point vanished until a zoom.
-// Images painted before the app font loaded are painted again once it has.
-export function paintMissingPointImages(map: PointImageHost, style: PointStyle) {
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
-  const painted = new Set<string>();
+export type PointImages = {
+  // The params of the images the points may ask for, so they can be drawn on demand.
+  remember(params: readonly MapPointParams[]): void;
+  stop(): void;
+};
+
+function createPointImage(params: MapPointParams, drawing: MapPointDrawing) {
+  const size = Math.ceil(mapPointSize(params) * drawing.pixelRatio);
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) return undefined;
+  drawMapPoint(context, params, drawing);
+  return context.getImageData(0, 0, size, size);
+}
+
+// Without the fonts API, or if the font fails, the points are drawn in the fallback font.
+function loadValueFont(style: MapPointStyle): Promise<unknown> {
+  return document.fonts?.load(mapPointValueFont(style)).catch(() => undefined) ?? Promise.resolve();
+}
+
+// Draws each point image the first time the layer asks for it. MapLibre 6 awaits the resolver
+// before laying the tile out, while `styleimagemissing` comes too late: an image added there only
+// shows on the next layout, so a newly selected point vanished until a zoom. The value is drawn
+// inside the image, so the resolver waits for its font and never draws a point twice.
+export function paintMissingPointImages(map: PointImageHost, style: MapPointStyle): PointImages {
+  const drawing = { pixelRatio: Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO), style };
+  const paramsById = new Map<string, MapPointParams>();
+  const fontLoaded = loadValueFont(style);
   let isStopped = false;
-  const paintMissingImage: MissingImageResolver = (id) => {
-    const spec = parsePointImageId(id);
-    if (!spec || map.hasImage(id)) return;
-    const image = createPointImage(spec, style, pixelRatio);
-    if (!image) return;
-    map.addImage(id, image, { pixelRatio });
-    painted.add(id);
+  const isWanted = (id: string) => !isStopped && paramsById.has(id) && !map.hasImage(id);
+  const paintMissingImage: MissingImageResolver = async (id) => {
+    if (!isWanted(id)) return;
+    await fontLoaded;
+    const params = paramsById.get(id);
+    if (!params || !isWanted(id)) return;
+    const image = createPointImage(params, drawing);
+    if (image) map.addImage(id, image, { pixelRatio: drawing.pixelRatio });
   };
-  const repaintInFont = () => {
-    if (isStopped) return;
-    for (const id of painted) {
-      const spec = parsePointImageId(id);
-      const image = spec && createPointImage(spec, style, pixelRatio);
-      if (image) map.updateImage(id, image);
-    }
-  };
-  void document.fonts?.load(labelFont(style)).then(repaintInFont, () => {});
   map.setMissingStyleImageResolver(paintMissingImage);
-  return () => {
-    isStopped = true;
-    map.setMissingStyleImageResolver(null);
+  return {
+    remember: (params) => {
+      for (const point of params) paramsById.set(mapPointImageId(point), point);
+    },
+    stop: () => {
+      isStopped = true;
+      map.setMissingStyleImageResolver(null);
+    },
   };
 }
 
-// Needs a loaded style: MapLibre rejects sources and layers added before it. Returns how to stop
-// painting the point images.
-export function addPointLayers(map: Map) {
-  const colors = readMapColors();
-  const stopPainting = paintMissingPointImages(map, { colors, fontFamily: readMapFontFamily() });
+// Needs a loaded style: MapLibre rejects sources and layers added before it. Returns the point
+// images, to remember the points set and to stop drawing them.
+export function addPointLayers(map: MapLibreMap) {
+  const pointImages = paintMissingPointImages(map, readMapPointStyle());
   map.addSource(POINTS_SOURCE_ID, { type: 'geojson', data: toFeatureCollection([]) });
   map.addSource(USER_LOCATION_SOURCE_ID, {
     type: 'geojson',
     data: toUserLocationCollection(undefined),
   });
   map.addLayer(pointLayer());
+  const colors = readMapColors();
+  map.addLayer(userLocationHaloLayer(colors));
   map.addLayer(userLocationLayer(colors));
-  return stopPainting;
+  return pointImages;
 }
 
-export function listenToPointClicks(map: Map, onSelect: (id: string) => void) {
+export function listenToPointClicks(map: MapLibreMap, onSelect: (id: string) => void) {
   map.on('click', POINT_LAYER_ID, (event) => {
     const id: unknown = event.features?.[0]?.properties['id'];
     if (typeof id === 'string') onSelect(id);
@@ -86,6 +115,6 @@ export function listenToPointClicks(map: Map, onSelect: (id: string) => void) {
   });
 }
 
-export function setSourceData(map: Map, sourceId: string, data: GeoJSON.GeoJSON) {
+export function setSourceData(map: MapLibreMap, sourceId: string, data: GeoJSON.GeoJSON) {
   map.getSource<GeoJSONSource>(sourceId)?.setData(data);
 }

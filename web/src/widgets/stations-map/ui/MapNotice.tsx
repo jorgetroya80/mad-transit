@@ -1,5 +1,5 @@
 import type { DataStatus } from '@/entities/station';
-import { OfflineIcon } from '@/shared/ui';
+import { Icon, Legend } from '@/shared/ui';
 
 export type MapLayout = 'desktop' | 'mobile';
 
@@ -39,12 +39,14 @@ function OfflineLayer({ hasData, layout }: Omit<MapNoticeProps, 'status'>) {
     <output
       className={`absolute inset-0 z-10 flex flex-col items-center gap-3 bg-canvas px-6 text-center text-fg-muted ${PLACEMENT[layout].layer}`}
     >
-      <OfflineIcon className="size-8" />
+      <Icon name="wifi-off" size={34} className="text-tone-neutral-icon" />
       <span className="font-medium text-fg">El mapa no se puede cargar sin conexión</span>
       {hasData ? <span className="text-sm">{LIST_HINT[layout]}</span> : null}
     </output>
   );
 }
+
+const UNCONFIRMED_ITEMS = [{ tone: 'muted', text: 'Gris = dato sin confirmar' }] as const;
 
 // Bottom left, clear of the attribution and the controls on the right. The rows already say
 // «sin confirmar» in words, so this is for sighted users only.
@@ -52,10 +54,9 @@ function UnconfirmedLegend() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 text-sm text-fg shadow-float"
+      className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-control bg-surface px-3 py-2 shadow-control"
     >
-      <span className="size-3 rounded-full border border-availability-unconfirmed-line bg-availability-unconfirmed" />
-      <span>Gris = dato sin confirmar</span>
+      <Legend label="Leyenda del mapa" items={UNCONFIRMED_ITEMS} />
     </div>
   );
 }

@@ -31,7 +31,7 @@ describe('LazyBaseMap', () => {
   it('forwards every prop to the map', async () => {
     const props: BaseMapProps = {
       className: 'h-full',
-      points: [{ id: '1a', lng: -3.7, lat: 40.4, label: '7', tone: 'good' }],
+      points: [{ id: '1a', lng: -3.7, lat: 40.4, value: '7', tone: 'success' }],
       selectedId: '1a',
       onSelectPoint: () => {},
       focus: { lng: -3.7, lat: 40.4 },

@@ -9,8 +9,9 @@ import {
   MD_MEDIA_QUERY,
   REDUCED_MOTION_QUERY,
 } from '@/shared/config';
-import { addPointLayers, listenToPointClicks, setSourceData } from './mapLayers';
+import { addPointLayers, listenToPointClicks, type PointImages, setSourceData } from './mapLayers';
 import {
+  pointImageParams,
   POINTS_SOURCE_ID,
   toFeatureCollection,
   toUserLocationCollection,
@@ -21,6 +22,8 @@ import {
 } from './points';
 
 type SelectPoint = (id: string) => void;
+
+export type LoadedMap = { map: Map; pointImages: PointImages };
 
 // Below md the bottom sheet covers the bottom of the map, so the attribution goes to the top.
 function addAttribution(map: Map, fromMd: boolean) {
@@ -44,12 +47,13 @@ function toLngLat(lng: number | undefined, lat: number | undefined): LngLat | un
   return lng === undefined || lat === undefined ? undefined : { lng, lat };
 }
 
-// Returns the map once its style has loaded and the point layers exist; undefined before.
+// Returns the map and its point images once its style has loaded and the point layers exist;
+// undefined before.
 export function useMapLibre(
   containerRef: RefObject<HTMLElement | null>,
   onSelectPoint?: SelectPoint,
 ) {
-  const [loadedMap, setLoadedMap] = useState<Map>();
+  const [loadedMap, setLoadedMap] = useState<LoadedMap>();
   // The click handler is registered once, so it reads the latest callback from a ref.
   const onSelectPointRef = useRef(onSelectPoint);
   useEffect(() => {
@@ -71,16 +75,16 @@ export function useMapLibre(
       attributionControl: false,
     });
     const stopPlacingAttribution = placeAttribution(map);
-    let stopPaintingPoints = () => {};
+    let pointImages: PointImages | undefined;
     map.on('load', () => {
-      stopPaintingPoints = addPointLayers(map);
+      pointImages = addPointLayers(map);
       listenToPointClicks(map, (id) => onSelectPointRef.current?.(id));
-      setLoadedMap(map);
+      setLoadedMap({ map, pointImages });
     });
 
     return () => {
       stopPlacingAttribution();
-      stopPaintingPoints();
+      pointImages?.stop();
       map.remove();
     };
   }, [containerRef]);
@@ -88,15 +92,17 @@ export function useMapLibre(
   return loadedMap;
 }
 
+// The images are remembered before the data is set, so the layer finds them when it asks.
 export function usePointsData(
-  map: Map | undefined,
+  loadedMap: LoadedMap | undefined,
   points: readonly MapPoint[],
   selectedId?: string,
 ) {
   useEffect(() => {
-    if (!map) return;
-    setSourceData(map, POINTS_SOURCE_ID, toFeatureCollection(points, selectedId));
-  }, [map, points, selectedId]);
+    if (!loadedMap) return;
+    loadedMap.pointImages.remember(pointImageParams(points, selectedId));
+    setSourceData(loadedMap.map, POINTS_SOURCE_ID, toFeatureCollection(points, selectedId));
+  }, [loadedMap, points, selectedId]);
 }
 
 export function useUserLocationData(map: Map | undefined, location?: LngLat) {

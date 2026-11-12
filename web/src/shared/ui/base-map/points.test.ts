@@ -1,34 +1,24 @@
+import { mapPointImageId } from '../map-point';
 import type { MapColors } from './mapColors';
 import {
-  parsePointImageId,
   POINT_LAYER_ID,
   POINTS_SOURCE_ID,
-  pointImageId,
+  pointImageParams,
   pointLayer,
   toFeatureCollection,
   toUserLocationCollection,
+  USER_LOCATION_HALO_LAYER_ID,
   USER_LOCATION_LAYER_ID,
   USER_LOCATION_SOURCE_ID,
+  userLocationHaloLayer,
   userLocationLayer,
   type MapPoint,
 } from './points';
 
-const sol: MapPoint = { id: '1a', lng: -3.7038, lat: 40.4168, label: '7', tone: 'good' };
-const callao: MapPoint = { id: '2', lng: -3.7059, lat: 40.42, label: '0', tone: 'empty' };
+const sol: MapPoint = { id: '1a', lng: -3.7038, lat: 40.4168, value: '7', tone: 'success' };
+const callao: MapPoint = { id: '2', lng: -3.7059, lat: 40.42, value: '0', tone: 'danger' };
 
-const colors: MapColors = {
-  tones: {
-    good: { fill: '#good', text: '#good-text' },
-    low: { fill: '#low', text: '#low-text' },
-    empty: { fill: '#empty', text: '#empty-text' },
-    off: { fill: '#off', text: '#off-text' },
-    unconfirmed: { fill: '#unconfirmed', text: '#unconfirmed-text' },
-  },
-  userLocation: '#user',
-  pointStroke: '#stroke',
-  pointSelectedStroke: '#selected-stroke',
-  emptyStroke: '#empty-stroke',
-};
+const colors: MapColors = { userLocation: '#user', pointStroke: '#stroke' };
 
 describe('toFeatureCollection', () => {
   it('turns each point into a GeoJSON point with [lng, lat] coordinates', () => {
@@ -41,10 +31,23 @@ describe('toFeatureCollection', () => {
     ]);
   });
 
-  it('keeps id, label and tone as properties, none selected by default', () => {
+  it('keeps the id and names the image of the point, none selected by default', () => {
     const [feature] = toFeatureCollection([sol]).features;
 
-    expect(feature?.properties).toEqual({ id: '1a', label: '7', tone: 'good', selected: false });
+    expect(feature?.properties).toEqual({
+      id: '1a',
+      imageId: mapPointImageId({ tone: 'success', value: '7', selected: false }),
+      selected: false,
+    });
+  });
+
+  it('names the selected image only for the selected point', () => {
+    const collection = toFeatureCollection([sol, callao], '2');
+
+    expect(collection.features.map((feature) => feature.properties.imageId)).toEqual([
+      mapPointImageId({ tone: 'success', value: '7', selected: false }),
+      mapPointImageId({ tone: 'danger', value: '0', selected: true }),
+    ]);
   });
 
   it('flags only the selected point', () => {
@@ -81,16 +84,8 @@ describe('pointLayer', () => {
     expect(layer.layout?.['text-field']).toBeUndefined();
   });
 
-  it('names the image of each point after its tone, selection and label', () => {
-    expect(pointLayer().layout?.['icon-image']).toEqual([
-      'concat',
-      'point:',
-      ['get', 'tone'],
-      ':',
-      ['case', ['get', 'selected'], '1', '0'],
-      ':',
-      ['get', 'label'],
-    ]);
+  it('asks for the image each point names', () => {
+    expect(pointLayer().layout?.['icon-image']).toEqual(['get', 'imageId']);
   });
 
   it('shows every point, even when points overlap', () => {
@@ -105,32 +100,19 @@ describe('pointLayer', () => {
   });
 });
 
-describe('pointImageId', () => {
-  it.each([
-    { tone: 'good', selected: false, label: '7', id: 'point:good:0:7' },
-    { tone: 'low', selected: true, label: '25A', id: 'point:low:1:25A' },
-    { tone: 'off', selected: false, label: '–', id: 'point:off:0:–' },
-  ] as const)('names $label as "$id" and reads it back', (spec) => {
-    const { id, ...image } = spec;
-
-    expect(pointImageId(image)).toBe(id);
-    expect(parsePointImageId(id)).toEqual(image);
+describe('pointImageParams', () => {
+  it('draws each point with its own look, selected only when it is the selected one', () => {
+    expect(pointImageParams([sol, callao], '1a')).toEqual([
+      { tone: 'success', value: '7', selected: true },
+      { tone: 'danger', value: '0', selected: false },
+    ]);
   });
 
-  it('keeps a label that contains the separator', () => {
-    expect(parsePointImageId('point:good:0:1:2')).toEqual({
-      tone: 'good',
-      selected: false,
-      label: '1:2',
-    });
+  it('selects none without a selected id', () => {
+    expect(pointImageParams([sol], undefined)).toEqual([
+      { tone: 'success', value: '7', selected: false },
+    ]);
   });
-
-  it.each(['road-shield', 'point:blue:0:7', 'point:good:0'])(
-    'ignores "%s", which is not a point image',
-    (id) => {
-      expect(parsePointImageId(id)).toBeUndefined();
-    },
-  );
 });
 
 describe('userLocationLayer', () => {
@@ -147,5 +129,29 @@ describe('userLocationLayer', () => {
 
   it('borders the dot with the point stroke color', () => {
     expect(userLocationLayer(colors).paint?.['circle-stroke-color']).toBe('#stroke');
+  });
+
+  it('draws a 12 px dot with a 2 px border', () => {
+    const { paint } = userLocationLayer(colors);
+
+    expect(paint?.['circle-radius']).toBe(6);
+    expect(paint?.['circle-stroke-width']).toBe(2);
+  });
+});
+
+describe('userLocationHaloLayer', () => {
+  it('draws a 22 px halo in the user color at 18 %, from the same source', () => {
+    const layer = userLocationHaloLayer(colors);
+
+    expect(layer).toMatchObject({
+      id: USER_LOCATION_HALO_LAYER_ID,
+      type: 'circle',
+      source: USER_LOCATION_SOURCE_ID,
+    });
+    expect(layer.paint).toEqual({
+      'circle-color': '#user',
+      'circle-radius': 11,
+      'circle-opacity': 0.18,
+    });
   });
 });

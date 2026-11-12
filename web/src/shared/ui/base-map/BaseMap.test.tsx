@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   MADRID_CENTER,
@@ -9,12 +9,15 @@ import {
   MD_MEDIA_QUERY,
   REDUCED_MOTION_QUERY,
 } from '@/shared/config';
+import { expectNoAxeViolations } from '../../../../test/axe';
+import { firstIconPath, iconPath } from '../../../../test/iconPath';
 import { BaseMap } from './BaseMap';
 import {
   POINT_LAYER_ID,
   POINTS_SOURCE_ID,
   toFeatureCollection,
   toUserLocationCollection,
+  USER_LOCATION_HALO_LAYER_ID,
   USER_LOCATION_LAYER_ID,
   USER_LOCATION_SOURCE_ID,
   type MapPoint,
@@ -43,7 +46,10 @@ const maplibre = vi.hoisted(() => {
     readonly easeTo = vi.fn<(options: unknown) => void>();
     readonly zoomIn = vi.fn<() => void>();
     readonly zoomOut = vi.fn<() => void>();
-    readonly setMissingStyleImageResolver = vi.fn<(resolver: unknown) => void>();
+    readonly setMissingStyleImageResolver =
+      vi.fn<(resolver: ((id: string) => Promise<void>) | null) => void>();
+    readonly hasImage = vi.fn<(id: string) => boolean>(() => false);
+    readonly addImage = vi.fn<(id: string, image: unknown, options: unknown) => void>();
     readonly sources = new Map<string, MockSource>();
     readonly subscriptions: Subscription[] = [];
     readonly canvas = { style: { cursor: '' } };
@@ -230,8 +236,8 @@ describe('BaseMap', () => {
 });
 
 const points: MapPoint[] = [
-  { id: '1a', lng: -3.7038, lat: 40.4168, label: '7', tone: 'good' },
-  { id: '2', lng: -3.7059, lat: 40.42, label: '0', tone: 'empty' },
+  { id: '1a', lng: -3.7038, lat: 40.4168, value: '7', tone: 'success' },
+  { id: '2', lng: -3.7059, lat: 40.42, value: '0', tone: 'danger' },
 ];
 
 function loadedMap() {
@@ -248,7 +254,7 @@ describe('BaseMap points', () => {
   beforeEach(() => {
     maplibre.instances.length = 0;
     stubMatchMedia(true);
-    document.documentElement.style.setProperty('--color-availability-good', '#15803d');
+    document.documentElement.style.setProperty('--color-tone-success', '#0f7a43');
     document.documentElement.style.setProperty('--color-map-user-location', '#2563eb');
   });
 
@@ -275,6 +281,7 @@ describe('BaseMap points', () => {
     ]);
     expect(map.addLayer.mock.calls.map(([layer]) => layer.id)).toEqual([
       POINT_LAYER_ID,
+      USER_LOCATION_HALO_LAYER_ID,
       USER_LOCATION_LAYER_ID,
     ]);
   });
@@ -295,6 +302,24 @@ describe('BaseMap points', () => {
     unmount();
 
     expect(map.setMissingStyleImageResolver).toHaveBeenLastCalledWith(null);
+  });
+
+  it('paints the image a point asks for, selected or not', async () => {
+    // jsdom cannot draw: a context whose every method does nothing.
+    const context = new Proxy({}, { get: () => () => ({}) });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      context as CanvasRenderingContext2D,
+    );
+    render(<BaseMap points={points} selectedId="2" />);
+    const map = loadedMap();
+    const resolve = map.setMissingStyleImageResolver.mock.lastCall?.[0];
+    const imageIds = toFeatureCollection(points, '2').features.map(
+      (feature) => feature.properties.imageId,
+    );
+
+    for (const id of imageIds) await resolve?.(id);
+
+    expect(map.addImage.mock.calls.map(([id]) => id)).toEqual(imageIds);
   });
 
   it('applies the points passed before the style loaded', () => {
@@ -507,5 +532,108 @@ describe('BaseMap controls', () => {
       'aria-busy',
       'true',
     );
+  });
+
+  it('stacks zoom in, zoom out and recenter, in that order', () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    loadedMap();
+
+    expect(
+      screen.getAllByRole('button').map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Acercar', 'Alejar', 'Centrar en mi posición']);
+  });
+
+  it('groups the zoom buttons in one box, with «Centrar en mi posición» floating apart', () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    loadedMap();
+
+    const zoom = screen.getByRole('group', { name: 'Zoom del mapa' });
+    expect(within(zoom).getByRole('button', { name: 'Acercar' })).toBeInTheDocument();
+    expect(within(zoom).getByRole('button', { name: 'Alejar' })).toBeInTheDocument();
+    const recenter = screen.getByRole('button', { name: 'Centrar en mi posición' });
+    expect(zoom).not.toContainElement(recenter);
+    expect(recenter).toHaveClass('bg-surface', 'shadow-control', 'rounded-control');
+  });
+
+  it('sits above the compact attribution in the bottom right corner', () => {
+    render(<BaseMap controls={{}} />);
+    loadedMap();
+
+    expect(screen.getByRole('group', { name: 'Zoom del mapa' }).parentElement).toHaveClass(
+      'absolute',
+      'right-4',
+      'bottom-12',
+      'z-10',
+    );
+  });
+
+  it('draws plus and minus in grey and the locate icon in primary blue', () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    loadedMap();
+
+    expect(firstIconPath(screen.getByRole('button', { name: 'Acercar' }))).toBe(iconPath('plus'));
+    expect(firstIconPath(screen.getByRole('button', { name: 'Alejar' }))).toBe(iconPath('minus'));
+    expect(firstIconPath(screen.getByRole('button', { name: 'Centrar en mi posición' }))).toBe(
+      iconPath('locate'),
+    );
+
+    expect(screen.getByRole('button', { name: 'Acercar' })).toHaveClass('text-fg-muted');
+    expect(screen.getByRole('button', { name: 'Alejar' })).toHaveClass('text-fg-muted');
+    expect(screen.getByRole('button', { name: 'Centrar en mi posición' })).toHaveClass(
+      'text-primary',
+    );
+  });
+
+  it('makes each button a 44 px target with a decorative 20 px icon', () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    loadedMap();
+
+    screen.getAllByRole('button').forEach((button) => {
+      expect(button).toHaveClass('size-11');
+      expect(button.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+      expect(button.querySelector('svg')).toHaveAttribute('width', '20');
+    });
+  });
+
+  // aria-disabled, not disabled: the button keeps the focus the user just put on it.
+  it('keeps «Centrar en mi posición» focusable but busy while recentering, ignoring clicks', async () => {
+    const onRecenter = vi.fn<() => void>();
+    render(<BaseMap controls={{ onRecenter, isRecentering: true }} />);
+    loadedMap();
+    const button = screen.getByRole('button', { name: 'Centrar en mi posición' });
+
+    await userEvent.click(button);
+
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toBeEnabled();
+    expect(onRecenter).not.toHaveBeenCalled();
+  });
+
+  it('is neither busy nor disabled while not recentering', () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    loadedMap();
+
+    const button = screen.getByRole('button', { name: 'Centrar en mi posición' });
+    expect(button).not.toHaveAttribute('aria-busy');
+    expect(button).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('tabs through zoom in, zoom out and recenter', async () => {
+    render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    loadedMap();
+
+    await userEvent.tab();
+    expect(screen.getByRole('button', { name: 'Acercar' })).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByRole('button', { name: 'Alejar' })).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByRole('button', { name: 'Centrar en mi posición' })).toHaveFocus();
+  });
+
+  it('has no axe violations with the controls', async () => {
+    const { container } = render(<BaseMap controls={{ onRecenter: vi.fn<() => void>() }} />);
+    loadedMap();
+
+    await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
   });
 });

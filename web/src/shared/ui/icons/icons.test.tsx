@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
-import { ChevronIcon, LocationIcon, MinusIcon, OfflineIcon, PlusIcon } from '.';
+import { ChevronIcon } from '.';
 
-const DECORATIVE_ICONS = [OfflineIcon, LocationIcon, ChevronIcon, PlusIcon, MinusIcon];
+const DECORATIVE_ICONS = [ChevronIcon];
 
 describe('icons', () => {
   it.each(DECORATIVE_ICONS)(
