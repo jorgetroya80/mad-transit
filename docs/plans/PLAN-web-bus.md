@@ -47,12 +47,12 @@ T1-T9 ─► T10 cierre
 ### Fase 0: Refactor previo (PR `refactor(web)` aparte)
 
 - [ ] **T0a: Mover piezas compartidas fuera de su widget o página** (S, ~1 h)
-  - Descripción: `ApproximateLocationNotice` (y su `LocatingNotice`) de `widgets/station-list/ui/LocationNotice.tsx` a `shared/ui`; `useMapLocation` y `useUserFocus` de `pages/map/model` a `shared/lib` o `features`. Sin cambios de comportamiento: solo se mueven y se actualizan los imports.
+  - Descripción: `LocationNotice` pasa a `shared/ui/location-notice` como componente genérico: el copy entra por props (`ApproximateLocationBanner`, `LocatingBanner`) y `shared/ui` no contiene palabras de dominio. El copy de BiciMAD queda en un wrapper en `widgets/station-list/ui/LocationNotice.tsx`. `useMapLocation` y `useUserFocus` pasan de `pages/map/model` a `shared/lib/geo/`; `useMapLocation` usa `GeoPosition` en vez de `Coordinates` de entities (shared no importa entities). Sin cambios de comportamiento en BiciMAD.
   - Aceptación:
     - Los tests de BiciMAD pasan sin cambios de comportamiento (solo cambian sus imports, si los tienen).
     - `pnpm --filter web depcruise` sin violaciones de capa.
   - Verificación: `pnpm --filter web test`; `pnpm --filter web depcruise`.
-  - Archivos: `widgets/station-list/ui/LocationNotice.tsx`, `pages/map/model/useMapLocation.ts`, `pages/map/model/useUserFocus.ts`, `shared/ui/index.ts`, `shared/lib/index.ts`.
+  - Archivos: `shared/ui/location-notice/*` (+ test), `widgets/station-list/ui/LocationNotice.tsx`, `shared/lib/geo/useMapLocation.ts`, `shared/lib/geo/useUserFocus.ts`, `shared/ui/index.ts`, `shared/lib/index.ts`, imports de `pages/map/ui/*` y `widgets/station-list/ui/StationList.tsx`.
   - Dependencias: ninguna.
 
 - [ ] **T0b: Extraer la pauta de reintentos a `shared`** (S, ~1 h)
