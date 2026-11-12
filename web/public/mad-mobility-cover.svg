@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="175" viewBox="0 0 300 175">
+<rect width="300" height="175" fill="#14213D"/>
+<g transform="translate(14 40)">
+    <path d="M50 84 C38 68 26 58 26 42 A24 24 0 0 1 74 42 C74 58 62 68 50 84 Z" fill="#FCA311"/>
+    <g stroke="#14213D" stroke-linecap="round">
+        <circle cx="50" cy="42" r="13" fill="none" stroke-width="4"/>
+        <line x1="37" y1="42" x2="63" y2="42" stroke-width="2.5"/>
+        <line x1="43.5" y1="30.74" x2="56.5" y2="53.26" stroke-width="2.5"/>
+        <line x1="43.5" y1="53.26" x2="56.5" y2="30.74" stroke-width="2.5"/>
+    </g>
+    <circle cx="50" cy="42" r="3" fill="#14213D"/>
+</g>
+<g font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700">
+    <text x="104" y="86" font-size="34" fill="#FFFFFF">Mad</text>
+    <text x="104" y="120" font-size="34" fill="#FCA311">Transit</text>
+</g>
+</svg>
