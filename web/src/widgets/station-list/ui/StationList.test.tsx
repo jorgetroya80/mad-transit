@@ -22,7 +22,7 @@ import { formatClock } from '@/shared/lib';
 import { Icon, type IconName } from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
-import { findStaleNotice } from '../../../../test/staleNotice';
+import { findStaleNotice, staleRetryButton } from '../../../../test/staleNotice';
 import { StationList } from './StationList';
 
 const STATIONS_URL = `${env.apiBaseUrl}/v1/bicimad/stations`;
@@ -840,16 +840,12 @@ describe('StationList', () => {
     const requests = recordAllRequests();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
-    await user.click(within(notice).getByRole('button', { name: 'Reintentar' }));
+    await user.click(staleRetryButton(notice));
 
     await waitFor(() =>
       expect(requests.map((url) => url.searchParams.has('near')).sort()).toEqual([false, true]),
     );
-    await waitFor(() =>
-      expect(within(notice).getByRole('button', { name: 'Reintentar' })).not.toHaveAttribute(
-        'aria-busy',
-      ),
-    );
+    await waitFor(() => expect(staleRetryButton(notice)).not.toHaveAttribute('aria-busy'));
   });
 
   it('leaves stale data to the offline notice once the connection drops', async () => {

@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { formatClock } from '@/shared/lib';
 import { expectNoAxeViolations } from '../../../../test/axe';
+import { staleRetryButton } from '../../../../test/staleNotice';
+import { ICON_DRAWINGS } from '../icons';
 import { StaleNotice } from './StaleNotice';
 import { UpdatedAt } from './UpdatedAt';
 
@@ -58,6 +60,26 @@ describe('data freshness', () => {
       expect(within(notice).getByText(lead).tagName).toBe('STRONG');
     });
 
+    it('ages the mobile lead as time goes by', () => {
+      render(<StaleNotice layout="mobile" updatedAt={TWELVE_MINUTES_AGO} onRetry={noop} />);
+
+      act(() => vi.advanceTimersByTime(60_000));
+
+      expect(screen.getByRole('status')).toHaveTextContent(`Datos de hace 13 min. ${MOBILE_TAIL}`);
+    });
+
+    it('is a warning banner with the clock and an outlined «Reintentar» beside its text', () => {
+      render(<StaleNotice layout="desktop" updatedAt={TWELVE_MINUTES_AGO} onRetry={noop} />);
+      const notice = screen.getByRole('status');
+      const banner = notice.parentElement;
+
+      expect(banner).toHaveClass('bg-tone-warning-soft', 'border-tone-warning-soft-line');
+      expect(banner?.querySelector('svg path')).toHaveAttribute('d', ICON_DRAWINGS.clock.paths[0]);
+      expect(notice).not.toContainElement(staleRetryButton(notice));
+      expect(staleRetryButton(notice)).toHaveClass('h-10', 'border-tone-warning-icon');
+      expect(staleRetryButton(notice)).not.toHaveAttribute('aria-disabled');
+    });
+
     it('keeps «Reintentar» busy until the retry settles', async () => {
       let resolve = noop;
       const onRetry = vi.fn<() => Promise<void>>(
@@ -67,10 +89,12 @@ describe('data freshness', () => {
           }),
       );
       render(<StaleNotice layout="desktop" updatedAt={TWELVE_MINUTES_AGO} onRetry={onRetry} />);
-      const button = within(screen.getByRole('status')).getByRole('button', { name: 'Reintentar' });
+      const button = staleRetryButton(screen.getByRole('status'));
 
+      button.focus();
       fireEvent.click(button);
       expect(button).toHaveAttribute('aria-busy', 'true');
+      expect(button).toHaveFocus();
       fireEvent.click(button);
       expect(onRetry).toHaveBeenCalledOnce();
 
