@@ -5,10 +5,14 @@ import { http, HttpResponse } from 'msw';
 import { createRef } from 'react';
 import type { Coordinates } from '@/entities/station';
 import { useSelectedStation } from '@/features/select-station';
-import { internalErrorProblem, stationsFixture } from '@/shared/api/mocks/fixtures';
+import {
+  internalErrorProblem,
+  nearbyStationsFixture,
+  stationsFixture,
+} from '@/shared/api/mocks/fixtures';
 import { problemResponse } from '@/shared/api/mocks/handlers';
 import { server } from '@/shared/api/mocks/node';
-import { env, STATIONS_STORAGE_KEY } from '@/shared/config';
+import { env, NEARBY_STORAGE_KEYS, STATIONS_STORAGE_KEY } from '@/shared/config';
 import { formatClock } from '@/shared/lib';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
@@ -75,7 +79,11 @@ function SheetDetail({ center }: { center: Coordinates | undefined }) {
   );
 }
 
-function renderSheet(initialEntry = '/?station=1a', center: Coordinates | undefined = SOL) {
+// The center goes in an object: a default parameter would turn an explicit undefined into SOL.
+function renderSheet(
+  initialEntry = '/?station=1a',
+  { center }: { center: Coordinates | undefined } = { center: SOL },
+) {
   return renderWithRouter(<SheetDetail center={center} />, { initialEntries: [initialEntry] });
 }
 
@@ -257,12 +265,23 @@ describe('StationSheetHeader and StationSheetBody', () => {
     expect(await within(sheet()).findAllByText('Sin confirmar')).toHaveLength(2);
   });
 
-  // Skipped under exception W1 (CONSTRAINTS.md): the nearby list an earlier test saves can land
-  // in storage after the clean-up, and the placeholder then shows its distance here.
-  // StationCard.test covers the same meta without a distance.
-  // oxlint-disable-next-line vitest/no-disabled-tests -- exception W1
-  it.skip('shows only the number when the station has no distance', async () => {
-    await renderSheet('/?station=1a', undefined);
+  it('shows only the number when the station has no distance', async () => {
+    await renderSheet('/?station=1a', { center: undefined });
+    await title();
+
+    expect(screen.getByText('Estación 1a')).toBeVisible();
+  });
+
+  it('hides the distance without a center, even with a nearby list saved before', async () => {
+    localStorage.setItem(
+      NEARBY_STORAGE_KEYS.bikes,
+      JSON.stringify({
+        near: '40.4170,-3.7024',
+        response: nearbyStationsFixture,
+        savedAt: NOW.getTime(),
+      }),
+    );
+    await renderSheet('/?station=1a', { center: undefined });
     await title();
 
     expect(screen.getByText('Estación 1a')).toBeVisible();
