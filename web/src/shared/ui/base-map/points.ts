@@ -3,20 +3,20 @@ import type {
   ExpressionSpecification,
   SymbolLayerSpecification,
 } from 'maplibre-gl';
+import { mapPointImageId, type MapPointParams } from '../map-point';
 import type { MapColors } from './mapColors';
-
-export const MAP_POINT_TONES = ['good', 'low', 'empty', 'off', 'unconfirmed'] as const;
-
-export type MapPointTone = (typeof MAP_POINT_TONES)[number];
 
 export type LngLat = { lng: number; lat: number };
 
 // Pixels of the map hidden by something on top of it: the focus is centered in the rest.
 export type FocusPadding = { bottom: number; right?: number };
 
-export type MapPoint = LngLat & { id: string; label: string; tone: MapPointTone };
+type WithoutSelected<T> = T extends unknown ? Omit<T, 'selected'> : never;
 
-type MapPointProperties = Pick<MapPoint, 'id' | 'label' | 'tone'> & { selected: boolean };
+// The map marks the selected point from its own `selectedId`, so a point only brings its look.
+export type MapPoint = LngLat & { id: string } & WithoutSelected<MapPointParams>;
+
+type MapPointProperties = { id: string; imageId: string; selected: boolean };
 
 export const POINTS_SOURCE_ID = 'points';
 export const POINT_LAYER_ID = 'point-images';
@@ -27,17 +27,37 @@ const USER_LOCATION_RADIUS_PX = 8;
 const USER_LOCATION_STROKE_WIDTH_PX = 3;
 const SELECTED_SORT_KEY = 1;
 const UNSELECTED_SORT_KEY = 0;
-const POINT_IMAGE_PREFIX = 'point';
-const POINT_IMAGE_SEPARATOR = ':';
-const SELECTED_FLAG = '1';
-const UNSELECTED_FLAG = '0';
 
 const isSelected: ExpressionSpecification = ['get', 'selected'];
 
-export type PointImageSpec = Omit<MapPointProperties, 'id'>;
-
 function toPoint({ lng, lat }: LngLat): GeoJSON.Point {
   return { type: 'Point', coordinates: [lng, lat] };
+}
+
+function toImageParams(
+  { id, lng: _lng, lat: _lat, ...look }: MapPoint,
+  selectedId: string | undefined,
+): MapPointParams {
+  return { ...look, selected: id === selectedId };
+}
+
+export function pointImageParams(
+  points: readonly MapPoint[],
+  selectedId: string | undefined,
+): MapPointParams[] {
+  return points.map((point) => toImageParams(point, selectedId));
+}
+
+function toFeature(
+  point: MapPoint,
+  selectedId: string | undefined,
+): GeoJSON.Feature<GeoJSON.Point, MapPointProperties> {
+  const imageId = mapPointImageId(toImageParams(point, selectedId));
+  return {
+    type: 'Feature',
+    geometry: toPoint(point),
+    properties: { id: point.id, imageId, selected: point.id === selectedId },
+  };
 }
 
 export function toFeatureCollection(
@@ -46,11 +66,7 @@ export function toFeatureCollection(
 ): GeoJSON.FeatureCollection<GeoJSON.Point, MapPointProperties> {
   return {
     type: 'FeatureCollection',
-    features: points.map(({ id, label, tone, ...position }) => ({
-      type: 'Feature',
-      geometry: toPoint(position),
-      properties: { id, label, tone, selected: id === selectedId },
-    })),
+    features: points.map((point) => toFeature(point, selectedId)),
   };
 }
 
@@ -67,23 +83,6 @@ function whenSelected<T>(selected: T, otherwise: T): ExpressionSpecification {
   return ['case', isSelected, selected, otherwise] as ExpressionSpecification;
 }
 
-// The label goes last, so the first separators split the id whatever the label holds.
-export function pointImageId({ tone, selected, label }: PointImageSpec): string {
-  const flag = selected ? SELECTED_FLAG : UNSELECTED_FLAG;
-  return [POINT_IMAGE_PREFIX, tone, flag, label].join(POINT_IMAGE_SEPARATOR);
-}
-
-function isMapPointTone(value: string | undefined): value is MapPointTone {
-  return MAP_POINT_TONES.some((tone) => tone === value);
-}
-
-export function parsePointImageId(id: string): PointImageSpec | undefined {
-  const [prefix, tone, flag, ...label] = id.split(POINT_IMAGE_SEPARATOR);
-  if (prefix !== POINT_IMAGE_PREFIX || !isMapPointTone(tone) || label.length === 0)
-    return undefined;
-  return { tone, selected: flag === SELECTED_FLAG, label: label.join(POINT_IMAGE_SEPARATOR) };
-}
-
 // Each point is one image with its number already drawn: in a single symbol layer MapLibre draws
 // every icon before every text, so a separate number would land on top of a neighbour's circle.
 export function pointLayer(): SymbolLayerSpecification {
@@ -92,15 +91,7 @@ export function pointLayer(): SymbolLayerSpecification {
     type: 'symbol',
     source: POINTS_SOURCE_ID,
     layout: {
-      'icon-image': [
-        'concat',
-        `${POINT_IMAGE_PREFIX}${POINT_IMAGE_SEPARATOR}`,
-        ['get', 'tone'],
-        POINT_IMAGE_SEPARATOR,
-        whenSelected(SELECTED_FLAG, UNSELECTED_FLAG),
-        POINT_IMAGE_SEPARATOR,
-        ['get', 'label'],
-      ],
+      'icon-image': ['get', 'imageId'],
       // Every point shows its number: the color alone never tells the availability.
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,

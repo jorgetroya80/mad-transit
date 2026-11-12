@@ -16,22 +16,22 @@ describe('toMapPoints', () => {
   it('shows the bikes and their availability when looking for bikes', () => {
     const points = toMapPoints(stations, 'bikes', 'ok');
 
-    expect(points.map(({ id, label, tone }) => ({ id, label, tone }))).toEqual([
-      { id: '1a', label: '12', tone: 'good' },
-      { id: '1b', label: '2', tone: 'low' },
-      { id: '2', label: '–', tone: 'off' },
-      { id: '3', label: '0', tone: 'empty' },
+    expect(points.map(({ id, value, tone }) => ({ id, value, tone }))).toEqual([
+      { id: '1a', value: '12', tone: 'success' },
+      { id: '1b', value: '2', tone: 'warning' },
+      { id: '2', value: '–', tone: 'neutral' },
+      { id: '3', value: '0', tone: 'danger' },
     ]);
   });
 
   it('shows the free docks and their availability when looking for docks', () => {
     const points = toMapPoints(stations, 'docks', 'ok');
 
-    expect(points.map(({ id, label, tone }) => ({ id, label, tone }))).toEqual([
-      { id: '1a', label: '12', tone: 'good' },
-      { id: '1b', label: '22', tone: 'good' },
-      { id: '2', label: '–', tone: 'off' },
-      { id: '3', label: '18', tone: 'good' },
+    expect(points.map(({ id, value, tone }) => ({ id, value, tone }))).toEqual([
+      { id: '1a', value: '12', tone: 'success' },
+      { id: '1b', value: '22', tone: 'success' },
+      { id: '2', value: '–', tone: 'neutral' },
+      { id: '3', value: '18', tone: 'success' },
     ]);
   });
 
@@ -41,8 +41,14 @@ describe('toMapPoints', () => {
       .map((station) => ({ ...station, status: 'NO_SERVICE', bikes: 7 }));
 
     expect(toMapPoints(offStations, 'bikes', 'ok')).toEqual([
-      expect.objectContaining({ label: '–', tone: 'off' }),
+      expect.objectContaining({ value: '–', tone: 'neutral' }),
     ]);
+  });
+
+  it('leaves the selection to the map, so selecting a station keeps the same points', () => {
+    const points = toMapPoints(stations, 'bikes', 'ok');
+
+    expect(points.some((point) => 'selected' in point)).toBe(false);
   });
 
   it('returns no points without stations', () => {
@@ -54,11 +60,11 @@ describe('toMapPoints', () => {
     (status) => {
       const points = toMapPoints(stations, 'bikes', status);
 
-      expect(points.map(({ id, label, tone }) => ({ id, label, tone }))).toEqual([
-        { id: '1a', label: '12', tone: 'unconfirmed' },
-        { id: '1b', label: '2', tone: 'unconfirmed' },
-        { id: '2', label: '0', tone: 'unconfirmed' },
-        { id: '3', label: '0', tone: 'unconfirmed' },
+      expect(points.map(({ id, value, tone }) => ({ id, value, tone }))).toEqual([
+        { id: '1a', value: '12', tone: 'muted' },
+        { id: '1b', value: '2', tone: 'muted' },
+        { id: '2', value: '0', tone: 'muted' },
+        { id: '3', value: '0', tone: 'muted' },
       ]);
     },
   );

@@ -39,8 +39,9 @@ export function BaseMap({
   controls,
 }: BaseMapProps) {
   const containerRef = useRef<HTMLElement>(null);
-  const map = useMapLibre(containerRef, onSelectPoint);
-  usePointsData(map, points, selectedId);
+  const loadedMap = useMapLibre(containerRef, onSelectPoint);
+  const map = loadedMap?.map;
+  usePointsData(loadedMap, points, selectedId);
   useUserLocationData(map, userLocation);
   useEaseTo(map, focus, focusPadding);
 

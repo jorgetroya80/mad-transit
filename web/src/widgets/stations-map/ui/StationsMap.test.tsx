@@ -101,11 +101,11 @@ describe('StationsMap', () => {
     await renderMap();
     await waitForPoints();
 
-    expect(lastMapProps().points?.map(({ id, label, tone }) => ({ id, label, tone }))).toEqual([
-      { id: '1a', label: '12', tone: 'good' },
-      { id: '1b', label: '2', tone: 'low' },
-      { id: '2', label: '–', tone: 'off' },
-      { id: '3', label: '0', tone: 'empty' },
+    expect(lastMapProps().points?.map(({ id, value, tone }) => ({ id, value, tone }))).toEqual([
+      { id: '1a', value: '12', tone: 'success' },
+      { id: '1b', value: '2', tone: 'warning' },
+      { id: '2', value: '–', tone: 'neutral' },
+      { id: '3', value: '0', tone: 'danger' },
     ]);
   });
 
@@ -113,11 +113,11 @@ describe('StationsMap', () => {
     await renderMap('/?need=docks');
     await waitForPoints();
 
-    expect(lastMapProps().points?.map(({ id, label, tone }) => ({ id, label, tone }))).toEqual([
-      { id: '1a', label: '12', tone: 'good' },
-      { id: '1b', label: '22', tone: 'good' },
-      { id: '2', label: '–', tone: 'off' },
-      { id: '3', label: '18', tone: 'good' },
+    expect(lastMapProps().points?.map(({ id, value, tone }) => ({ id, value, tone }))).toEqual([
+      { id: '1a', value: '12', tone: 'success' },
+      { id: '1b', value: '22', tone: 'success' },
+      { id: '2', value: '–', tone: 'neutral' },
+      { id: '3', value: '18', tone: 'success' },
     ]);
   });
 
@@ -235,7 +235,7 @@ describe('StationsMap', () => {
     await renderMap();
     await waitForPoints();
 
-    expect(lastMapProps().points?.every(({ tone }) => tone === 'unconfirmed')).toBe(true);
+    expect(lastMapProps().points?.every(({ tone }) => tone === 'muted')).toBe(true);
   });
 
   describe('notices over the map', () => {

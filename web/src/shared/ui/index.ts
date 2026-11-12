@@ -1,11 +1,5 @@
 export { Banner } from './banner';
-export {
-  BaseMap,
-  type FocusPadding,
-  type MapControlsOptions,
-  type MapPoint,
-  type MapPointTone,
-} from './base-map';
+export { BaseMap, type FocusPadding, type MapControlsOptions, type MapPoint } from './base-map';
 export { BottomSheet, type SheetSnap, useBottomSheetOverlap } from './bottom-sheet';
 export { Button } from './button';
 export { Card } from './card';
@@ -30,8 +24,6 @@ export {
 } from './icons';
 export { Legend } from './legend';
 export { ListItem } from './list-item';
-// MapPointTone is still the base map's name, so the new tone type is reached as
-// MapPointParams['tone'] until the map draws with drawMapPoint.
 export {
   drawMapPoint,
   MAP_POINT_TONES,
@@ -40,6 +32,7 @@ export {
   type MapPointPainter,
   type MapPointParams,
   type MapPointStyle,
+  type MapPointTone,
   mapPointImageId,
   mapPointSize,
   mapPointValueFont,

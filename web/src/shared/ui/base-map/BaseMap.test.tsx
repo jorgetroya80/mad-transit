@@ -43,7 +43,10 @@ const maplibre = vi.hoisted(() => {
     readonly easeTo = vi.fn<(options: unknown) => void>();
     readonly zoomIn = vi.fn<() => void>();
     readonly zoomOut = vi.fn<() => void>();
-    readonly setMissingStyleImageResolver = vi.fn<(resolver: unknown) => void>();
+    readonly setMissingStyleImageResolver =
+      vi.fn<(resolver: ((id: string) => Promise<void>) | null) => void>();
+    readonly hasImage = vi.fn<(id: string) => boolean>(() => false);
+    readonly addImage = vi.fn<(id: string, image: unknown, options: unknown) => void>();
     readonly sources = new Map<string, MockSource>();
     readonly subscriptions: Subscription[] = [];
     readonly canvas = { style: { cursor: '' } };
@@ -230,8 +233,8 @@ describe('BaseMap', () => {
 });
 
 const points: MapPoint[] = [
-  { id: '1a', lng: -3.7038, lat: 40.4168, label: '7', tone: 'good' },
-  { id: '2', lng: -3.7059, lat: 40.42, label: '0', tone: 'empty' },
+  { id: '1a', lng: -3.7038, lat: 40.4168, value: '7', tone: 'success' },
+  { id: '2', lng: -3.7059, lat: 40.42, value: '0', tone: 'danger' },
 ];
 
 function loadedMap() {
@@ -248,7 +251,7 @@ describe('BaseMap points', () => {
   beforeEach(() => {
     maplibre.instances.length = 0;
     stubMatchMedia(true);
-    document.documentElement.style.setProperty('--color-availability-good', '#15803d');
+    document.documentElement.style.setProperty('--color-tone-success', '#0f7a43');
     document.documentElement.style.setProperty('--color-map-user-location', '#2563eb');
   });
 
@@ -295,6 +298,24 @@ describe('BaseMap points', () => {
     unmount();
 
     expect(map.setMissingStyleImageResolver).toHaveBeenLastCalledWith(null);
+  });
+
+  it('paints the image a point asks for, selected or not', async () => {
+    // jsdom cannot draw: a context whose every method does nothing.
+    const context = new Proxy({}, { get: () => () => ({}) });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      context as CanvasRenderingContext2D,
+    );
+    render(<BaseMap points={points} selectedId="2" />);
+    const map = loadedMap();
+    const resolve = map.setMissingStyleImageResolver.mock.lastCall?.[0];
+    const imageIds = toFeatureCollection(points, '2').features.map(
+      (feature) => feature.properties.imageId,
+    );
+
+    for (const id of imageIds) await resolve?.(id);
+
+    expect(map.addImage.mock.calls.map(([id]) => id)).toEqual(imageIds);
   });
 
   it('applies the points passed before the style loaded', () => {
