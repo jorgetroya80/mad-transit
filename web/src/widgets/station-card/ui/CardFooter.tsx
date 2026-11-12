@@ -8,7 +8,7 @@ type CardFooterProps = { detail: StationDetailState };
 function LastData({ updatedAt }: { updatedAt: Date | undefined }) {
   const now = useNow(NOW_TICK_MS);
   return (
-    <p className="text-sm text-fg-muted">
+    <p className="text-body text-fg-muted">
       {updatedAt
         ? `Último dato: ${formatClock(updatedAt)} · ${formatMinutesAgo(updatedAt, now)}`
         : 'Datos sin confirmar'}

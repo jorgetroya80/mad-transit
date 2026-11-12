@@ -9,7 +9,7 @@ export function AppHeader() {
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface px-4">
       <div>
         <h1 className="text-lg leading-tight font-semibold text-fg">Mad Transit</h1>
-        <p className="text-sm text-fg-muted">BiciMAD en tiempo real</p>
+        <p className="text-body text-fg-muted">BiciMAD en tiempo real</p>
       </div>
       <UpdatedIndicator status={status} updatedAt={updatedAt} onRetry={retry} />
     </header>

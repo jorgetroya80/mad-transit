@@ -68,6 +68,12 @@ describe('data freshness', () => {
       expect(screen.getByRole('status')).toHaveTextContent(`Datos de hace 13 min. ${MOBILE_TAIL}`);
     });
 
+    it('keeps no clock ticking on desktop, whose text has no age', () => {
+      render(<StaleNotice layout="desktop" updatedAt={TWELVE_MINUTES_AGO} onRetry={noop} />);
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
     it('is a warning banner with the clock and an outlined «Reintentar» beside its text', () => {
       render(<StaleNotice layout="desktop" updatedAt={TWELVE_MINUTES_AGO} onRetry={noop} />);
       const notice = screen.getByRole('status');

@@ -25,7 +25,7 @@ function ServiceNotice({ layout }: { layout: MapLayout }) {
     <div
       className={`pointer-events-none absolute inset-x-4 z-10 flex justify-center ${PLACEMENT[layout].notice}`}
     >
-      <p className="rounded-control bg-surface px-4 py-2 text-center text-sm text-fg shadow-float">
+      <p className="rounded-control bg-surface px-4 py-2 text-center text-body text-fg shadow-float">
         Las estaciones aparecerán aquí cuando se recupere el servicio
       </p>
     </div>
@@ -41,7 +41,7 @@ function OfflineLayer({ hasData, layout }: Omit<MapNoticeProps, 'status'>) {
     >
       <Icon name="wifi-off" size={34} className="text-tone-neutral-icon" />
       <span className="font-medium text-fg">El mapa no se puede cargar sin conexión</span>
-      {hasData ? <span className="text-sm">{LIST_HINT[layout]}</span> : null}
+      {hasData ? <span className="text-body">{LIST_HINT[layout]}</span> : null}
     </output>
   );
 }

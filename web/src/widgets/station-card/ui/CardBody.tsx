@@ -13,7 +13,7 @@ type CardBodyProps = {
 function NotFound({ number, onClose }: Omit<CardBodyProps, 'detail'>) {
   return (
     <div className="flex flex-col items-start gap-3">
-      <p role="alert" className="text-label leading-normal font-normal text-fg-muted">
+      <p role="alert" className="text-body text-fg-muted">
         {`No hay ninguna estación de BiciMAD con el número ${number}. Puede que el enlace sea antiguo o que la estación se haya retirado.`}
       </p>
       <Button label="Volver a la lista" onClick={onClose} />
@@ -43,7 +43,7 @@ function OutOfService() {
   return (
     <output className="flex flex-col gap-1 rounded-control bg-chip px-3 py-2.5">
       <span className="font-semibold text-tone-neutral-label">Fuera de servicio</span>{' '}
-      <span className="text-sm text-fg-muted">No se pueden sacar ni dejar bicis.</span>
+      <span className="text-body text-fg-muted">No se pueden sacar ni dejar bicis.</span>
     </output>
   );
 }

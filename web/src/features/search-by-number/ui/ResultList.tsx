@@ -33,7 +33,7 @@ export function ResultList({ ref, results, onChoose, onResultKeyDown }: ResultLi
               <Separator /> <span className="text-fg-muted">{item.title}</span>
             </span>
             {item.subtitle ? (
-              <span className="text-sm text-fg-muted">
+              <span className="text-body text-fg-muted">
                 <Separator /> {item.subtitle}
               </span>
             ) : null}
