@@ -10,4 +10,10 @@ describe('DataAttribution', () => {
     expect(link).toHaveAttribute('href', 'https://www.emtmadrid.es');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
+
+  it('rings the link with the shared focus ring', () => {
+    render(<DataAttribution />);
+
+    expect(screen.getByRole('link', { name: 'EMT de Madrid' })).toHaveClass('focus-ring');
+  });
 });

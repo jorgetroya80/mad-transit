@@ -48,19 +48,9 @@ describe('app router', () => {
   });
 });
 
-describe('development routes', () => {
-  afterEach(() => vi.unstubAllEnvs());
-
-  it('serves the component review page in development', async () => {
-    const view = await renderWithRouter(routeContent, { initialEntries: ['/dev/components'] });
-
-    expect(
-      await view.findByRole('heading', { level: 1, name: 'Librería de componentes' }),
-    ).toBeInTheDocument();
-  });
-
-  it('leaves the component review page out of a production router', async () => {
-    vi.stubEnv('DEV', false);
+describe('component review page', () => {
+  it('is gone, even in development', async () => {
+    expect(import.meta.env.DEV).toBe(true);
 
     const { router } = await renderWithRouter(routeContent, {
       initialEntries: ['/dev/components'],
