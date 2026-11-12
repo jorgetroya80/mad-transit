@@ -24,6 +24,8 @@ type EmptyStateProps = {
   note?: string;
   children?: ReactNode;
   announce?: Announce;
+  // Id of the heading and message together, so a field can be described by them.
+  messageId?: string;
   headingLevel?: 2 | 3;
   size?: EmptyStateSize;
 };
@@ -51,26 +53,25 @@ const SIZES = {
 const STACK = 'flex flex-col items-center gap-3.5';
 const MESSAGE_CLASSES = 'max-w-80 text-label leading-normal font-normal text-fg-muted';
 
-type TextProps = { announce: Announce; heading: ReactNode; message: string };
+type TextProps = { announce: Announce; id?: string; heading: ReactNode; message: string };
 
-// Status is an <output>, since oxlint's prefer-tag-over-role rejects role="status". An <output>
-// holds inline content only, so it wraps the message and leaves the heading out; an alert reads
-// both.
-function AnnouncedText({ announce, heading, message }: TextProps) {
-  if (announce === 'alert') {
+// Both live regions read the heading and the message together. Status is an <output>, since
+// oxlint's prefer-tag-over-role rejects role="status"; the space keeps its title and message
+// apart in the text it announces.
+function AnnouncedText({ announce, id, heading, message }: TextProps) {
+  const paragraph = <p className={MESSAGE_CLASSES}>{message}</p>;
+  if (announce === 'status') {
     return (
-      <div role="alert" className={STACK}>
-        {heading}
-        <p className={MESSAGE_CLASSES}>{message}</p>
-      </div>
+      <output id={id} className={STACK}>
+        {heading} {paragraph}
+      </output>
     );
   }
-  const Message = announce === 'status' ? 'output' : 'p';
   return (
-    <>
+    <div id={id} role={announce === 'alert' ? 'alert' : undefined} className={STACK}>
       {heading}
-      <Message className={MESSAGE_CLASSES}>{message}</Message>
-    </>
+      {paragraph}
+    </div>
   );
 }
 
@@ -85,6 +86,7 @@ export function EmptyState({
   note,
   children,
   announce = 'alert',
+  messageId,
   headingLevel = 2,
   size = 'md',
 }: EmptyStateProps) {
@@ -104,7 +106,7 @@ export function EmptyState({
       >
         <Icon name={icon} size={sizes.icon} className={toneClasses.icon} />
       </span>
-      <AnnouncedText announce={announce} heading={heading} message={message} />
+      <AnnouncedText announce={announce} id={messageId} heading={heading} message={message} />
       {action ? (
         <div className="pt-1.5">
           <Button size="lg" {...action} />
