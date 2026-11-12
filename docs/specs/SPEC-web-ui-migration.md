@@ -225,3 +225,4 @@ Ninguna. Las dos de la primera versión las decidió el usuario (2026-11-11): re
 - 2026-11-11: aprobada por el usuario.
 - 2026-11-11: el PR 1 pasa a `refactor(web)`, porque no cambia nada a la vista (decisión del usuario al aprobar el plan).
 - 2026-11-12: T8 necesita ampliar la librería (decisión del usuario). `SearchField` gana `ref`, `onKeyDown`, un `aria-describedby` extra, `inputMode="text"` y una pista que se oculta solo a la vista. El `status` de `EmptyState` envuelve el título y el mensaje, y su texto lleva un `id`. Va como commit previo en el PR 4. «Prueba con» pasa de h2 a h3, como en el diseño. El icono sigue siendo `search` y los textos no cambian.
+- 2026-11-12: SC1 a SC5 comprobados al cerrar T15 (detalle en el changelog del plan). Quedan SC6, con la revisión visual del PR 6 y Render tras la release 0.11.0, y el paso a **implemented**.

@@ -87,34 +87,6 @@
   --color-surface-disabled: #f3f5f8;
   --color-line-subtle: #e6eaef;
 
-  /* Notices and availability: the names the screens read today, kept until they read tone-*.
-     availability-off-label keeps its own value: it is #4b5563 and tone-neutral-label #4a5462. */
-  --color-notice-stale: var(--color-tone-warning-soft);
-  --color-notice-stale-line: var(--color-tone-warning-soft-line);
-  --color-notice-stale-foreground: var(--color-tone-warning-soft-foreground);
-  --color-notice-stale-icon: var(--color-tone-warning-icon);
-  --color-notice-error: var(--color-tone-danger-soft);
-  --color-notice-error-foreground: var(--color-tone-danger-soft-foreground);
-  --color-notice-offline: var(--color-tone-inverse);
-  --color-notice-offline-foreground: var(--color-tone-inverse-foreground);
-  --color-availability-good: var(--color-tone-success);
-  --color-availability-good-foreground: var(--color-tone-success-foreground);
-  --color-availability-good-label: var(--color-tone-success-label);
-  --color-availability-low: var(--color-tone-warning);
-  --color-availability-low-foreground: var(--color-tone-warning-foreground);
-  --color-availability-low-label: var(--color-tone-warning-label);
-  --color-availability-empty: var(--color-tone-danger);
-  --color-availability-empty-foreground: var(--color-tone-danger-foreground);
-  --color-availability-empty-line: var(--color-tone-danger-line);
-  --color-availability-empty-label: var(--color-tone-danger-label);
-  --color-availability-off: var(--color-tone-neutral);
-  --color-availability-off-foreground: var(--color-tone-neutral-foreground);
-  --color-availability-off-label: #4b5563;
-  --color-availability-unconfirmed: var(--color-tone-muted);
-  --color-availability-unconfirmed-foreground: var(--color-tone-muted-foreground);
-  --color-availability-unconfirmed-line: var(--color-tone-muted-line);
-  --color-availability-unconfirmed-label: var(--color-tone-muted-label);
-
   /* Line badges */
   --color-tag: #2b333e;
   --color-tag-inverse: #14181f;
@@ -151,10 +123,9 @@
   --text-stat: 1.625rem;
   --text-stat--line-height: 2rem;
   --text-stat--font-weight: 700;
-  /* Size only until web-ui-migration: the design's line heights would shorten the mobile sheet
-     header, and this module changes no screen. */
   --text-sheet-title: 1.0625rem;
-  --text-sheet-subtitle: 0.8125rem;
+  --text-sheet-title--line-height: 1.375rem;
+  --text-sheet-title--font-weight: 700;
 
   /* Shape, shadow and motion */
   --radius-tag: 6px;

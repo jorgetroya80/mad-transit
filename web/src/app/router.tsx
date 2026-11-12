@@ -1,9 +1,7 @@
 import {
-  type AnyRootRoute,
   createRootRoute,
   createRoute,
   createRouter,
-  lazyRouteComponent,
   type RouteComponent,
   type RouterHistory,
   stringifySearchWith,
@@ -21,18 +19,7 @@ function createRouteTree(mapComponent: RouteComponent) {
     validateSearch: validateMapSearch,
     search: { middlewares: [stripSearchParams({ need: 'bikes' })] },
   });
-  return rootRoute.addChildren(
-    import.meta.env.DEV ? [mapRoute, createDevComponentsRoute(rootRoute)] : [mapRoute],
-  );
-}
-
-// Behind import.meta.env.DEV and a dynamic import, so the production build drops the page.
-function createDevComponentsRoute<TRootRoute extends AnyRootRoute>(rootRoute: TRootRoute) {
-  return createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/dev/components',
-    component: lazyRouteComponent(() => import('@/pages/dev-components'), 'DevComponentsPage'),
-  });
+  return rootRoute.addChildren([mapRoute]);
 }
 
 type AppRouterOptions = { history?: RouterHistory; mapComponent?: RouteComponent };
