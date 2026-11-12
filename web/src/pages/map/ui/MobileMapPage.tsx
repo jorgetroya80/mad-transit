@@ -35,13 +35,14 @@ export function MobileMapPage() {
     <main className="relative grid h-dvh grid-cols-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
       <h1 className="sr-only">Mad Transit</h1>
       <FloatingControls center={location.center} />
-      {/* The browser would not ask a denied permission again, as on desktop. */}
+      {/* The browser would not ask a denied permission again, as on desktop. The map's row only:
+          an absolutely placed item without a row end would span the hidden strip's row too. */}
       {location.isLocationDenied ? null : (
         <RecenterButton
           snap={sheet.snap}
           isRecentering={location.status === 'pending'}
           onRecenter={locate}
-          className="col-start-1 row-start-1"
+          className="col-start-1 row-start-1 row-end-2"
         />
       )}
       <MobileSheet
