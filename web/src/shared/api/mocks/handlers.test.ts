@@ -1,7 +1,12 @@
 import { getStation, listStations } from '@jorgetroya80/mad-transit-client';
 import { apiClient } from '../client';
 import { http } from 'msw';
-import { emtUnavailableProblem, internalErrorProblem, stationsFixture } from './fixtures';
+import {
+  emtUnavailableProblem,
+  internalErrorProblem,
+  stationNotFoundProblem,
+  stationsFixture,
+} from './fixtures';
 import { apiTimestamp, createHandlers, problemResponse } from './handlers';
 import { server } from './node';
 
@@ -50,5 +55,23 @@ describe('problem mocks', () => {
     expect(response?.headers.get('Content-Type')).toBe('application/problem+json');
     expect(error).toEqual(problem);
     expect(problem).toMatchObject({ type, status, requestId: 'mock-request' });
+  });
+});
+
+// As the local API answered on 2026-11-12: a missing station keeps Spring's reason phrase.
+describe('stationNotFoundProblem', () => {
+  it('answers a missing station as the API does', async () => {
+    const { error, response } = await getStation({ client: apiClient, path: { number: '999' } });
+
+    expect(response?.status).toBe(404);
+    expect(error).toEqual({
+      type: 'about:blank',
+      title: 'Not Found',
+      status: 404,
+      detail: 'Not Found',
+      instance: '/v1/bicimad/stations/999',
+      requestId: 'mock-request',
+    });
+    expect(stationNotFoundProblem('999')).toEqual(error);
   });
 });

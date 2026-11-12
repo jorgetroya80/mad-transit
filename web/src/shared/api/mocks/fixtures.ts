@@ -88,7 +88,7 @@ export function stationNotFoundProblem(number: string): Problem {
     type: 'about:blank',
     title: 'Not Found',
     status: 404,
-    detail: `No station with number ${number}`,
+    detail: 'Not Found',
     instance: `/v1/bicimad/stations/${number}`,
     requestId: REQUEST_ID,
   };
