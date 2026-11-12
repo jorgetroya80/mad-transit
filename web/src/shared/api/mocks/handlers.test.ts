@@ -1,7 +1,8 @@
 import { getStation, listStations } from '@jorgetroya80/mad-transit-client';
 import { apiClient } from '../client';
-import { stationsFixture } from './fixtures';
-import { apiTimestamp, createHandlers } from './handlers';
+import { http } from 'msw';
+import { emtUnavailableProblem, internalErrorProblem, stationsFixture } from './fixtures';
+import { apiTimestamp, createHandlers, problemResponse } from './handlers';
 import { server } from './node';
 
 const NOW = '2026-10-31T16:45:12Z';
@@ -32,5 +33,22 @@ describe('createHandlers', () => {
 describe('apiTimestamp', () => {
   it('writes the date in whole seconds, like the API', () => {
     expect(apiTimestamp(new Date('2026-10-31T16:45:12.789Z'))).toBe(NOW);
+  });
+});
+
+// The API's ProblemDetailsHandler: EMT down is a 503, anything unexpected a 500.
+describe('problem mocks', () => {
+  it.each([
+    [emtUnavailableProblem('/v1/bicimad/stations'), 503, 'urn:mad-transit:problem:emt-unavailable'],
+    [internalErrorProblem('/v1/bicimad/stations/1a'), 500, 'urn:mad-transit:problem:internal'],
+  ])('answers %o as the API does', async (problem, status, type) => {
+    server.use(http.get('*/v1/bicimad/stations', () => problemResponse(problem)));
+
+    const { error, response } = await listStations({ client: apiClient });
+
+    expect(response?.status).toBe(status);
+    expect(response?.headers.get('Content-Type')).toBe('application/problem+json');
+    expect(error).toEqual(problem);
+    expect(problem).toMatchObject({ type, status, requestId: 'mock-request' });
   });
 });
