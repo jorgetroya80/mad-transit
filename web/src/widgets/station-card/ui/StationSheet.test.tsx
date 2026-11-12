@@ -273,7 +273,10 @@ describe('StationSheetHeader and StationSheetBody', () => {
     await renderSheet();
     await title();
 
-    expect(screen.getByText(/^Actualizado/)).toHaveTextContent('Actualizado ahora');
+    // The title shows from the full list first; the age is the detail's, once it lands.
+    await waitFor(() =>
+      expect(screen.getByText(/^Actualizado/)).toHaveTextContent('Actualizado ahora'),
+    );
   });
 
   it('says the station does not exist after a single request, and still goes back (SC6)', async () => {
