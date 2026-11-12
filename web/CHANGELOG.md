@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/jorgetroya80/mad-transit/compare/web-v0.11.0...web-v0.11.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **web:** apply the web-ui-migration review follow-ups ([#125](https://github.com/jorgetroya80/mad-transit/issues/125)) ([77b8591](https://github.com/jorgetroya80/mad-transit/commit/77b859165960d17d9824a72e6177ff6775a17787))
+
 ## [0.11.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.10.0...web-v0.11.0) (2026-11-12)
 
 
