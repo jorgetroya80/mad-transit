@@ -532,6 +532,9 @@ describe('MapPage', () => {
     it('keeps the recenter button 16 px above the sheet at both heights', async () => {
       const user = userEvent.setup();
       await renderPage();
+      // Absolutely placed, it measures its bottom from the end of its grid area: the map's row
+      // only, or the bottom would count the hidden strip too and sit 56 px under the sheet.
+      expect(recenterSlot()).toHaveClass('col-start-1', 'row-start-1', 'row-end-2');
       expect(recenterSlot()).toHaveStyle({ bottom: '390px' });
 
       await user.click(sheetHandle());
