@@ -1,3 +1,3 @@
 export { LazyBaseMap as BaseMap } from './LazyBaseMap';
-export type { MapControlsOptions } from './MapControls';
+export type { MapControlsOptions } from './BaseMap';
 export type { FocusPadding, MapPoint } from './points';

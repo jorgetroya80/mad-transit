@@ -8,6 +8,7 @@ import { env } from '@/shared/config';
 import type * as SharedUi from '@/shared/ui';
 import type { MapPoint } from '@/shared/ui';
 import { expectNoAxeViolations } from '../../../../test/axe';
+import { firstIconPath, iconPath } from '../../../../test/iconPath';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { StationsMap } from './StationsMap';
 
@@ -274,6 +275,17 @@ describe('StationsMap', () => {
       expect(within(layer).getByText(hint)).toBeInTheDocument();
     });
 
+    it('draws the library wifi-off icon over the offline layer, decorative', async () => {
+      onlineManager.setOnline(false);
+      await renderMap();
+
+      const icon = screen.getByRole('status').querySelector('svg');
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+      expect(icon).toHaveAttribute('width', '34');
+      expect(icon).toHaveClass('text-tone-neutral-icon');
+      expect(firstIconPath(screen.getByRole('status'))).toBe(iconPath('wifi-off'));
+    });
+
     it('drops the layer when the connection returns, keeping the same map', async () => {
       await renderMap();
       await waitForPoints();
@@ -315,9 +327,21 @@ describe('StationsMap', () => {
       await renderMap();
       await waitForPoints();
 
-      const legend = screen.getByText(LEGEND).parentElement;
+      // The item sits in the library list, inside the box the widget places.
+      const legend = screen.getByText(LEGEND).closest('div');
       expect(legend).toHaveAttribute('aria-hidden', 'true');
       expect(legend).toHaveClass('pointer-events-none', 'bottom-4', 'left-4');
+    });
+
+    it('draws it as the library legend, with the muted swatch on a floating box as the canvas does', async () => {
+      serveStale();
+      await renderMap();
+      await waitForPoints();
+
+      const item = screen.getByText(LEGEND);
+      expect(item.tagName).toBe('LI');
+      expect(item.firstElementChild).toHaveClass('bg-tone-muted', 'border-tone-muted-line');
+      expect(item.closest('div')).toHaveClass('rounded-control', 'bg-surface', 'shadow-control');
     });
 
     it('has no legend on mobile, where the list says it', async () => {

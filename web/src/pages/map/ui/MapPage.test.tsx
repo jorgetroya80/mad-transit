@@ -138,6 +138,11 @@ function recenterButton() {
   return screen.getByRole('button', { name: 'Centrar en mi posición' });
 }
 
+// The slot the page places above the sheet, around the library button.
+function recenterSlot() {
+  return recenterButton().parentElement;
+}
+
 async function rowIn(section: string, number: string) {
   const region = await screen.findByRole('region', { name: section });
   return within(region).findByRole('button', { name: new RegExp(`^Estación ${number},`) });
@@ -522,13 +527,13 @@ describe('MapPage', () => {
     it('keeps the recenter button 16 px above the sheet at both heights', async () => {
       const user = userEvent.setup();
       await renderPage();
-      expect(recenterButton()).toHaveStyle({ bottom: '390px' });
+      expect(recenterSlot()).toHaveStyle({ bottom: '390px' });
 
       await user.click(sheetHandle());
-      expect(recenterButton()).toHaveStyle({ bottom: '16px' });
+      expect(recenterSlot()).toHaveStyle({ bottom: '16px' });
 
       await user.click(listStrip());
-      expect(recenterButton()).toHaveStyle({ bottom: '390px' });
+      expect(recenterSlot()).toHaveStyle({ bottom: '390px' });
     });
 
     it('centers the selected station above the sheet at its current height', async () => {
@@ -541,7 +546,7 @@ describe('MapPage', () => {
 
       await user.click(detailHandle());
       expect(lastMapProps().focusPadding).toEqual({ bottom: 0 });
-      expect(recenterButton()).toHaveStyle({ bottom: '16px' });
+      expect(recenterSlot()).toHaveStyle({ bottom: '16px' });
     });
 
     it('keeps the map on the user after recentering when the sheet changes height', async () => {
@@ -692,7 +697,7 @@ describe('MapPage', () => {
         expect(await detailTitle('Puerta del Sol B')).toBeInTheDocument();
         expect(detailHandle()).toHaveFocus();
         expect(detailHandle()).toHaveAttribute('aria-expanded', 'true');
-        expect(recenterButton()).toHaveStyle({ bottom: '390px' });
+        expect(recenterSlot()).toHaveStyle({ bottom: '390px' });
         expect(lastMapProps().selectedId).toBe('1b');
       },
     );
