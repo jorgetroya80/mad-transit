@@ -7,7 +7,7 @@ import {
   mapPointSize,
 } from '../map-point';
 import type * as MapPointModule from '../map-point';
-import { paintMissingPointImages, type PointImageHost } from './mapLayers';
+import { FONT_WAIT_MS, paintMissingPointImages, type PointImageHost } from './mapLayers';
 
 vi.mock('../map-point', async (importOriginal) => ({
   ...(await importOriginal<typeof MapPointModule>()),
@@ -119,6 +119,25 @@ describe('paintMissingPointImages', () => {
     await request;
 
     expect(map.addImage).toHaveBeenCalledExactlyOnceWith(lowId, image, { pixelRatio: 2 });
+  });
+
+  it('draws in the fallback font when the value font hangs past its wait', async () => {
+    vi.useFakeTimers();
+    try {
+      stubFontLoading();
+      const { map, requestImage } = fakeMap();
+      paintMissingPointImages(map, style).remember([low]);
+
+      const request = requestImage(lowId);
+      await vi.advanceTimersByTimeAsync(FONT_WAIT_MS - 1);
+      expect(map.addImage).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      await request;
+
+      expect(map.addImage).toHaveBeenCalledExactlyOnceWith(lowId, image, { pixelRatio: 2 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('never paints an image the map already has', async () => {

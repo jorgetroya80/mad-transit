@@ -51,9 +51,15 @@ function createPointImage(params: MapPointParams, drawing: MapPointDrawing) {
   return context.getImageData(0, 0, size, size);
 }
 
-// Without the fonts API, or if the font fails, the points are drawn in the fallback font.
+// A font that hangs would hold every point back, as MapLibre waits for them before the layout.
+export const FONT_WAIT_MS = 1500;
+
+// Without the fonts API, or if the font fails or hangs, the points are drawn in the fallback font.
 function loadValueFont(style: MapPointStyle): Promise<unknown> {
-  return document.fonts?.load(mapPointValueFont(style)).catch(() => undefined) ?? Promise.resolve();
+  const fontLoad = document.fonts?.load(mapPointValueFont(style)).catch(() => undefined);
+  if (!fontLoad) return Promise.resolve();
+  const wait = new Promise((resolve) => setTimeout(resolve, FONT_WAIT_MS));
+  return Promise.race([fontLoad, wait]);
 }
 
 // Draws each point image the first time the layer asks for it. MapLibre 6 awaits the resolver
