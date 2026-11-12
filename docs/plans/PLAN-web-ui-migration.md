@@ -1,7 +1,7 @@
 # Plan: web-ui-migration
 
 - Created: 2026-11-11
-- Status: **approved** (2026-11-12)
+- Status: **implemented** (2026-11-12)
 - Spec: [SPEC-web-ui-migration.md](../specs/SPEC-web-ui-migration.md)
 
 ## Overview
@@ -200,8 +200,8 @@ Las zonas son independientes en el código, pero comparten `shared/ui/index.ts`,
 ### Checkpoint final
 - [x] SC1 a SC5 comprobados; CI en verde en el PR 6.
 - [x] Revisión visual del usuario de las dos pantallas en cada estado, a 1440 y 390 px (SC6).
-- [ ] Permiso para mergear el PR 6 y, después, el PR de release (web 0.11.0); comprobación en Render.
-- [ ] Un PR `docs` pasa spec, plan y capability map a **implemented**.
+- [x] Permiso para mergear el PR 6 y, después, el PR de release (web 0.11.0); comprobación en Render.
+- [x] Un PR `docs` pasa spec, plan y capability map a **implemented**.
 
 ## Riesgos y mitigaciones
 
@@ -248,3 +248,5 @@ Unas 16 h en total: PR 1 ~1 h, PR 2 ~4 h, PR 3 ~3 h, PR 4 ~3 h 30 min, PR 5 ~3 h
 - 2026-11-12: T15 hecha. Se borran `pages/dev-components` y su ruta de desarrollo en `app/router.tsx`; el test del router comprueba ahora que `/dev/components` no existe ni en desarrollo, y en el `dist` del build no aparece. Al repasar SC2 quedaba un anillo escrito a mano en `DataAttribution`: pasa a `focus-ring`, con test (el anillo del enlace pasa a `primary`). El floor guard suma 2: `DevComponentsPage.test.tsx` borrado con la página y la aserción del encabezado de la página en el test del router. El resto de `check:task` en verde por separado (1867 tests en web, 100 % de 1 línea cambiada, depcruise sin violaciones, build sin errores).
 - 2026-11-12: repaso de SC1 a SC5. SC1: ninguna pieza de la tabla del supuesto 1 sigue en el código (`BaseMap` monta un `MapControls` local hecho con `ControlGroup` e `IconButton`). SC2: tokens retirados con `retiredTokens.test.ts`; `icons.tsx`, `IconFrame`, `pointImage.ts`, `/dev/components` y los anillos a mano fuera, salvo `SourcePicker`; `mapColors.ts` solo lee los dos colores de la posición del usuario. SC3: textos y nombres iguales, y las aserciones de comportamiento que cambiaron están en el changelog con su motivo (orden de lectura de la ficha, «Prueba con» h3, «Reintentar» fuera de la región viva, `role=status` de «Cargando»), todas aceptadas por el usuario. SC4: los cambios de aspecto están apuntados por tarea y el teclado no cambia. SC5: cada PR con `check:task` en verde por separado, avisos del floor guard explicados en sus commits y CI en verde. Pendiente fuera del módulo: `StationSheet.test.tsx` «greys out both availabilities…» (de #103) falló 1 de 3 veces con cobertura por tardar más de 1 s, así que va en un `fix(web)` junto al del botón de centrar.
 - 2026-11-12: revisión visual final del usuario aprobada (primera parte de SC6). Falta Render tras la release.
+- 2026-11-12: antes de la release, tres PRs de seguimiento. #121 (`test(web)`): los mocks de error devuelven los cuerpos de la API, 503 `emt-unavailable` y 500 `internal`; un test de la hoja ya no tiene carrera; y el test «greys out both availabilities…» queda saltado bajo la excepción W1 de `CONSTRAINTS.md` por mswjs/interceptors#897. #122 (`fix(web)`): sin ubicación, la ficha ya no muestra la distancia de una lista cercana guardada; lo destapó el test de «sin distancia», que siempre se pintaba con centro. #123 (`fix(web)`): el botón de centrar en móvil vuelve a quedar 16 px sobre el panel.
+- 2026-11-12: release web 0.11.0 (#116) publicada y desplegada en Render; el usuario lo comprobó en Render (SC6). Spec, plan y capability map pasan a **implemented**. Queda fuera del módulo: las mejoras opcionales de la revisión (tope a la espera de la fuente del mapa, tamaños `text-sm`/`text-xs`/`text-base` en piezas que se quedan, `useNow` sin uso en el aviso de escritorio y la clase del texto de «no encontrada»); el 400 de la API sin `type` con un número no válido; y el test bajo W1, que caduca el 2026-12-31.
