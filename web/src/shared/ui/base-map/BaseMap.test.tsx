@@ -15,6 +15,7 @@ import {
   POINTS_SOURCE_ID,
   toFeatureCollection,
   toUserLocationCollection,
+  USER_LOCATION_HALO_LAYER_ID,
   USER_LOCATION_LAYER_ID,
   USER_LOCATION_SOURCE_ID,
   type MapPoint,
@@ -278,6 +279,7 @@ describe('BaseMap points', () => {
     ]);
     expect(map.addLayer.mock.calls.map(([layer]) => layer.id)).toEqual([
       POINT_LAYER_ID,
+      USER_LOCATION_HALO_LAYER_ID,
       USER_LOCATION_LAYER_ID,
     ]);
   });

@@ -22,9 +22,13 @@ export const POINTS_SOURCE_ID = 'points';
 export const POINT_LAYER_ID = 'point-images';
 export const USER_LOCATION_SOURCE_ID = 'user-location';
 export const USER_LOCATION_LAYER_ID = 'user-location-dot';
+export const USER_LOCATION_HALO_LAYER_ID = 'user-location-halo';
 
-const USER_LOCATION_RADIUS_PX = 8;
-const USER_LOCATION_STROKE_WIDTH_PX = 3;
+// A 12 px dot with a 2 px border, over a 22 px halo of its color.
+const USER_LOCATION_RADIUS_PX = 6;
+const USER_LOCATION_STROKE_WIDTH_PX = 2;
+const USER_LOCATION_HALO_RADIUS_PX = 11;
+const USER_LOCATION_HALO_OPACITY = 0.18;
 const SELECTED_SORT_KEY = 1;
 const UNSELECTED_SORT_KEY = 0;
 
@@ -113,6 +117,21 @@ export function userLocationLayer({
       'circle-radius': USER_LOCATION_RADIUS_PX,
       'circle-stroke-width': USER_LOCATION_STROKE_WIDTH_PX,
       'circle-stroke-color': pointStroke,
+    },
+  };
+}
+
+export function userLocationHaloLayer({
+  userLocation,
+}: Pick<MapColors, 'userLocation'>): CircleLayerSpecification {
+  return {
+    id: USER_LOCATION_HALO_LAYER_ID,
+    type: 'circle',
+    source: USER_LOCATION_SOURCE_ID,
+    paint: {
+      'circle-color': userLocation,
+      'circle-radius': USER_LOCATION_HALO_RADIUS_PX,
+      'circle-opacity': USER_LOCATION_HALO_OPACITY,
     },
   };
 }

@@ -17,6 +17,7 @@ import {
   toFeatureCollection,
   toUserLocationCollection,
   USER_LOCATION_SOURCE_ID,
+  userLocationHaloLayer,
   userLocationLayer,
 } from './points';
 
@@ -95,7 +96,9 @@ export function addPointLayers(map: MapLibreMap) {
     data: toUserLocationCollection(undefined),
   });
   map.addLayer(pointLayer());
-  map.addLayer(userLocationLayer(readMapColors()));
+  const colors = readMapColors();
+  map.addLayer(userLocationHaloLayer(colors));
+  map.addLayer(userLocationLayer(colors));
   return pointImages;
 }
 

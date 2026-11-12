@@ -7,8 +7,10 @@ import {
   pointLayer,
   toFeatureCollection,
   toUserLocationCollection,
+  USER_LOCATION_HALO_LAYER_ID,
   USER_LOCATION_LAYER_ID,
   USER_LOCATION_SOURCE_ID,
+  userLocationHaloLayer,
   userLocationLayer,
   type MapPoint,
 } from './points';
@@ -127,5 +129,29 @@ describe('userLocationLayer', () => {
 
   it('borders the dot with the point stroke color', () => {
     expect(userLocationLayer(colors).paint?.['circle-stroke-color']).toBe('#stroke');
+  });
+
+  it('draws a 12 px dot with a 2 px border', () => {
+    const { paint } = userLocationLayer(colors);
+
+    expect(paint?.['circle-radius']).toBe(6);
+    expect(paint?.['circle-stroke-width']).toBe(2);
+  });
+});
+
+describe('userLocationHaloLayer', () => {
+  it('draws a 22 px halo in the user color at 18 %, from the same source', () => {
+    const layer = userLocationHaloLayer(colors);
+
+    expect(layer).toMatchObject({
+      id: USER_LOCATION_HALO_LAYER_ID,
+      type: 'circle',
+      source: USER_LOCATION_SOURCE_ID,
+    });
+    expect(layer.paint).toEqual({
+      'circle-color': '#user',
+      'circle-radius': 11,
+      'circle-opacity': 0.18,
+    });
   });
 });
