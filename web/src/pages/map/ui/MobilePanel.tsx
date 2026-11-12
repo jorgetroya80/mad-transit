@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
+import type { MapLocation } from '@/shared/lib';
 import { DataAttribution } from '@/shared/ui';
 import { StationList } from '@/widgets/station-list';
-import type { MapLocation } from '../model/useMapLocation';
 
 type MobilePanelProps = {
   ref: Ref<HTMLDivElement>;

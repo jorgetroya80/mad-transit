@@ -2,13 +2,13 @@ import type { StationsResponse } from '@jorgetroya80/mad-transit-client';
 import {
   type PlaceholderDataFunction,
   type QueryKey,
-  type QueryState,
   skipToken,
   useQuery,
   useQueryClient,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { POLL_INTERVAL_MS, RETRY_DELAYS_MS } from '@/shared/config';
+import { POLL_INTERVAL_MS } from '@/shared/config';
+import { restartWait, retryDelayMs } from '@/shared/lib';
 import type { Need } from '../model/types';
 import { fetchAllStations, fetchNearbyStations, fetchStation } from './fetchStations';
 import { type Coordinates, stationKeys, toNearParam } from './stationKeys';
@@ -18,27 +18,6 @@ import {
   saveAllStations,
   saveNearbyStations,
 } from './stationsCache';
-
-type PacedQuery = { state: Pick<QueryState, 'status' | 'errorUpdateCount'> };
-
-// TanStack Query has no counter of consecutive failures that survives a refetch: fetchFailureCount
-// starts again at every fetch and errorUpdateCount never resets. So this keeps the
-// errorUpdateCount at which the wait last restarted (a success or a manual retry) per query.
-const waitStart = new WeakMap<PacedQuery, number>();
-
-function consecutiveFailures(query: PacedQuery): number {
-  const { status, errorUpdateCount } = query.state;
-  if (status === 'success') waitStart.set(query, errorUpdateCount);
-  return errorUpdateCount - (waitStart.get(query) ?? 0);
-}
-
-// Every 30 s while the requests succeed; after a failure, 30, 60 and then 120 s until one succeeds.
-// The interval restarts on every query update, so each wait counts from the last answer.
-function retryDelayMs(query: PacedQuery): number {
-  const failures = consecutiveFailures(query);
-  if (failures === 0) return POLL_INTERVAL_MS;
-  return RETRY_DELAYS_MS[Math.min(failures, RETRY_DELAYS_MS.length) - 1] ?? POLL_INTERVAL_MS;
-}
 
 // retryDelayMs is the wait before the next automatic request, the same one refetchInterval uses,
 // so a countdown cannot drift from the real retry.
@@ -55,7 +34,7 @@ function useRestartingRefetch<TData>(
   const findQuery = () => queryClient.getQueryCache().find({ queryKey, exact: true });
   const refetch: typeof result.refetch = (options) => {
     const query = findQuery();
-    if (query) waitStart.set(query, query.state.errorUpdateCount);
+    if (query) restartWait(query);
     return result.refetch(options);
   };
   const currentDelayMs = () => {

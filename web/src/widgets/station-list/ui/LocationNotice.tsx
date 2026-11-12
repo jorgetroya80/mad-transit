@@ -1,36 +1,27 @@
 import type { ComponentProps } from 'react';
-import { Banner } from '@/shared/ui';
+import { ApproximateLocationBanner, LocatingBanner } from '@/shared/ui';
 
 const DENIED_TEXT =
   'No has dado permiso de ubicación: mostrando estaciones cerca de la Puerta del Sol';
 
-type LocationNoticeProps = {
-  isApproximateLocation: boolean;
-  isLocationDenied: boolean;
-};
+type LocationProps = Pick<
+  ComponentProps<typeof ApproximateLocationBanner>,
+  'isApproximateLocation' | 'isLocationDenied'
+>;
 
-export function ApproximateLocationNotice({
-  isApproximateLocation,
-  isLocationDenied,
-}: LocationNoticeProps) {
-  if (!isApproximateLocation) return null;
+export function ApproximateLocationNotice(props: LocationProps) {
   return (
-    <Banner
-      tone="info"
-      icon="info"
-      announce="polite"
-      message={
-        isLocationDenied
-          ? DENIED_TEXT
-          : 'Sin ubicación: mostrando estaciones cerca de la Puerta del Sol'
-      }
+    <ApproximateLocationBanner
+      {...props}
+      missingText="Sin ubicación: mostrando estaciones cerca de la Puerta del Sol"
+      deniedText={DENIED_TEXT}
     />
   );
 }
 
 export type LocatingLayout = 'desktop' | 'mobile';
 
-type LocatingNoticeProps = LocationNoticeProps & {
+type LocatingNoticeProps = LocationProps & {
   layout: LocatingLayout;
   onLocate: () => void;
   isLocating: boolean;
@@ -51,29 +42,14 @@ const NO_LOCATION = {
   },
 } as const satisfies Record<LocatingLayout, { text: string; label: string; pendingLabel: string }>;
 
-type LocationBannerProps = Pick<ComponentProps<typeof Banner>, 'message' | 'action'>;
-
-// Polite, as the notice has always been: only its text is read, not the action.
-function LocationBanner(props: LocationBannerProps) {
-  return <Banner tone="info" icon="pin" announce="polite" {...props} />;
-}
-
-// Always on screen, so the user knows what the list is around. A denied permission is not
-// asked again: the browser would not show its prompt.
-export function LocatingNotice({
-  isApproximateLocation,
-  isLocationDenied,
-  layout,
-  onLocate,
-  isLocating,
-}: LocatingNoticeProps) {
-  if (!isApproximateLocation) return <LocationBanner message="Usando tu ubicación actual." />;
-  if (isLocationDenied) return <LocationBanner message={DENIED_TEXT} />;
+// Always on screen, so the user knows what the list is around.
+export function LocatingNotice({ layout, onLocate, isLocating, ...location }: LocatingNoticeProps) {
   const { text, label, pendingLabel } = NO_LOCATION[layout];
   return (
-    <LocationBanner
-      message={text}
-      action={{ label: isLocating ? pendingLabel : label, onClick: onLocate, busy: isLocating }}
+    <LocatingBanner
+      {...location}
+      texts={{ current: 'Usando tu ubicación actual.', denied: DENIED_TEXT, missing: text }}
+      action={{ label, pendingLabel, onLocate, isLocating }}
     />
   );
 }

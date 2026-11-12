@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
+import type { MapLocation } from '@/shared/lib';
 import { BottomSheet } from '@/shared/ui';
 import { StationSheetBody, StationSheetHeader } from '@/widgets/station-card';
-import type { MapLocation } from '../model/useMapLocation';
 import type { useSheetSnap } from '../model/useSheetSnap';
 import { MobilePanel } from './MobilePanel';
 import { MobileSheetHeader } from './MobileSheetHeader';
