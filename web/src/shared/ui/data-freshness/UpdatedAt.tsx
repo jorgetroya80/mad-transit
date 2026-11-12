@@ -7,7 +7,7 @@ type UpdatedAtProps = { date: Date };
 export function UpdatedAt({ date }: UpdatedAtProps) {
   const now = useNow(NOW_TICK_MS);
   return (
-    <p className="text-sm text-fg-muted">
+    <p className="text-body text-fg-muted">
       Actualizado <RelativeTime date={date} now={now} />
     </p>
   );

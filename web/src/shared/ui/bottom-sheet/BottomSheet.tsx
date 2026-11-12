@@ -103,7 +103,9 @@ function SheetHandle({
     >
       <span aria-hidden="true" className="h-1 w-10 shrink-0 rounded-full bg-handle" />
       {isHidden ? (
-        <span className="max-w-full truncate text-sm font-semibold text-fg">{collapsedLabel}</span>
+        <span className="max-w-full truncate text-body font-semibold text-fg">
+          {collapsedLabel}
+        </span>
       ) : null}
     </button>
   );

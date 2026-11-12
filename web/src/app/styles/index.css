@@ -126,6 +126,9 @@
   --text-sheet-title: 1.0625rem;
   --text-sheet-title--line-height: 1.375rem;
   --text-sheet-title--font-weight: 700;
+  --text-section: 1rem;
+  --text-section--line-height: 1.5rem;
+  --text-section--font-weight: 700;
 
   /* Shape, shadow and motion */
   --radius-tag: 6px;

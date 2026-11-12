@@ -32,7 +32,7 @@ export function StationSection({
       className="flex flex-col gap-2"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-        <Heading id={headingId} tabIndex={-1} className="text-base font-bold text-fg focus-ring">
+        <Heading id={headingId} tabIndex={-1} className="text-section text-fg focus-ring">
           {heading}
         </Heading>
         {caption === undefined ? null : (

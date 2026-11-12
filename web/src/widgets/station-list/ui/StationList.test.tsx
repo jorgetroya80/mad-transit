@@ -244,8 +244,7 @@ describe('StationList', () => {
     const nearby = await nearbyRegion();
 
     expect(within(nearby).getByRole('heading', { level: 2 })).toHaveClass(
-      'text-base',
-      'font-bold',
+      'text-section',
       'text-fg',
     );
     expect(within(nearby).getByText('Bicis disponibles')).toHaveClass('text-meta', 'text-fg-muted');

@@ -14,7 +14,7 @@ type SearchByNumberProps = {
   variant?: SearchVariant;
 };
 
-const STATUS_CLASS = 'text-sm text-fg-muted empty:hidden';
+const STATUS_CLASS = 'text-body text-fg-muted empty:hidden';
 
 const LAYOUTS = {
   inline: { root: 'flex flex-col gap-2', status: STATUS_CLASS },

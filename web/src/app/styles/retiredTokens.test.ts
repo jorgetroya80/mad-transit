@@ -45,3 +45,24 @@ describe('retired tokens', () => {
     expect(retiredTokenIn('availabilityTone AvailabilityLegend text-sheet-title')).toBeUndefined();
   });
 });
+
+// The screens read the text-* scale, not Tailwind's default sizes. Disclosure and CountBadge are
+// library pieces whose md size is 16 px by their own spec.
+const DEFAULT_TEXT_SIZE = /\btext-(?:xs|sm|base)\b/;
+const LIBRARY_SIZE_MAPS = [
+  '../../shared/ui/disclosure/Disclosure.tsx',
+  '../../shared/ui/count-badge/CountBadge.tsx',
+];
+const SCREEN_SOURCES = Object.entries(CODE).filter(
+  ([path]) => !path.endsWith('.test.tsx') && !LIBRARY_SIZE_MAPS.includes(path),
+);
+
+describe('default text sizes', () => {
+  it('skips only the library size maps, which exist', () => {
+    expect(Object.keys(CODE)).toEqual(expect.arrayContaining(LIBRARY_SIZE_MAPS));
+  });
+
+  it.each(SCREEN_SOURCES)('%s uses the text-* scale', (_path, source) => {
+    expect(source.match(DEFAULT_TEXT_SIZE)?.[0]).toBeUndefined();
+  });
+});
