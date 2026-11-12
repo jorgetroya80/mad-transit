@@ -31,10 +31,10 @@ function mobileText(updatedAt: Date | undefined, now: Date): StaleText {
   };
 }
 
-export function StaleNotice({ layout, updatedAt, onRetry }: StaleNoticeProps) {
+type StaleBannerProps = { text: StaleText; onRetry: () => unknown };
+
+function StaleBanner({ text, onRetry }: StaleBannerProps) {
   const { isPending, run } = usePendingAction(onRetry);
-  const now = useNow(NOW_TICK_MS);
-  const text = layout === 'desktop' ? desktopText(updatedAt) : mobileText(updatedAt, now);
   return (
     <Banner
       tone="warning"
@@ -44,4 +44,15 @@ export function StaleNotice({ layout, updatedAt, onRetry }: StaleNoticeProps) {
       action={{ label: 'Reintentar', onClick: run, busy: isPending }}
     />
   );
+}
+
+// Only the mobile text ages, so only it keeps a clock ticking.
+function MobileStaleNotice({ updatedAt, onRetry }: Omit<StaleNoticeProps, 'layout'>) {
+  const now = useNow(NOW_TICK_MS);
+  return <StaleBanner text={mobileText(updatedAt, now)} onRetry={onRetry} />;
+}
+
+export function StaleNotice({ layout, updatedAt, onRetry }: StaleNoticeProps) {
+  if (layout === 'mobile') return <MobileStaleNotice updatedAt={updatedAt} onRetry={onRetry} />;
+  return <StaleBanner text={desktopText(updatedAt)} onRetry={onRetry} />;
 }
