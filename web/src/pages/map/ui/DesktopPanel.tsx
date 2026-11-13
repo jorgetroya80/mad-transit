@@ -1,4 +1,5 @@
 import { NeedToggle } from '@/features/filter-by-need';
+import { ServiceToggle } from '@/features/select-service';
 import type { MapLocation } from '@/shared/lib';
 import { DataAttribution } from '@/shared/ui';
 import { AvailabilityLegend, StationList } from '@/widgets/station-list';
@@ -10,6 +11,7 @@ type DesktopPanelProps = { location: MapLocation };
 export function DesktopPanel({ location }: DesktopPanelProps) {
   return (
     <div className="flex min-h-full flex-col gap-4">
+      <ServiceToggle />
       <TransitSearch center={location.center} />
       <NeedToggle variant="cards" />
       <StationList

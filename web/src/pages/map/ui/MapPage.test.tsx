@@ -227,6 +227,27 @@ describe('MapPage', () => {
     );
   });
 
+  describe('with Bus chosen', () => {
+    it('shows the Paradas panel and the service choice, without the stations map or search', async () => {
+      await renderPage('/?service=bus');
+
+      expect(screen.getByRole('region', { name: 'Paradas' })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: 'Bus' })).toBeChecked();
+      expect(screen.queryByTestId('base-map')).not.toBeInTheDocument();
+      expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    });
+
+    it('brings the stations back when BiciMAD is chosen again, keeping the need', async () => {
+      const user = userEvent.setup();
+      const { router } = await renderPage('/?service=bus&need=docks');
+
+      await user.click(screen.getByRole('radio', { name: 'BiciMAD' }));
+
+      expect(router.state.location.href).toBe('/?need=docks');
+      expect(await screen.findByTestId('base-map')).toBeInTheDocument();
+    });
+  });
+
   describe('with the location granted', () => {
     beforeEach(() => stubGeolocation('granted'));
 

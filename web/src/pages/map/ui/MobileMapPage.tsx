@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import type { Coordinates } from '@/entities/station';
 import { NeedToggle } from '@/features/filter-by-need';
+import { ServiceToggle } from '@/features/select-service';
 import { useSelectedStation } from '@/features/select-station';
 import { useMapLocation, useUserFocus } from '@/shared/lib';
 import { StationsMap } from '@/widgets/stations-map';
@@ -65,10 +66,11 @@ export function MobileMapPage() {
   );
 }
 
-// Search, mode and the offline banner, over the top of the map.
+// Service, search, mode and the offline banner, over the top of the map.
 function FloatingControls({ center }: { center: Coordinates | undefined }) {
   return (
     <div className="absolute inset-x-4 top-11 z-20 flex flex-col gap-2.5">
+      <ServiceToggle />
       <TransitSearch center={center} variant="floating" />
       <div className="self-end">
         <NeedToggle variant="pill" />

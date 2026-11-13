@@ -29,12 +29,40 @@ describe('app router', () => {
     expect(currentSearch(router)).toEqual({ need: 'bikes' });
   });
 
+  it('reads ?service=bus&stop=72 as a bus stop', async () => {
+    const { router } = await renderWithRouter(routeContent, {
+      initialEntries: ['/?service=bus&stop=72'],
+    });
+
+    expect(currentSearch(router)).toEqual({ need: 'bikes', service: 'bus', stop: '72' });
+  });
+
+  it('reads an unknown service and a stop without service=bus as BiciMAD, dropping the stop', async () => {
+    const { router } = await renderWithRouter(routeContent, {
+      initialEntries: ['/?service=xyz&stop=72'],
+    });
+
+    expect(currentSearch(router)).toEqual({ need: 'bikes' });
+  });
+
   it('writes the station as plain text and leaves out need=bikes', async () => {
     const { router } = await renderWithRouter(routeContent);
 
     await act(() => router.navigate({ to: '/', search: { station: '538', need: 'bikes' } }));
 
     expect(router.state.location.href).toBe('/?station=538');
+  });
+
+  it('writes service=bus with its stop and leaves out service=bicimad', async () => {
+    const { router } = await renderWithRouter(routeContent);
+
+    await act(() =>
+      router.navigate({ to: '/', search: { service: 'bus', stop: '72', need: 'bikes' } }),
+    );
+    expect(router.state.location.href).toBe('/?service=bus&stop=72');
+
+    await act(() => router.navigate({ to: '/', search: { service: 'bicimad', need: 'bikes' } }));
+    expect(router.state.location.href).toBe('/');
   });
 
   it('writes need=docks next to the station', async () => {

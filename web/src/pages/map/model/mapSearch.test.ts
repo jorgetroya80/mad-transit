@@ -20,4 +20,46 @@ describe('validateMapSearch', () => {
   it.each(['xyz', '', 1])('treats need %j as bikes', (need) => {
     expect(validateMapSearch({ need })).toEqual({ need: 'bikes' });
   });
+
+  it('keeps service bus', () => {
+    expect(validateMapSearch({ service: 'bus' })).toEqual({ need: 'bikes', service: 'bus' });
+  });
+
+  it.each(['xyz', '', 1])(
+    'treats service %j as bicimad, which the search leaves out',
+    (service) => {
+      expect(validateMapSearch({ service })).toEqual({ need: 'bikes' });
+    },
+  );
+
+  it('keeps stop 72 with service bus', () => {
+    expect(validateMapSearch({ service: 'bus', stop: '72' })).toEqual({
+      need: 'bikes',
+      service: 'bus',
+      stop: '72',
+    });
+  });
+
+  it('ignores stop without service bus', () => {
+    const search = validateMapSearch({ stop: '72' });
+
+    expect(search).toEqual({ need: 'bikes' });
+    expect(search.stop).toBeUndefined();
+  });
+
+  it.each([[''], [72], [null]])('drops stop %j with service bus', (stop) => {
+    expect(validateMapSearch({ service: 'bus', stop })).toEqual({
+      need: 'bikes',
+      service: 'bus',
+    });
+  });
+
+  it('keeps the station next to a bus stop', () => {
+    expect(validateMapSearch({ service: 'bus', stop: '72', station: '538' })).toEqual({
+      station: '538',
+      need: 'bikes',
+      service: 'bus',
+      stop: '72',
+    });
+  });
 });
