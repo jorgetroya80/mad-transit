@@ -1,8 +1,9 @@
 import { ServiceToggle } from '@/features/select-service';
 import { useSelectedStop } from '@/features/select-stop';
-import { useMapLocation, useUserFocus } from '@/shared/lib';
+import { type GeoPosition, useMapLocation, useUserFocus } from '@/shared/lib';
 import { BottomSheet } from '@/shared/ui';
 import { BusStopsMap } from '@/widgets/bus-stops-map';
+import { TransitSearch } from '@/widgets/transit-search';
 import { useMapFocusPadding } from '../model/useMapFocusPadding';
 import { useShownArrival } from '../model/useShownArrival';
 import { useSheetSnap } from '../model/useSheetSnap';
@@ -22,9 +23,7 @@ export function BusMobilePage() {
   return (
     <main className="relative grid h-dvh grid-cols-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
       <h1 className="sr-only">Mad Transit</h1>
-      <div className="absolute inset-x-4 top-11 z-20 flex flex-col gap-2.5">
-        <ServiceToggle />
-      </div>
+      <FloatingControls center={location.center} />
       {location.isLocationDenied ? null : (
         <RecenterButton
           snap={sheet.snap}
@@ -60,5 +59,15 @@ export function BusMobilePage() {
         shownArrival={shownArrival}
       />
     </main>
+  );
+}
+
+// Service and stop search, over the top of the map.
+function FloatingControls({ center }: { center: GeoPosition | undefined }) {
+  return (
+    <div className="absolute inset-x-4 top-11 z-20 flex flex-col gap-2.5">
+      <ServiceToggle />
+      <TransitSearch center={center} variant="floating" />
+    </div>
   );
 }

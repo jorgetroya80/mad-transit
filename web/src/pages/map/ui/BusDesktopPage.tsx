@@ -3,6 +3,7 @@ import { useSelectedStop } from '@/features/select-stop';
 import { useMapLocation, useUserFocus } from '@/shared/lib';
 import { SidePanel } from '@/shared/ui';
 import { BusStopsMap } from '@/widgets/bus-stops-map';
+import { TransitSearch } from '@/widgets/transit-search';
 import { useShownArrival } from '../model/useShownArrival';
 import { BusPanel } from './BusPanel';
 
@@ -25,6 +26,7 @@ export function BusDesktopPage() {
         <div className="flex min-h-full flex-col gap-4">
           <ServiceToggle />
           <h2 className="text-lg font-semibold text-fg">Paradas</h2>
+          <TransitSearch center={location.center} />
           <BusPanel
             number={number}
             location={location}

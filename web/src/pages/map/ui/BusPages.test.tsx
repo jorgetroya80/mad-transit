@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type * as SharedUi from '@/shared/ui';
 import { stubMatchMedia } from '../../../../test/matchMedia';
@@ -66,6 +66,15 @@ describe('bus pages', () => {
       );
     });
 
+    it('opens the stop typed in the search, as when it is tapped on the map', async () => {
+      const user = userEvent.setup();
+      const { router } = await renderBus('/?service=bus');
+
+      await user.type(screen.getByRole('searchbox', { name: 'Buscar parada' }), '72{Enter}');
+
+      await waitFor(() => expect(router.state.location.href).toBe('/?service=bus&stop=72'));
+    });
+
     it('writes ?stop when a stop is tapped', async () => {
       const user = userEvent.setup();
       const { router } = await renderBus('/?service=bus');
@@ -117,6 +126,12 @@ describe('bus pages', () => {
       await renderBus('/?service=bus&stop=72');
 
       expect(await screen.findByRole('list', { name: 'Líneas de la parada' })).toBeInTheDocument();
+    });
+
+    it('has the stop search over the map', async () => {
+      await renderBus('/?service=bus');
+
+      expect(screen.getByRole('searchbox', { name: 'Buscar parada' })).toBeInTheDocument();
     });
   });
 });

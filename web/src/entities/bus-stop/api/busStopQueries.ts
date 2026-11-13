@@ -11,6 +11,7 @@ import {
 } from './fetchBusStops';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * ONE_HOUR_MS;
 const TOO_MANY_REQUESTS = 429;
 const CLIENT_ERROR_MIN = 400;
 const SERVER_ERROR_MIN = 500;
@@ -38,6 +39,9 @@ const stopsOptions = {
   refetchInterval: (query: PollQuery) => nextRequestMs(query, false),
 };
 
+// The whole city's list changes even less often than one area's, so it is kept longer.
+const allStopsOptions = { ...stopsOptions, staleTime: ONE_DAY_MS };
+
 export function useNearbyStops(center: GeoPosition | undefined) {
   const queryKey = busStopKeys.nearby(center);
   const result = useQuery({
@@ -55,7 +59,7 @@ export function useAllStops() {
   const result = useQuery({
     queryKey,
     queryFn: ({ signal }) => fetchAllBusStops({ signal }),
-    ...stopsOptions,
+    ...allStopsOptions,
   });
   return useRestartingRefetch(result, queryKey);
 }

@@ -10,6 +10,7 @@ import { useNeed } from '@/features/filter-by-need';
 import type { SearchItem, SearchSource } from '@/features/search-by-number';
 import { useSelectedStation } from '@/features/select-station';
 import { useMemo } from 'react';
+import { UNAVAILABLE_TEXT } from './unavailableText';
 
 const BICIMAD_SOURCE_ID = 'bicimad';
 const BICIMAD_LABEL = 'BiciMAD';
@@ -18,12 +19,6 @@ const STATION_LABEL_PLURAL = 'estaciones';
 const NO_ITEMS: readonly SearchItem[] = [];
 
 type UnavailableStatus = Extract<DataStatus, 'error' | 'offline'>;
-
-// Without stations there is nothing to search, so the box says when there will be.
-const UNAVAILABLE_TEXT = {
-  error: 'No disponible hasta recuperar los datos',
-  offline: 'Disponible al volver a conectarte',
-} as const satisfies Record<UnavailableStatus, string>;
 
 const SAVED_PLACEHOLDER = 'Busca entre las estaciones guardadas';
 
