@@ -1,6 +1,5 @@
 import { STALE_AFTER_MS } from '@/shared/config';
-import { dataStatus } from './dataStatus';
-import type { DataStatus } from './types';
+import { type DataStatus, dataStatus } from './dataStatus';
 
 const NOW = new Date('2026-10-31T10:00:00Z').getTime();
 

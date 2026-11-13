@@ -1,6 +1,7 @@
 import type { Tone } from '@/shared/ui';
 import { availabilityFor, availabilityLabel, availabilityTone } from './availability';
-import type { AvailabilityLevel, DataStatus, Need, Station } from './types';
+import type { AvailabilityLevel, Need, Station } from './types';
+import { type DataStatus } from '@/shared/lib';
 
 type StationCounts = Pick<Station, 'status' | 'bikes' | 'freeDocks'>;
 

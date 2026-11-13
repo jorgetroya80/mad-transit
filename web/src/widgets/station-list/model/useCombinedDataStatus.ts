@@ -1,11 +1,6 @@
-import {
-  type Coordinates,
-  type DataStatus,
-  type Need,
-  useAllStations,
-  useDataStatus,
-} from '@/entities/station';
+import { type Coordinates, type Need, useAllStations } from '@/entities/station';
 import { useNearbyList } from './useNearbyList';
+import { type DataStatus, useDataStatus } from '@/shared/lib';
 
 type CombinedDataStatus = {
   status: DataStatus;

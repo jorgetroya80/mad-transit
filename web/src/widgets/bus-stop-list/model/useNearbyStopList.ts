@@ -1,4 +1,4 @@
-import { BusRequestError, type BusStop, useNearbyStops } from '@/entities/bus-stop';
+import { type BusStop, blockedUntil, useNearbyStops } from '@/entities/bus-stop';
 import { NOW_TICK_MS } from '@/shared/config';
 import { type GeoPosition, useNow } from '@/shared/lib';
 
@@ -19,15 +19,13 @@ export function useNearbyStopList(center: GeoPosition | undefined): NearbyStopLi
   const query = useNearbyStops(center);
   const { data, isError, error, errorUpdatedAt, isFetching } = query;
   const now = useNow(NOW_TICK_MS);
-  const retryAfterMs = error instanceof BusRequestError ? error.retryAfterMs : undefined;
-  const blockedUntil = isError && retryAfterMs !== undefined ? errorUpdatedAt + retryAfterMs : 0;
 
   return {
     stops: data?.stops,
     isError,
     isStale: data !== undefined && (data.stale || isError),
     updatedAt: data && new Date(data.updatedAt),
-    isRetryBlocked: now.getTime() < blockedUntil,
+    isRetryBlocked: now.getTime() < blockedUntil(error, errorUpdatedAt),
     isRetrying: isError && isFetching,
     retry: () => query.refetch(),
   };

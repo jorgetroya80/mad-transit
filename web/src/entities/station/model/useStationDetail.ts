@@ -1,8 +1,8 @@
 import { StationNotFoundError } from '../api/StationNotFoundError';
 import { useAllStations, useStation } from '../api/stationQueries';
 import { isSameStationNumber } from './stationNumber';
-import type { DataStatus, Station } from './types';
-import { useDataStatus } from './useDataStatus';
+import type { Station } from './types';
+import { type DataStatus, useDataStatus } from '@/shared/lib';
 
 export type StationDetailState =
   | { status: 'not-found' }

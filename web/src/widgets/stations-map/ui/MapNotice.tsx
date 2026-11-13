@@ -1,5 +1,5 @@
-import type { DataStatus } from '@/entities/station';
 import { Icon, Legend } from '@/shared/ui';
+import { type DataStatus } from '@/shared/lib';
 
 export type MapLayout = 'desktop' | 'mobile';
 

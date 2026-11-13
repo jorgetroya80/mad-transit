@@ -1,6 +1,6 @@
-import type { DataStatus, Need } from '@/entities/station';
+import type { Need } from '@/entities/station';
 import { NEARBY_RADIUS_M } from '@/shared/config';
-import { useCountdown, usePendingAction } from '@/shared/lib';
+import { useCountdown, usePendingAction, type DataStatus } from '@/shared/lib';
 import { EmptyState, Spinner, UpdatedAt } from '@/shared/ui';
 import type { NearbyList } from '../model/useNearbyList';
 import { StationRows } from './StationRows';

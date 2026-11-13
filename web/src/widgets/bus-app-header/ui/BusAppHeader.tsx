@@ -1,7 +1,7 @@
 import { useNearbyStops } from '@/entities/bus-stop';
-import { useDataStatus } from '@/entities/station';
+
 import { NOW_TICK_MS } from '@/shared/config';
-import { type GeoPosition, freshnessOf, useNow } from '@/shared/lib';
+import { type GeoPosition, freshnessOf, useNow, useDataStatus } from '@/shared/lib';
 import { AppHeader as Header } from '@/shared/ui';
 
 type BusAppHeaderProps = {

@@ -1,12 +1,11 @@
 import {
   type Coordinates,
-  type DataStatus,
   type Need,
   readNearbyStations,
   type Station,
-  useDataStatus,
   useNearbyStations,
 } from '@/entities/station';
+import { type DataStatus, useDataStatus } from '@/shared/lib';
 
 export type NearbyList = {
   status: DataStatus;

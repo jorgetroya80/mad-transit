@@ -1,6 +1,6 @@
-import { useAllStations, useDataStatus } from '@/entities/station';
+import { useAllStations } from '@/entities/station';
 import { NOW_TICK_MS } from '@/shared/config';
-import { freshnessOf, useNow } from '@/shared/lib';
+import { freshnessOf, useNow, useDataStatus } from '@/shared/lib';
 import { AppHeader as Header } from '@/shared/ui';
 
 // The freshness of the whole list, which the map and the nearby list both come from.

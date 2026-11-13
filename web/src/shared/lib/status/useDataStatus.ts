@@ -1,12 +1,12 @@
 import { NOW_TICK_MS } from '@/shared/config';
-import { useNow, useOnline } from '@/shared/lib';
-import { dataStatus } from './dataStatus';
-import { parseUpdatedAt } from './parseUpdatedAt';
-import type { DataStatus } from './types';
+import { useOnline } from '../network/useOnline';
+import { parseUpdatedAt } from '../time/parseUpdatedAt';
+import { useNow } from '../time/useNow';
+import { type DataStatus, dataStatus } from './dataStatus';
 
-// The slice of a station query this needs. Every station response carries the API's
-// `updatedAt` and its `stale` flag; every station query, the wait before its next request.
-type StationsQuery = {
+// The slice of a query this needs. Every response carries the API's `updatedAt` and its `stale`
+// flag; every query, the wait before its next request.
+type StatusQuery = {
   data: { updatedAt: string; stale: boolean } | undefined;
   isError: boolean;
   dataUpdatedAt: number;
@@ -42,7 +42,7 @@ export function useDataStatus({
   isFetching,
   retryDelayMs,
   refetch,
-}: StationsQuery): DataStatusResult {
+}: StatusQuery): DataStatusResult {
   // Asking again without data resets TanStack's status to pending; the failure still stands
   // until an answer arrives.
   const failed = isError || errorUpdatedAt > dataUpdatedAt;

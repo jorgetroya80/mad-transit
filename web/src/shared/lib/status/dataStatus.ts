@@ -1,5 +1,6 @@
 import { STALE_AFTER_MS } from '@/shared/config';
-import type { DataStatus } from './types';
+
+export type DataStatus = 'loading' | 'ok' | 'stale' | 'error' | 'offline';
 
 type StatusInput = {
   hasData: boolean;

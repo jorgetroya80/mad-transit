@@ -1,6 +1,7 @@
 import { LOW_AVAILABILITY_THRESHOLD } from '@/shared/config';
 import type { Tone } from '@/shared/ui';
-import type { AvailabilityLevel, DataStatus, Need, Station } from './types';
+import type { AvailabilityLevel, Need, Station } from './types';
+import { type DataStatus } from '@/shared/lib';
 
 type Availability = { level: AvailabilityLevel; count: number };
 
