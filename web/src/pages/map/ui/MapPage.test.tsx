@@ -228,12 +228,14 @@ describe('MapPage', () => {
   });
 
   describe('with Bus chosen', () => {
-    it('shows the Paradas panel and the service choice, without the stations map or search', async () => {
+    beforeEach(() => stubGeolocation('granted'));
+
+    it('shows the Paradas panel and the service choice, with the bus stops map, without the search', async () => {
       await renderPage('/?service=bus');
 
       expect(screen.getByRole('region', { name: 'Paradas' })).toBeInTheDocument();
       expect(screen.getByRole('radio', { name: 'Bus' })).toBeChecked();
-      expect(screen.queryByTestId('base-map')).not.toBeInTheDocument();
+      expect(screen.getByTestId('base-map')).toBeInTheDocument();
       expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
     });
 
