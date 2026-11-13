@@ -28,6 +28,22 @@ describe('MapPointParams', () => {
     expectTypeOf<{ tone: 'inverse'; value: string }>().not.toExtend<MapPointParams>();
   });
 
+  it('takes the icon and the value together only in a pill', () => {
+    expectTypeOf({
+      tone: 'info' as const,
+      shape: 'pill' as const,
+      icon: 'bus' as IconName,
+      value: '27',
+    }).toExtend<MapPointParams>();
+    expectTypeOf<{ tone: 'info'; shape: 'pill'; value: string }>().not.toExtend<MapPointParams>();
+    expectTypeOf<{
+      tone: 'info';
+      shape: 'square';
+      icon: IconName;
+      value: string;
+    }>().not.toExtend<MapPointParams>();
+  });
+
   it('takes the tag fill only with the tones whose value is white, so it stays readable', () => {
     expect(MAP_POINT_TAG_TONES).toEqual(['success', 'neutral', 'info']);
     expectTypeOf({ tone: 'neutral' as const, fill: 'tag' as const }).toExtend<MapPointParams>();
@@ -57,6 +73,12 @@ describe('mapPointImageId', () => {
     expect(mapPointImageId(changed)).not.toBe(mapPointImageId(BASE));
   });
 
+  it('gives the pill another id when its value changes', () => {
+    const pill: MapPointParams = { tone: 'info', shape: 'pill', icon: 'bus', value: '27' };
+
+    expect(mapPointImageId(pill)).not.toBe(mapPointImageId({ ...pill, value: '28' }));
+  });
+
   it('tells the value «bus» from the icon bus', () => {
     expect(mapPointImageId({ tone: 'neutral', value: 'bus' })).not.toBe(
       mapPointImageId({ tone: 'neutral', icon: 'bus' }),
@@ -68,6 +90,7 @@ describe('mapPointImageId', () => {
       [false, true].flatMap((selected) => [
         mapPointImageId({ tone, selected, value: '3' }),
         mapPointImageId({ tone, selected, shape: 'square', icon: 'bus' }),
+        mapPointImageId({ tone, selected, shape: 'pill', icon: 'bus', value: '27' }),
       ]),
     );
     const tagIds = MAP_POINT_TAG_TONES.flatMap((tone) =>

@@ -1,17 +1,24 @@
 import { useAllStations, useDataStatus } from '@/entities/station';
-import { UpdatedIndicator } from '@/shared/ui';
+import { NOW_TICK_MS } from '@/shared/config';
+import { useNow } from '@/shared/lib';
+import { AppHeader as Header } from '@/shared/ui';
+import { freshnessOf } from '../model/freshnessOf';
 
 // The freshness of the whole list, which the map and the nearby list both come from.
 export function AppHeader() {
   const { status, updatedAt, retry } = useDataStatus(useAllStations());
+  const now = useNow(NOW_TICK_MS);
+  const freshness = freshnessOf(status, updatedAt, now);
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface px-4">
-      <div>
-        <h1 className="text-lg leading-tight font-semibold text-fg">Mad Transit</h1>
-        <p className="text-body text-fg-muted">BiciMAD en tiempo real</p>
-      </div>
-      <UpdatedIndicator status={status} updatedAt={updatedAt} onRetry={retry} />
-    </header>
+    <Header
+      title="Mad Transit"
+      subtitle="BiciMAD en tiempo real"
+      statusText={freshness.text}
+      statusTone={freshness.tone}
+      showRefresh={freshness.action !== undefined}
+      refreshLabel={freshness.action}
+      onRefresh={retry}
+    />
   );
 }
