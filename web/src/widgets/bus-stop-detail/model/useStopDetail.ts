@@ -1,4 +1,10 @@
-import { BusRequestError, type BusStopInfo, useNearbyStops, useStop } from '@/entities/bus-stop';
+import {
+  BusRequestError,
+  type BusStopInfo,
+  blockedUntil,
+  useNearbyStops,
+  useStop,
+} from '@/entities/bus-stop';
 import { NOW_TICK_MS } from '@/shared/config';
 import { type GeoPosition, useNow } from '@/shared/lib';
 
@@ -18,12 +24,6 @@ export type StopDetail = {
 };
 
 const NOT_FOUND = 404;
-
-// Retry-After counts from the failure; without a failure with it, nothing blocks.
-function blockedUntil(error: unknown, failedAt: number): number {
-  if (!(error instanceof BusRequestError) || error.retryAfterMs === undefined) return 0;
-  return failedAt + error.retryAfterMs;
-}
 
 // The lines and the address come only with the stop, so the detail always asks for it. The
 // distance comes from the nearby list, the same query the list uses, so it adds no request.

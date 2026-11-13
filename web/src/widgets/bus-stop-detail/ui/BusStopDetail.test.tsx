@@ -2,7 +2,11 @@ import type { ComponentProps } from 'react';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { busStopDetailFixture, busStopsFixture } from '@/shared/api/mocks/fixtures';
+import {
+  busArrivalsFixture,
+  busStopDetailFixture,
+  busStopsFixture,
+} from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env } from '@/shared/config';
 import type { GeoPosition } from '@/shared/lib';
@@ -107,6 +111,36 @@ describe('BusStopDetail', () => {
     await user.click(screen.getByRole('button', { name: 'Volver a la lista' }));
 
     expect(router.state.location.href).toBe('/?service=bus');
+  });
+
+  it('does not ask for the arrivals of a stop that is not found', async () => {
+    let asked = 0;
+    server.use(
+      http.get(`${BUS_STOPS_URL}/:number/arrivals`, () => {
+        asked += 1;
+        return HttpResponse.json(busArrivalsFixture);
+      }),
+    );
+
+    await renderDetail('99999999');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Parada no encontrada' }),
+    ).toBeInTheDocument();
+    expect(asked).toBe(0);
+  });
+
+  it('shows the arrivals, and keeps the lines when they fail', async () => {
+    server.use(
+      http.get(`${BUS_STOPS_URL}/:number/arrivals`, () =>
+        HttpResponse.json({ title: 'Bad Gateway', status: BAD_GATEWAY }, { status: BAD_GATEWAY }),
+      ),
+    );
+
+    await renderDetail();
+
+    expect(await screen.findByText('Llegadas no disponibles')).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: 'Líneas de la parada' })).toBeInTheDocument();
   });
 
   it('closes the detail with its back button', async () => {

@@ -5,6 +5,7 @@ import { type GeoPosition, usePendingAction } from '@/shared/lib';
 import { Banner, EmptyState, IconButton, Spinner, StaleNotice, Tag } from '@/shared/ui';
 import { type LineRow, toLineRows } from '../lib/toLineRows';
 import { type StopDetail, useStopDetail } from '../model/useStopDetail';
+import { Arrivals } from './Arrivals';
 
 type Layout = 'desktop' | 'mobile';
 
@@ -171,7 +172,10 @@ export function BusStopDetail({ number, center, layout }: BusStopDetailProps) {
         <StaleNotice layout={layout} updatedAt={detail.updatedAt} onRetry={detail.retry} />
       ) : null}
       {detail.stop ? (
-        <Lines lines={detail.stop.lines} layout={layout} />
+        <>
+          <Arrivals number={number} />
+          <Lines lines={detail.stop.lines} layout={layout} />
+        </>
       ) : (
         <Pending detail={detail} />
       )}
