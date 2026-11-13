@@ -2,10 +2,10 @@ import { ServiceToggle } from '@/features/select-service';
 import { useSelectedStop } from '@/features/select-stop';
 import { useMapLocation, useUserFocus } from '@/shared/lib';
 import { BottomSheet } from '@/shared/ui';
-import { BusStopList } from '@/widgets/bus-stop-list';
 import { BusStopsMap } from '@/widgets/bus-stops-map';
 import { useMapFocusPadding } from '../model/useMapFocusPadding';
 import { useSheetSnap } from '../model/useSheetSnap';
+import { BusPanel } from './BusPanel';
 import { RecenterButton } from './RecenterButton';
 
 // Full-screen map with the service choice floating on top, and the list in the bottom sheet.
@@ -38,14 +38,7 @@ export function BusMobilePage() {
         hideLabel="Ocultar lista"
         collapsedLabel="Mostrar paradas cercanas"
       >
-        <BusStopList
-          center={location.center}
-          isApproximateLocation={location.isApproximateLocation}
-          isLocationDenied={location.isLocationDenied}
-          layout="mobile"
-          onLocate={location.locate}
-          isLocating={location.status === 'pending'}
-        />
+        <BusPanel number={number} location={location} layout="mobile" />
       </BottomSheet>
       <BusStopsMap
         className="col-start-1 row-start-1 h-full w-full"

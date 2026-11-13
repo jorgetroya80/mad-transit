@@ -6,6 +6,7 @@ const mapRoute = getRouteApi('/');
 export type SelectedStop = {
   number: string | undefined;
   select: (number: string) => void;
+  clear: () => void;
 };
 
 // `?stop` is the only source of truth. Selecting pushes an entry so Back closes the detail.
@@ -17,6 +18,10 @@ export function useSelectedStop(): SelectedStop {
     (number: string) => navigate({ search: (prev) => ({ ...prev, stop: number }) }),
     [navigate],
   );
+  const clear = useCallback(
+    () => navigate({ search: (prev) => ({ ...prev, stop: undefined }) }),
+    [navigate],
+  );
 
-  return { number: stop, select };
+  return { number: stop, select, clear };
 }

@@ -74,6 +74,26 @@ describe('bus pages', () => {
 
       expect(router.state.location.href).toBe('/?service=bus&stop=72');
     });
+
+    it('shows the detail of ?stop in the panel, and its back button lists the stops again', async () => {
+      const user = userEvent.setup();
+      const { router } = await renderBus('/?service=bus&stop=72');
+
+      expect(await screen.findByRole('table', { name: 'Líneas de la parada' })).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Paradas cercanas' })).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Volver a la lista' }));
+
+      expect(await screen.findByRole('button', { name: STOP_LABEL })).toBeInTheDocument();
+      expect(router.state.location.href).toBe('/?service=bus');
+    });
+
+    it('says the stop of ?stop does not exist', async () => {
+      await renderBus('/?service=bus&stop=99999999');
+
+      expect(
+        await screen.findByRole('heading', { name: 'Parada no encontrada' }),
+      ).toBeInTheDocument();
+    });
   });
 
   describe('below md', () => {
@@ -91,6 +111,12 @@ describe('bus pages', () => {
         'aria-expanded',
         'true',
       );
+    });
+
+    it('shows the detail of ?stop in the sheet', async () => {
+      await renderBus('/?service=bus&stop=72');
+
+      expect(await screen.findByRole('list', { name: 'Líneas de la parada' })).toBeInTheDocument();
     });
   });
 });

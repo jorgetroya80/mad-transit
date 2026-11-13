@@ -2,8 +2,8 @@ import { ServiceToggle } from '@/features/select-service';
 import { useSelectedStop } from '@/features/select-stop';
 import { useMapLocation, useUserFocus } from '@/shared/lib';
 import { SidePanel } from '@/shared/ui';
-import { BusStopList } from '@/widgets/bus-stop-list';
 import { BusStopsMap } from '@/widgets/bus-stops-map';
+import { BusPanel } from './BusPanel';
 
 // The stops map beside the panel, as the stations map is beside its own.
 export function BusDesktopPage() {
@@ -23,14 +23,7 @@ export function BusDesktopPage() {
         <div className="flex min-h-full flex-col gap-4">
           <ServiceToggle />
           <h2 className="text-lg font-semibold text-fg">Paradas</h2>
-          <BusStopList
-            center={location.center}
-            isApproximateLocation={location.isApproximateLocation}
-            isLocationDenied={location.isLocationDenied}
-            layout="desktop"
-            onLocate={location.locate}
-            isLocating={location.status === 'pending'}
-          />
+          <BusPanel number={number} location={location} layout="desktop" />
         </div>
       </SidePanel>
       <div className="relative min-w-0 flex-1">

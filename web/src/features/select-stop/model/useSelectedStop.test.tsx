@@ -4,12 +4,15 @@ import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { useSelectedStop } from './useSelectedStop';
 
 function StopProbe() {
-  const { number, select } = useSelectedStop();
+  const { number, select, clear } = useSelectedStop();
   return (
     <>
       <output>{number ?? 'ninguna'}</output>
       <button type="button" onClick={() => select('72')}>
         Elegir 72
+      </button>
+      <button type="button" onClick={clear}>
+        Quitar parada
       </button>
     </>
   );
@@ -51,6 +54,17 @@ describe('useSelectedStop', () => {
     expect(screen.getByRole('status')).toHaveTextContent('72');
 
     await act(async () => router.history.back());
+
+    expect(searchParams(router)).toEqual({ service: 'bus' });
+    expect(screen.getByRole('status')).toHaveTextContent('ninguna');
+  });
+
+  it('clears the stop from the URL and keeps the service', async () => {
+    const { router } = await renderWithRouter(<StopProbe />, {
+      initialEntries: ['/?service=bus&stop=72'],
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar parada' }));
 
     expect(searchParams(router)).toEqual({ service: 'bus' });
     expect(screen.getByRole('status')).toHaveTextContent('ninguna');
