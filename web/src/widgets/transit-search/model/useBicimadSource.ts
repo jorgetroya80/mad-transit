@@ -1,9 +1,7 @@
 import {
   type Coordinates,
-  type DataStatus,
   type Station,
   useAllStations,
-  useDataStatus,
   useNearbyStations,
 } from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
@@ -11,6 +9,7 @@ import type { SearchItem, SearchSource } from '@/features/search-by-number';
 import { useSelectedStation } from '@/features/select-station';
 import { useMemo } from 'react';
 import { UNAVAILABLE_TEXT } from './unavailableText';
+import { type DataStatus, useDataStatus } from '@/shared/lib';
 
 const BICIMAD_SOURCE_ID = 'bicimad';
 const BICIMAD_LABEL = 'BiciMAD';

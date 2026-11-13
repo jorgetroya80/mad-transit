@@ -4,7 +4,6 @@ import {
   availabilityStatusText,
   availabilityText,
   availabilityTone,
-  type DataStatus,
   formatDistance,
   formatSpokenDistance,
   formatSpokenWalk,
@@ -14,6 +13,7 @@ import {
   type Station,
 } from '@/entities/station';
 import { CountBadge, ListItem } from '@/shared/ui';
+import { type DataStatus } from '@/shared/lib';
 
 type StationRowsProps = {
   stations: readonly Station[];

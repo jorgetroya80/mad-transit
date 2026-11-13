@@ -1,18 +1,16 @@
 import type { ComponentProps } from 'react';
 import { NOW_TICK_MS } from '@/shared/config';
-import { formatRelative, isJustNow, useNow, usePendingAction } from '@/shared/lib';
+import { type DataStatus, formatRelative, isJustNow, useNow, usePendingAction } from '@/shared/lib';
 import { Button } from '../button';
 import { StatusText } from '../status-text';
 
-// The same union as entities/station's DataStatus, which shared cannot import.
-type FreshnessStatus = 'loading' | 'ok' | 'stale' | 'error' | 'offline';
-type LoadedStatus = Exclude<FreshnessStatus, 'loading'>;
+type LoadedStatus = Exclude<DataStatus, 'loading'>;
 
 // A returned promise keeps the button busy until it settles; anything else is fire and forget.
 type Retry = () => unknown;
 
 type UpdatedIndicatorProps = {
-  status: FreshnessStatus;
+  status: DataStatus;
   updatedAt: Date | undefined;
   onRetry: Retry;
 };

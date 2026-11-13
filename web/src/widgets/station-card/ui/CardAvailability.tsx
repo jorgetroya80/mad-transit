@@ -4,11 +4,11 @@ import {
   availabilitySpokenText,
   availabilityStatusText,
   availabilityTone,
-  type DataStatus,
   type Need,
   type Station,
 } from '@/entities/station';
 import { StatTile } from '@/shared/ui';
+import { type DataStatus } from '@/shared/lib';
 
 type CardAvailabilityProps = { station: Station; status: DataStatus };
 

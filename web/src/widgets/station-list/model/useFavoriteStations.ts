@@ -1,6 +1,7 @@
-import { type DataStatus, type Station, useAllStations, useDataStatus } from '@/entities/station';
+import { type Station, useAllStations } from '@/entities/station';
 import { useFavorites } from '@/features/toggle-favorite';
 import { pickFavorites } from '../lib/pickFavorites';
+import { type DataStatus, useDataStatus } from '@/shared/lib';
 
 const NO_STATIONS: readonly Station[] = [];
 

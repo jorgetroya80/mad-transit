@@ -2,11 +2,11 @@ import {
   availabilityFor,
   availabilityLabel,
   availabilityTone,
-  type DataStatus,
   type Need,
   type Station,
 } from '@/entities/station';
 import type { MapPoint } from '@/shared/ui';
+import { type DataStatus } from '@/shared/lib';
 
 type MapStation = Pick<Station, 'number' | 'lat' | 'lon' | 'status' | 'bikes' | 'freeDocks'>;
 

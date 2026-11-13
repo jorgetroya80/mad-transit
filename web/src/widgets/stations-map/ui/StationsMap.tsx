@@ -4,13 +4,13 @@ import {
   isSameStationNumber,
   type Station,
   useAllStations,
-  useDataStatus,
 } from '@/entities/station';
 import { useNeed } from '@/features/filter-by-need';
 import { useSelectedStation } from '@/features/select-station';
 import { BaseMap, type FocusPadding, type MapControlsOptions } from '@/shared/ui';
 import { toMapPoints } from '../lib/toMapPoints';
 import { type MapLayout, MapNotice } from './MapNotice';
+import { useDataStatus } from '@/shared/lib';
 
 type StationsMapProps = {
   // Where the list is, so the offline layer can point to it.
