@@ -41,7 +41,7 @@ Que un usuario sepa en menos de 5 segundos qué parada de autobús tiene cerca y
 5. **Detalle.** Número, nombre, dirección y distancia; llegadas por orden ("Llegando" con 0 min, "Sin estimación" con `noEstimate`); y las líneas con horario y frecuencia, en tabla en escritorio y en lista en móvil (decisión 9). Las nocturnas (`N…`) muestran su horario tal cual ("23:30–05:30") y una etiqueta "Nocturno" en texto, no solo con color. Un número inexistente muestra "Parada no encontrada". La distancia sale de la lista de cercanas (como `useStationDistance`); fuera de los 500 m no se muestra. Si fallan solo las llegadas (por ejemplo, un `503` porque tienen más de 2 min), el detalle se sigue mostrando con el aviso "Llegadas no disponibles" y un botón para reintentar. El panel se titula "Paradas" con Bus elegido.
 6. **Datos y polling.** Las paradas cercanas casi no cambian: `staleTime` de 1 h, sin `refetchInterval`. Las llegadas se piden solo con una parada abierta, cada 30 s (el TTL del API) y no con la pestaña oculta.
 7. **Buscador.** `transit-search` añade una fuente `bus` (`useBusSource`) con todas las paradas (`GET /v1/bus/stops` sin `near`). La pide solo cuando el usuario elige Bus, no al cargar la app. `SearchByNumber` recibe la fuente activa según `?service`. Con una sola fuente no pinta `SourcePicker`, así BiciMAD queda igual que hoy, pero sin su selector (decisión 5).
-8. **Autobús en el mapa.** "Ver en el mapa" pinta el autobús con un icono distinto del de parada (vehículo en un círculo, con su línea como texto) y encuadra la parada y el autobús juntos. La posición se mueve con cada sondeo de 30 s. Solo se muestra un autobús a la vez, y se quita al cerrar el detalle o al elegir otra llegada. No va en la URL: es un estado de la vista. Una llegada sin posición (`busLat` a `null`) no muestra el botón. El botón dice qué hace con texto accesible: "Ver en el mapa el autobús de la línea 27".
+8. **Autobús en el mapa.** "Ver en el mapa" pinta el autobús como pastilla con icono `bus` y su línea dentro (`MapPoint` con `shape: 'pill'`, una sola imagen) y encuadra la parada y el autobús juntos. La posición se mueve con cada sondeo de 30 s. Solo se muestra un autobús a la vez, y se quita al cerrar el detalle o al elegir otra llegada. No va en la URL: es un estado de la vista. Una llegada sin posición (`busLat` a `null`) no muestra el botón. El botón dice qué hace con texto accesible: "Ver en el mapa el autobús de la línea 27".
 9. **Cliente.** Los tipos y las funciones salen de la versión `0.9.0` de `@jorgetroya80/mad-transit-client` (release de api-bus, api 0.9.0). MSW sirve fixtures con esos tipos para desarrollar y testear sin el API.
 
 ### Errores: qué ve el usuario y qué hace la app
@@ -162,7 +162,7 @@ export function formatArrival({ minutes, noEstimate }: Arrival): string {
 
 ## Open Questions
 
-1. **Vehículo en el mapa.** `MapPointParams` admite icono o texto, no los dos. El vehículo necesita icono `bus` y la línea como texto. El plan decide cómo se pinta.
+Ninguna. El vehículo se pinta como pastilla de `MapPoint` (`shape: 'pill'`), aprobado el 2026-11-13.
 
 ## Changelog
 
@@ -174,4 +174,5 @@ export function formatArrival({ minutes, noEstimate }: Arrival): string {
 - 2026-10-30: se quita `inService` (el API responde `502` estándar); ese caso entra en la fila de errores 5xx.
 - 2026-10-30: el cupo de llegadas pasa a 150.000 al día (revisión del PR #87); la decisión 6 se mantiene.
 - 2026-11-12: cruce con el diseño del canvas «Mad Transit · rediseño» y con el código actual. Decisiones 8 (sin ubicación desde Sol, con distancias y «Usar mi ubicación»), 9 (tabla en escritorio, lista en móvil) y 10 (cupo agotado con copy). Supuestos renumerados. Se cambian referencias a componentes y a iconos que ya no existen (`StateMessage`, `PanelNotice`, `QUERY_RETRY_COUNT`, `LineBadge`, SVG a mano), y el cliente fijado en 0.9.0. Aprobada por el usuario el mismo día, tras la corrección de la decisión 8.
+- 2026-11-13: vehículo en el mapa como pastilla (`MapPoint` con `shape: 'pill'`, icono `bus` y línea dentro), en vez de círculo con texto; pregunta abierta cerrada. Cabecera de la app como `AppHeader` genérico en `shared/ui`: título, subtítulo, logo, estado y refresco por props, sin valores de BiciMAD. La tabla de líneas usa `Table` genérica de `shared/ui`. Aprobado por el usuario.
 - 2026-11-12: corrección de códigos. El cupo EMT agotado responde `503` con `Retry-After` (no `429`). El `429` con `Retry-After` es el límite por IP del API. Verificado en `ProblemDetailsHandler.kt` y en el contrato OpenAPI de los endpoints de bus. Decisión 10 y la tabla de errores actualizadas.

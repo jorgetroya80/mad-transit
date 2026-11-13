@@ -64,6 +64,16 @@ T1-T9 ─► T10 cierre
   - Archivos: `entities/station/api/stationQueries.ts`, `shared/lib/...` (nuevo fichero) (+ test).
   - Dependencias: ninguna.
 
+- [ ] **T0c: Piezas genéricas de la cabecera, la tabla y la pastilla** (S, ~2 h)
+  - Descripción: `shared/ui/table` (`Table` genérica: columnas y filas por props, usa `Tag`, sin palabras de dominio); `shared/ui/app-header` (`AppHeader` genérica: título, subtítulo, logo, estado y botón de refresco por props, sin subtítulo por defecto); `MapPointParams` con `shape: 'pill'` (icono y valor a la vez). BiciMAD pasa a un wrapper de cabecera con sus datos (`widgets/app-header`) sin cambiar su comportamiento.
+  - Aceptación:
+    - `Table` y `AppHeader` no contienen palabras de dominio (`domainWords.test.ts`).
+    - `MapPoint` con `shape: 'pill'` dibuja icono y valor en una sola imagen (test de `mapPointParams`).
+    - Los tests de BiciMAD de la cabecera pasan sin cambiar aserciones.
+  - Verificación: `pnpm --filter web test`; `pnpm --filter web depcruise`; `pnpm --filter web build`.
+  - Archivos: `shared/ui/table/*`, `shared/ui/app-header/*` (+ tests), `shared/ui/map-point/mapPointParams.ts` (+ test), `widgets/app-header/ui/AppHeader.tsx`, `shared/ui/index.ts`.
+  - Dependencias: ninguna. PR `refactor(web)` aparte, antes de PR 3.
+
 ### Checkpoint: Fase 0
 
 - [ ] `pnpm check:task` en verde; PR `refactor(web)` mergeado antes de empezar la fase 1.
@@ -156,8 +166,8 @@ T1-T9 ─► T10 cierre
   - Dependencias: T6.
 
 - [ ] **T8: "Ver en el mapa" (posición del autobús)** (M, ~1 h 30 min)
-  - Descripción: `base-map` añade `fitPoints`. Botón "Ver en el mapa el autobús de la línea X" en cada llegada con posición (`busLat` no nulo). El autobús se pinta como círculo con icono `bus` y la línea como texto, junto a la parada. Se mueve con cada sondeo y se quita al cerrar el detalle, al elegir otra llegada o al caducar las llegadas.
-  - Antes de empezar: decidir cómo pintar icono y línea a la vez, porque `MapPointParams` admite uno u otro (pregunta abierta 1 de la spec). Opciones: (a) etiqueta HTML en el portal de `base-map`; (b) imagen propia dibujada en canvas. Se pregunta al usuario antes de codificar.
+  - Descripción: `base-map` añade `fitPoints`. Botón "Ver en el mapa el autobús de la línea X" en cada llegada con posición (`busLat` no nulo). El autobús se pinta como pastilla: `MapPoint` con `shape: 'pill'`, icono `bus` y la línea dentro (ampliar `MapPointParams` en `shared/ui/map-point`, aprobado el 2026-11-13). Se mueve con cada sondeo y se quita al cerrar el detalle, al elegir otra llegada o al caducar las llegadas.
+  - Dependencias extra: T0c (la cabecera y la tabla genéricas no bloquean T8, pero el orden de PRs sí).
   - Aceptación:
     - SC5: pulsar el botón muestra el autobús y encuadra la parada y el autobús juntos (`fitPoints`).
     - Sin `busLat` no hay botón; con las llegadas caducadas, el autobús desaparece.
@@ -213,6 +223,7 @@ Unas 14 h en total. Fase 1 ~4 h 30 min, fase 2 ~5 h y fase 3 ~4 h 30 min. T8 pue
 - 2026-10-30: borrador a partir de la spec aprobada.
 - 2026-10-30: se quita `inService`; un `502` de las llegadas se trata como el resto de errores.
 - 2026-11-12: un PR por fase (cuatro PRs pequeños) en vez de uno solo, con un commit por tarea.
+- 2026-11-13: T0c añadida (Table y AppHeader genéricas, pastilla de MapPoint). T8 usa la pastilla; pregunta abierta del vehículo cerrada. Aprobado por el usuario.
 - 2026-11-12: fase 0 añadida (T0a y T0b, refactor previo a bus), tras la revisión de huecos entre plan y código.
 - 2026-11-12: plan actualizado con la spec revisada (decisiones 8 a 10, supuestos renumerados). Cambios: cliente 0.9.0 (api-bus ya implementado); reutilización de `shared/ui/icons`, `map-point`, `ListItem`, `Tag`, `StatusText`, `EmptyState`, `Banner`, `ApproximateLocationNotice` y la pauta de reintentos de BiciMAD; T3 sin SVG a mano; T4 sin ubicación desde Sol; T5 tabla en escritorio y lista en móvil; T6 con el estado de cupo (`429`); T8 con la pregunta abierta del vehículo. Aprobado por el usuario el mismo día.
 - 2026-11-12: corrección de códigos verificada en el API: cupo EMT agotado = `503` con `Retry-After`; `429` con `Retry-After` = límite por IP del API. Tareas T1 y T6 actualizadas.
