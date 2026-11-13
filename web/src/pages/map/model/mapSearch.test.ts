@@ -54,6 +54,16 @@ describe('validateMapSearch', () => {
     });
   });
 
+  it.each([['72a'], ['7 2'], ['-1'], ['72.5'], ['1e3'], [' 72']])(
+    'drops stop %j, which is not only digits',
+    (stop) => {
+      expect(validateMapSearch({ service: 'bus', stop })).toEqual({
+        need: 'bikes',
+        service: 'bus',
+      });
+    },
+  );
+
   it('keeps the station next to a bus stop', () => {
     expect(validateMapSearch({ service: 'bus', stop: '72', station: '538' })).toEqual({
       station: '538',
