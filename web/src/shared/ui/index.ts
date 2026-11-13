@@ -1,3 +1,4 @@
+export { AppHeader } from './app-header';
 export { Banner } from './banner';
 export { BaseMap, type FocusPadding, type MapControlsOptions, type MapPoint } from './base-map';
 export { BottomSheet, type SheetSnap, useBottomSheetOverlap } from './bottom-sheet';
@@ -35,5 +36,6 @@ export { SidePanel } from './side-panel';
 export { Spinner } from './spinner';
 export { StatTile } from './stat-tile';
 export { StatusText } from './status-text';
+export { Table, type TableCell, type TableColumn, type TableRow } from './table';
 export { Tag } from './tag';
 export { type LineStyle, TONES, type Tone, toneLineStyle } from './tone';
