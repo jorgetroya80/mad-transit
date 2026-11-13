@@ -1,4 +1,10 @@
-import { ArrivalRow, type FreshArrivals, useFreshArrivals } from '@/entities/bus-stop';
+import {
+  type ArrivalRef,
+  ArrivalRow,
+  type FreshArrivals,
+  isSameArrival,
+  useFreshArrivals,
+} from '@/entities/bus-stop';
 import { usePendingAction } from '@/shared/lib';
 import { Banner, Spinner, UpdatedAt } from '@/shared/ui';
 
@@ -41,8 +47,14 @@ function Unavailable({ arrivals }: { arrivals: FreshArrivals }) {
   return <Retry arrivals={arrivals} />;
 }
 
+type ArrivalsProps = {
+  number: string;
+  shownArrival?: ArrivalRef;
+  onToggleOnMap?: (arrival: ArrivalRef) => void;
+};
+
 // Mounted only with a stop that loaded: a missing stop never asks for its arrivals.
-export function Arrivals({ number }: { number: string }) {
+export function Arrivals({ number, shownArrival, onToggleOnMap }: ArrivalsProps) {
   const arrivals = useFreshArrivals(number);
   if (arrivals.isUnavailable) return <Unavailable arrivals={arrivals} />;
   if (arrivals.arrivals === undefined) {
@@ -62,7 +74,12 @@ export function Arrivals({ number }: { number: string }) {
       ) : (
         <ul aria-label="Llegadas" className="flex flex-col">
           {arrivals.arrivals.map((arrival) => (
-            <ArrivalRow key={`${arrival.line} ${arrival.destination}`} arrival={arrival} />
+            <ArrivalRow
+              key={`${arrival.line} ${arrival.destination}`}
+              arrival={arrival}
+              shownOnMap={shownArrival !== undefined && isSameArrival(arrival, shownArrival)}
+              onToggleOnMap={onToggleOnMap && (() => onToggleOnMap(arrival))}
+            />
           ))}
         </ul>
       )}

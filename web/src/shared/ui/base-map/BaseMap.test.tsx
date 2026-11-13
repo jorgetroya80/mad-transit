@@ -71,6 +71,7 @@ const maplibre = vi.hoisted(() => {
     readonly off = vi.fn<(type: string, handler: Handler) => void>();
     readonly addLayer = vi.fn<(layer: { id: string; source?: unknown }) => void>();
     readonly easeTo = vi.fn<(options: unknown) => void>();
+    readonly fitBounds = vi.fn<(bounds: unknown, options: unknown) => void>();
     readonly zoomIn = vi.fn<() => void>();
     readonly zoomOut = vi.fn<() => void>();
     readonly setMissingStyleImageResolver =
@@ -505,6 +506,53 @@ describe('BaseMap points', () => {
       padding: { bottom: 400 },
       duration: 0,
     });
+  });
+
+  it('fits the map to the fit points once loaded and when they move', () => {
+    const fitPoints = [
+      { lng: -3.7, lat: 40.4 },
+      { lng: -3.71, lat: 40.42 },
+    ];
+    const { rerender } = render(<BaseMap fitPoints={fitPoints} />);
+    const map = renderedMap();
+    expect(map.fitBounds).not.toHaveBeenCalled();
+
+    act(() => map.fire('load'));
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [
+        [-3.71, 40.4],
+        [-3.7, 40.42],
+      ],
+      { padding: { bottom: 0 } },
+    );
+
+    rerender(<BaseMap fitPoints={fitPoints} />);
+    expect(map.fitBounds).toHaveBeenCalledOnce();
+
+    rerender(<BaseMap fitPoints={[{ lng: -3.7, lat: 40.41 }]} />);
+    expect(map.fitBounds).toHaveBeenCalledTimes(2);
+  });
+
+  it('fits the points above the bottom padding, without animation for reduced motion', () => {
+    stubMatchMedia(true, true);
+    render(<BaseMap fitPoints={[{ lng: -3.7, lat: 40.4 }]} focusPadding={{ bottom: 400 }} />);
+    const map = loadedMap();
+
+    expect(map.fitBounds).toHaveBeenCalledExactlyOnceWith(
+      [
+        [-3.7, 40.4],
+        [-3.7, 40.4],
+      ],
+      { padding: { bottom: 400 }, duration: 0 },
+    );
+  });
+
+  it('fits the points instead of easing to the focus while they are set', () => {
+    render(<BaseMap focus={{ lng: -3.7, lat: 40.4 }} fitPoints={[{ lng: -3.71, lat: 40.41 }]} />);
+    const map = loadedMap();
+
+    expect(map.easeTo).not.toHaveBeenCalled();
+    expect(map.fitBounds).toHaveBeenCalledOnce();
   });
 });
 

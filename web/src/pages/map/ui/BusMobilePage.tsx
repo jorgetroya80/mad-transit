@@ -4,6 +4,7 @@ import { useMapLocation, useUserFocus } from '@/shared/lib';
 import { BottomSheet } from '@/shared/ui';
 import { BusStopsMap } from '@/widgets/bus-stops-map';
 import { useMapFocusPadding } from '../model/useMapFocusPadding';
+import { useShownArrival } from '../model/useShownArrival';
 import { useSheetSnap } from '../model/useSheetSnap';
 import { BusPanel } from './BusPanel';
 import { RecenterButton } from './RecenterButton';
@@ -13,6 +14,7 @@ import { RecenterButton } from './RecenterButton';
 export function BusMobilePage() {
   const location = useMapLocation();
   const { number } = useSelectedStop();
+  const { shownArrival, toggleOnMap } = useShownArrival(number);
   const sheet = useSheetSnap(number);
   const focusPadding = useMapFocusPadding(sheet.snap);
   const { focusSelected, focusSelection, locate } = useUserFocus(number, location.locate);
@@ -38,7 +40,13 @@ export function BusMobilePage() {
         hideLabel="Ocultar lista"
         collapsedLabel="Mostrar paradas cercanas"
       >
-        <BusPanel number={number} location={location} layout="mobile" />
+        <BusPanel
+          number={number}
+          location={location}
+          layout="mobile"
+          shownArrival={shownArrival}
+          onToggleOnMap={toggleOnMap}
+        />
       </BottomSheet>
       <BusStopsMap
         className="col-start-1 row-start-1 h-full w-full"
@@ -49,6 +57,7 @@ export function BusMobilePage() {
         focusPadding={focusPadding}
         focusSelected={focusSelected}
         onSelect={focusSelection}
+        shownArrival={shownArrival}
       />
     </main>
   );

@@ -8,7 +8,13 @@ import { ControlGroup } from '../control-group';
 import { IconButton } from '../icon-button';
 import type { FocusPadding, LngLat, MapPoint } from './points';
 import { useMapPopup } from './useMapPopup';
-import { useEaseTo, useMapLibre, usePointsData, useUserLocationData } from './useMapLibre';
+import {
+  useEaseTo,
+  useFitPoints,
+  useMapLibre,
+  usePointsData,
+  useUserLocationData,
+} from './useMapLibre';
 
 // MapLibre derives the worker URL from its own import.meta.url, which neither Vite's dev
 // pre-bundling nor the production build preserve; Vite bundles the worker and gives its URL.
@@ -35,6 +41,8 @@ export type BaseMapProps = {
   selectedId?: string;
   onSelectPoint?: (id: string) => void;
   focus?: LngLat;
+  // Frames these points instead of the focus while they are set.
+  fitPoints?: readonly LngLat[];
   focusPadding?: FocusPadding;
   userLocation?: LngLat;
   // Shows the zoom controls, and recentering if it has `onRecenter`; without it the map has none.
@@ -92,6 +100,7 @@ export function BaseMap({
   selectedId,
   onSelectPoint,
   focus,
+  fitPoints,
   focusPadding,
   userLocation,
   controls,
@@ -102,7 +111,8 @@ export function BaseMap({
   const map = loadedMap?.map;
   usePointsData(loadedMap, points, selectedId);
   useUserLocationData(map, userLocation);
-  useEaseTo(map, focus, focusPadding);
+  useEaseTo(map, fitPoints ? undefined : focus, focusPadding);
+  useFitPoints(map, fitPoints, focusPadding);
   const popupElement = useMapPopup(map, popup?.at);
 
   // MapLibre adds its canvas next to the controls and leaves them alone. `isolate` keeps the

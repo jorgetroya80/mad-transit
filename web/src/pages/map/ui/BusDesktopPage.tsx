@@ -3,12 +3,14 @@ import { useSelectedStop } from '@/features/select-stop';
 import { useMapLocation, useUserFocus } from '@/shared/lib';
 import { SidePanel } from '@/shared/ui';
 import { BusStopsMap } from '@/widgets/bus-stops-map';
+import { useShownArrival } from '../model/useShownArrival';
 import { BusPanel } from './BusPanel';
 
 // The stops map beside the panel, as the stations map is beside its own.
 export function BusDesktopPage() {
   const location = useMapLocation();
   const { number } = useSelectedStop();
+  const { shownArrival, toggleOnMap } = useShownArrival(number);
   const { focusSelected, focusSelection, locate } = useUserFocus(number, location.locate);
   // The browser would not ask a denied permission again, so the map only keeps its zoom.
   const controls = {
@@ -23,7 +25,13 @@ export function BusDesktopPage() {
         <div className="flex min-h-full flex-col gap-4">
           <ServiceToggle />
           <h2 className="text-lg font-semibold text-fg">Paradas</h2>
-          <BusPanel number={number} location={location} layout="desktop" />
+          <BusPanel
+            number={number}
+            location={location}
+            layout="desktop"
+            shownArrival={shownArrival}
+            onToggleOnMap={toggleOnMap}
+          />
         </div>
       </SidePanel>
       <div className="relative min-w-0 flex-1">
@@ -36,6 +44,7 @@ export function BusDesktopPage() {
           focusSelected={focusSelected}
           onSelect={focusSelection}
           controls={controls}
+          shownArrival={shownArrival}
         />
       </div>
     </main>

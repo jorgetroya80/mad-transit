@@ -1,4 +1,4 @@
-import { AttributionControl, Map, type EaseToOptions } from 'maplibre-gl';
+import { AttributionControl, Map, type EaseToOptions, type FitBoundsOptions } from 'maplibre-gl';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import {
   MADRID_CENTER,
@@ -133,4 +133,31 @@ export function useEaseTo(map: Map | undefined, focus?: LngLat, padding?: FocusP
     const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
     map.easeTo(reduceMotion ? { ...camera, duration: 0 } : camera);
   }, [map, lng, lat, bottom, right]);
+}
+
+function toBounds(points: readonly LngLat[]): [[number, number], [number, number]] {
+  const lngs = points.map(({ lng }) => lng);
+  const lats = points.map(({ lat }) => lat);
+  return [
+    [Math.min(...lngs), Math.min(...lats)],
+    [Math.max(...lngs), Math.max(...lats)],
+  ];
+}
+
+// The parent keeps the array while the points stay put, so only a moved point frames again.
+export function useFitPoints(
+  map: Map | undefined,
+  points: readonly LngLat[] | undefined,
+  padding?: FocusPadding,
+) {
+  const bottom = padding?.bottom ?? 0;
+  const right = padding?.right;
+  useEffect(() => {
+    if (!map || !points) return;
+    const camera: FitBoundsOptions = {
+      padding: right === undefined ? { bottom } : { bottom, right },
+    };
+    const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
+    map.fitBounds(toBounds(points), reduceMotion ? { ...camera, duration: 0 } : camera);
+  }, [map, points, bottom, right]);
 }

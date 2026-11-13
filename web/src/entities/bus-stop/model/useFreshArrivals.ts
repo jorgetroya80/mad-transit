@@ -31,7 +31,7 @@ function isQuotaExhausted(error: unknown): boolean {
 }
 
 // Polling is the query's own: every 30 s, never in a hidden tab, and only while the stop is open.
-export function useFreshArrivals(number: string): FreshArrivals {
+export function useFreshArrivals(number: string | undefined): FreshArrivals {
   const query = useArrivals(number);
   const { data, isError, error, errorUpdatedAt } = query;
   const now = useNow(CLOCK_TICK_MS);

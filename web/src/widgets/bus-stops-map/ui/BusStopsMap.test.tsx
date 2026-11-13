@@ -1,6 +1,7 @@
 import { act, waitFor } from '@testing-library/react';
 import type { BusStopDetailResponse, BusStopsResponse } from '@jorgetroya80/mad-transit-client';
 import { http, HttpResponse } from 'msw';
+import type { ArrivalRef } from '@/entities/bus-stop';
 import { busStopsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env } from '@/shared/config';
@@ -15,6 +16,7 @@ type CapturedMapProps = {
   selectedId?: string;
   onSelectPoint?: (id: string) => void;
   focus?: { lng: number; lat: number };
+  fitPoints?: readonly MapPoint[];
   userLocation?: { lng: number; lat: number };
   popup?: MapPopup;
 };
@@ -83,9 +85,19 @@ function lastMapProps(): CapturedMapProps {
   return props;
 }
 
-function renderMap(initialEntry = '/?service=bus', onSelect = vi.fn<(number: string) => void>()) {
+function renderMap(
+  initialEntry = '/?service=bus',
+  onSelect = vi.fn<(number: string) => void>(),
+  shownArrival?: ArrivalRef,
+) {
   return renderWithRouter(
-    <BusStopsMap center={SOL} mapCenter={SOL} userLocation={USER} onSelect={onSelect} />,
+    <BusStopsMap
+      center={SOL}
+      mapCenter={SOL}
+      userLocation={USER}
+      onSelect={onSelect}
+      shownArrival={shownArrival}
+    />,
     { initialEntries: [initialEntry] },
   );
 }
@@ -192,6 +204,68 @@ describe('BusStopsMap', () => {
 
     expect(router.state.location.href).toBe('/?service=bus&stop=73');
     expect(onSelect).toHaveBeenCalledWith('73');
+  });
+
+  describe('the shown bus', () => {
+    const N1_ARRIVAL: ArrivalRef = { line: 'N1', destination: 'Cibeles' };
+    const ARRIVALS_URL = `${BUS_STOPS_URL}/72/arrivals`;
+
+    it('draws the bus as a pill with its line, beside the stop', async () => {
+      await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
+      await waitForPoints(4);
+
+      expect(lastMapProps().points?.at(-1)).toEqual(
+        expect.objectContaining({
+          id: 'bus',
+          shape: 'pill',
+          icon: 'bus',
+          value: 'N1',
+          tone: 'info',
+          fill: 'tag',
+          lng: -3.7037,
+          lat: 40.4166,
+        }),
+      );
+    });
+
+    it('fits the map to the stop and the bus together', async () => {
+      await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
+      await waitForPoints(4);
+
+      expect(lastMapProps().fitPoints).toEqual([
+        expect.objectContaining({ id: '72' }),
+        expect.objectContaining({ id: 'bus' }),
+      ]);
+    });
+
+    it('draws no bus while its arrivals are unavailable', async () => {
+      const answered = vi.fn<() => void>();
+      server.events.on('response:mocked', ({ request }) => {
+        if (request.url.endsWith('/72/arrivals')) answered();
+      });
+      server.use(
+        http.get(ARRIVALS_URL, () =>
+          HttpResponse.json({ title: 'Bad Gateway', status: 502 }, { status: 502 }),
+        ),
+      );
+
+      await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
+      await waitFor(() => expect(answered).toHaveBeenCalled());
+
+      expect(lastMapProps().points).toHaveLength(3);
+      expect(lastMapProps().fitPoints).toBeUndefined();
+    });
+
+    it('does not select a stop when the bus is tapped', async () => {
+      const onSelect = vi.fn<(number: string) => void>();
+      const { router } = await renderMap('/?service=bus&stop=72', onSelect, N1_ARRIVAL);
+      await waitForPoints(4);
+
+      await act(async () => lastMapProps().onSelectPoint?.('bus'));
+
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(router.state.location.href).toBe('/?service=bus&stop=72');
+    });
   });
 
   it('draws no points while the nearby stops fail', async () => {
