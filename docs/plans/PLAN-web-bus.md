@@ -1,7 +1,7 @@
 # Plan: web-bus
 
 - Created: 2026-10-30
-- Status: **approved** (2026-11-13)
+- Status: **implemented** (2026-11-13)
 - Spec: [SPEC-web-bus.md](../specs/SPEC-web-bus.md)
 
 ## Overview
