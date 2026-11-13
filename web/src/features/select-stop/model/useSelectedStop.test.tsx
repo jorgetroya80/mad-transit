@@ -59,6 +59,20 @@ describe('useSelectedStop', () => {
     expect(screen.getByRole('status')).toHaveTextContent('ninguna');
   });
 
+  it('clears the stop replacing its history entry, so Back does not reopen it', async () => {
+    const { router } = await renderWithRouter(<StopProbe />, {
+      initialEntries: ['/?service=bus'],
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Elegir 72' }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar parada' }));
+    expect(router.state.location.href).toBe('/?service=bus');
+    await act(async () => router.history.back());
+
+    expect(searchParams(router)).toEqual({ service: 'bus' });
+    expect(screen.getByRole('status')).toHaveTextContent('ninguna');
+  });
+
   it('clears the stop from the URL and keeps the service', async () => {
     const { router } = await renderWithRouter(<StopProbe />, {
       initialEntries: ['/?service=bus&stop=72'],

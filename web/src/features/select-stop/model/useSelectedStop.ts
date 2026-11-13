@@ -9,7 +9,8 @@ export type SelectedStop = {
   clear: () => void;
 };
 
-// `?stop` is the only source of truth. Selecting pushes an entry so Back closes the detail.
+// `?stop` is the only source of truth. Selecting pushes an entry so Back closes the detail;
+// clearing replaces it, so Back after closing does not reopen the stop just closed.
 export function useSelectedStop(): SelectedStop {
   const { stop } = mapRoute.useSearch();
   const navigate = mapRoute.useNavigate();
@@ -19,7 +20,7 @@ export function useSelectedStop(): SelectedStop {
     [navigate],
   );
   const clear = useCallback(
-    () => navigate({ search: (prev) => ({ ...prev, stop: undefined }) }),
+    () => navigate({ search: (prev) => ({ ...prev, stop: undefined }), replace: true }),
     [navigate],
   );
 
