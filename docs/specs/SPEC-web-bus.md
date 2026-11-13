@@ -1,7 +1,7 @@
 # Spec: web-bus
 
 - Created: 2026-10-30
-- Status: **approved** (2026-11-12)
+- Status: **approved** (2026-11-13)
 - Plan: [PLAN-web-bus.md](../plans/PLAN-web-bus.md)
 
 Módulo `web-bus` del [Capability Map](CAPABILITY-MAP.md). Sobre la SPA de [web-shell](SPEC-web-shell.md) y junto a [web-bicimad](SPEC-web-bicimad.md), añade las paradas de autobús EMT: icono de bus en el mapa, resumen al tocarlo, lista de cercanas y detalle con llegadas en el panel. Consume [api-bus](SPEC-api-bus.md) con `@jorgetroya80/mad-transit-client`.
@@ -176,3 +176,4 @@ Ninguna. El vehículo se pinta como pastilla de `MapPoint` (`shape: 'pill'`), ap
 - 2026-11-12: cruce con el diseño del canvas «Mad Transit · rediseño» y con el código actual. Decisiones 8 (sin ubicación desde Sol, con distancias y «Usar mi ubicación»), 9 (tabla en escritorio, lista en móvil) y 10 (cupo agotado con copy). Supuestos renumerados. Se cambian referencias a componentes y a iconos que ya no existen (`StateMessage`, `PanelNotice`, `QUERY_RETRY_COUNT`, `LineBadge`, SVG a mano), y el cliente fijado en 0.9.0. Aprobada por el usuario el mismo día, tras la corrección de la decisión 8.
 - 2026-11-13: vehículo en el mapa como pastilla (`MapPoint` con `shape: 'pill'`, icono `bus` y línea dentro), en vez de círculo con texto; pregunta abierta cerrada. Cabecera de la app como `AppHeader` genérico en `shared/ui`: título, subtítulo, logo, estado y refresco por props, sin valores de BiciMAD. La tabla de líneas usa `Table` genérica de `shared/ui`. Aprobado por el usuario.
 - 2026-11-12: corrección de códigos. El cupo EMT agotado responde `503` con `Retry-After` (no `429`). El `429` con `Retry-After` es el límite por IP del API. Verificado en `ProblemDetailsHandler.kt` y en el contrato OpenAPI de los endpoints de bus. Decisión 10 y la tabla de errores actualizadas.
+- 2026-11-13: cierre de web-bus (T10) con las fases 0 a 3 hechas. Se marca implemented tras el merge del PR 3. Verificación manual en Render (SC7) pendiente de Jorge tras el merge.

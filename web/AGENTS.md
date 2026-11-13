@@ -22,7 +22,7 @@ Run a single file with `pnpm --filter web exec vitest run <path>`.
 - Feature-Sliced Design with the layers `app`, `pages`, `widgets`, `features`, `entities` and `shared`. A layer only imports from the layers below it, and a slice never imports a sibling slice. `pnpm --filter web depcruise` checks it.
 - Each slice exposes its public API through its `index.ts`. Import from there, never from internal files.
 - `maplibre-gl` is only used inside `shared/ui/base-map`.
-- The URL (`?station`, `?need`) is read and written only through TanStack Router, never through `window.location` or `history`.
+- The URL (`?station`, `?need`, `?service`, `?stop`) is read and written only through TanStack Router, never through `window.location` or `history`.
 - The API is called only through `@jorgetroya80/mad-transit-client`. Never hand-write API types or compute distances and ordering in the client: the API does it.
 - `localStorage` only stores the favorites, the last stations lists (a cache shown while the network answers or when it cannot) and UI preferences.
 
