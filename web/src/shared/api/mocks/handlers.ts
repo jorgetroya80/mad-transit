@@ -1,17 +1,34 @@
 import type {
+  BusStopArrivalsResponse,
+  BusStopDetailResponse,
+  BusStopsResponse,
   Problem,
   StationDetailResponse,
   StationsResponse,
 } from '@jorgetroya80/mad-transit-client';
 import { http, HttpResponse } from 'msw';
 import { env } from '@/shared/config';
-import { nearbyStationsFixture, stationNotFoundProblem, stationsFixture } from './fixtures';
+import {
+  busArrivalsFixture,
+  busStopDetailFixture,
+  busStopsFixture,
+  nearbyBusStopsFixture,
+  nearbyStationsFixture,
+  notFoundProblem,
+  stationNotFoundProblem,
+  stationsFixture,
+} from './fixtures';
 
 const STATIONS_URL = `${env.apiBaseUrl}/v1/bicimad/stations`;
+const BUS_STOPS_URL = `${env.apiBaseUrl}/v1/bus/stops`;
 
 function findStation(number: string) {
   const wanted = number.toLowerCase();
   return stationsFixture.stations.find((station) => station.number.toLowerCase() === wanted);
+}
+
+function findBusStop(number: string) {
+  return busStopsFixture.stops.find((stop) => stop.number === number);
 }
 
 type HandlerOptions = {
@@ -20,10 +37,10 @@ type HandlerOptions = {
 };
 
 // Every API error is a problem+json body with its own status.
-export function problemResponse(problem: Problem) {
+export function problemResponse(problem: Problem, headers: Record<string, string> = {}) {
   return HttpResponse.json<Problem>(problem, {
     status: problem.status,
-    headers: { 'Content-Type': 'application/problem+json' },
+    headers: { 'Content-Type': 'application/problem+json', ...headers },
   });
 }
 
@@ -48,6 +65,28 @@ export function createHandlers({ updatedAt }: HandlerOptions = {}) {
         if (!station) return problemResponse(stationNotFoundProblem(params.number));
         const { updatedAt: fixtureUpdatedAt, stale, source } = stationsFixture;
         return HttpResponse.json(dated({ station, updatedAt: fixtureUpdatedAt, stale, source }));
+      },
+    ),
+    http.get<never, never, BusStopsResponse>(BUS_STOPS_URL, ({ request }) => {
+      const near = new URL(request.url).searchParams.has('near');
+      return HttpResponse.json(dated(near ? nearbyBusStopsFixture : busStopsFixture));
+    }),
+    http.get<{ number: string }, never, BusStopDetailResponse | Problem>(
+      `${BUS_STOPS_URL}/:number`,
+      ({ params }) => {
+        if (!findBusStop(params.number)) {
+          return problemResponse(notFoundProblem(`/v1/bus/stops/${params.number}`));
+        }
+        return HttpResponse.json(dated(busStopDetailFixture));
+      },
+    ),
+    http.get<{ number: string }, never, BusStopArrivalsResponse | Problem>(
+      `${BUS_STOPS_URL}/:number/arrivals`,
+      ({ params }) => {
+        if (!findBusStop(params.number)) {
+          return problemResponse(notFoundProblem(`/v1/bus/stops/${params.number}/arrivals`));
+        }
+        return HttpResponse.json(dated(busArrivalsFixture));
       },
     ),
   ];

@@ -17,7 +17,7 @@ function createRouteTree(mapComponent: RouteComponent) {
     path: '/',
     component: mapComponent,
     validateSearch: validateMapSearch,
-    search: { middlewares: [stripSearchParams({ need: 'bikes' })] },
+    search: { middlewares: [stripSearchParams({ need: 'bikes', service: 'bicimad' })] },
   });
   return rootRoute.addChildren([mapRoute]);
 }

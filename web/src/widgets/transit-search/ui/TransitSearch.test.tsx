@@ -78,6 +78,14 @@ describe('TransitSearch', () => {
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
   });
 
+  it('shows no search while Bus is chosen, until the bus source exists', async () => {
+    await renderWithRouter(<TransitSearch center={SOL} />, {
+      initialEntries: ['/?service=bus'],
+    });
+
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+  });
+
   it('lists stations by number prefix, in numeric order and at most the maximum', async () => {
     serveStations(MANY_NUMBERS.map(stationNumbered));
     const { user } = await renderLoadedSearch();

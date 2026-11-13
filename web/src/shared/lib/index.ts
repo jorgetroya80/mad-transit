@@ -1,4 +1,5 @@
 export { restartWait, retryDelayMs } from './async/retryPacing';
+export { useRestartingRefetch } from './async/useRestartingRefetch';
 export { usePendingAction } from './async/usePendingAction';
 export { useCloseOnEscape } from './dom/useCloseOnEscape';
 export type { GeolocationState, GeolocationStatus, GeoPosition } from './geo/useGeolocation';
