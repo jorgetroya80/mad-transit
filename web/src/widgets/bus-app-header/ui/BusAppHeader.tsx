@@ -19,7 +19,6 @@ export function BusAppHeader({ center }: BusAppHeaderProps) {
     <Header
       title="Mad Transit"
       subtitle="Paradas y llegadas de la EMT en tiempo real"
-      logo="bus"
       statusText={freshness.text}
       statusTone={freshness.tone}
       showRefresh={freshness.action !== undefined}
