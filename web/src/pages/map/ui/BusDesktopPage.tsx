@@ -27,7 +27,6 @@ export function BusDesktopPage() {
         <SidePanel label="Paradas" className="p-4">
           <div className="flex min-h-full flex-col gap-4">
             <ServiceToggle />
-            <h2 className="text-lg font-semibold text-fg">Paradas</h2>
             <TransitSearch center={location.center} />
             <BusPanel
               number={number}
