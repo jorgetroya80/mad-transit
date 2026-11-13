@@ -1,12 +1,13 @@
 import { act, waitFor } from '@testing-library/react';
 import type { BusStopDetailResponse, BusStopsResponse } from '@jorgetroya80/mad-transit-client';
 import { http, HttpResponse } from 'msw';
-import { busStopsFixture } from '@/shared/api/mocks/fixtures';
+import type { ArrivalRef } from '@/entities/bus-stop';
+import { arrivingArrival, busArrivalsFixture, busStopsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env } from '@/shared/config';
 import type { GeoPosition } from '@/shared/lib';
 import type * as SharedUi from '@/shared/ui';
-import type { MapPoint } from '@/shared/ui';
+import type { MapPoint, MapPopup } from '@/shared/ui';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { BusStopsMap } from './BusStopsMap';
 
@@ -15,7 +16,9 @@ type CapturedMapProps = {
   selectedId?: string;
   onSelectPoint?: (id: string) => void;
   focus?: { lng: number; lat: number };
+  fitPoints?: readonly MapPoint[];
   userLocation?: { lng: number; lat: number };
+  popup?: MapPopup;
 };
 
 const mapRenders = vi.hoisted(() => [] as CapturedMapProps[]);
@@ -82,9 +85,19 @@ function lastMapProps(): CapturedMapProps {
   return props;
 }
 
-function renderMap(initialEntry = '/?service=bus', onSelect = vi.fn<(number: string) => void>()) {
+function renderMap(
+  initialEntry = '/?service=bus',
+  onSelect = vi.fn<(number: string) => void>(),
+  shownArrival?: ArrivalRef,
+) {
   return renderWithRouter(
-    <BusStopsMap center={SOL} mapCenter={SOL} userLocation={USER} onSelect={onSelect} />,
+    <BusStopsMap
+      center={SOL}
+      mapCenter={SOL}
+      userLocation={USER}
+      onSelect={onSelect}
+      shownArrival={shownArrival}
+    />,
     { initialEntries: [initialEntry] },
   );
 }
@@ -121,6 +134,32 @@ describe('BusStopsMap', () => {
     await waitForPoints(3);
 
     expect(lastMapProps()).toMatchObject({ selectedId: '73' });
+  });
+
+  it('opens the popup on the selected stop, labelled with its number', async () => {
+    await renderMap('/?service=bus&stop=73');
+    await waitForPoints(3);
+
+    expect(lastMapProps().popup).toMatchObject({
+      at: { lng: -3.704, lat: 40.4172 },
+      label: 'Parada 73',
+    });
+  });
+
+  it('opens no popup without a selected stop', async () => {
+    await renderMap();
+    await waitForPoints(3);
+
+    expect(lastMapProps().popup).toBeUndefined();
+  });
+
+  it('closes the popup by removing ?stop', async () => {
+    const { router } = await renderMap('/?service=bus&stop=73');
+    await waitForPoints(3);
+
+    await act(async () => lastMapProps().popup?.onClose());
+
+    expect(router.state.location.href).toBe('/?service=bus');
   });
 
   it('centers on the user while no stop is selected', async () => {
@@ -165,6 +204,95 @@ describe('BusStopsMap', () => {
 
     expect(router.state.location.href).toBe('/?service=bus&stop=73');
     expect(onSelect).toHaveBeenCalledWith('73');
+  });
+
+  describe('the shown bus', () => {
+    const N1_ARRIVAL: ArrivalRef = { line: 'N1', destination: 'Cibeles' };
+    const ARRIVALS_URL = `${BUS_STOPS_URL}/72/arrivals`;
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('draws the bus as a pill with its line, beside the stop', async () => {
+      await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
+      await waitForPoints(4);
+
+      expect(lastMapProps().points?.at(-1)).toEqual(
+        expect.objectContaining({
+          id: 'bus',
+          shape: 'pill',
+          icon: 'bus',
+          value: 'N1',
+          tone: 'info',
+          fill: 'tag',
+          lng: -3.7037,
+          lat: 40.4166,
+        }),
+      );
+    });
+
+    it('fits the map to the stop and the bus together', async () => {
+      await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
+      await waitForPoints(4);
+
+      expect(lastMapProps().fitPoints).toEqual([
+        expect.objectContaining({ id: '72' }),
+        expect.objectContaining({ id: 'bus' }),
+      ]);
+    });
+
+    it('draws no bus while its arrivals are unavailable', async () => {
+      const answered = vi.fn<() => void>();
+      server.events.on('response:mocked', ({ request }) => {
+        if (request.url.endsWith('/72/arrivals')) answered();
+      });
+      server.use(
+        http.get(ARRIVALS_URL, () =>
+          HttpResponse.json({ title: 'Bad Gateway', status: 502 }, { status: 502 }),
+        ),
+      );
+
+      await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
+      await waitFor(() => expect(answered).toHaveBeenCalled());
+
+      expect(lastMapProps().points).toHaveLength(3);
+      expect(lastMapProps().fitPoints).toBeUndefined();
+    });
+
+    it('moves the bus with the next arrivals poll, without pressing the button again', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      let bus = { busLat: 40.4166, busLon: -3.7037 };
+      server.use(
+        http.get(ARRIVALS_URL, () =>
+          HttpResponse.json({
+            ...busArrivalsFixture,
+            arrivals: [{ ...arrivingArrival, ...bus }],
+          }),
+        ),
+      );
+      await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
+      await waitForPoints(4);
+      expect(lastMapProps().points?.at(-1)).toMatchObject({ lng: -3.7037, lat: 40.4166 });
+
+      bus = { busLat: 40.4201, busLon: -3.7011 };
+      await act(() => vi.advanceTimersByTimeAsync(30_000));
+
+      await waitFor(() =>
+        expect(lastMapProps().points?.at(-1)).toMatchObject({ lng: -3.7011, lat: 40.4201 }),
+      );
+    });
+
+    it('does not select a stop when the bus is tapped', async () => {
+      const onSelect = vi.fn<(number: string) => void>();
+      const { router } = await renderMap('/?service=bus&stop=72', onSelect, N1_ARRIVAL);
+      await waitForPoints(4);
+
+      await act(async () => lastMapProps().onSelectPoint?.('bus'));
+
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(router.state.location.href).toBe('/?service=bus&stop=72');
+    });
   });
 
   it('draws no points while the nearby stops fail', async () => {

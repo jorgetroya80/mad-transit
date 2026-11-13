@@ -1,7 +1,7 @@
 # Plan: web-bus
 
 - Created: 2026-10-30
-- Status: **approved** (2026-11-12)
+- Status: **approved** (2026-11-13)
 - Spec: [SPEC-web-bus.md](../specs/SPEC-web-bus.md)
 
 ## Overview
@@ -46,7 +46,7 @@ T1-T9 ─► T10 cierre
 
 ### Fase 0: Refactor previo (PR `refactor(web)` aparte)
 
-- [ ] **T0a: Mover piezas compartidas fuera de su widget o página** (S, ~1 h)
+- [x] **T0a: Mover piezas compartidas fuera de su widget o página** (S, ~1 h)
   - Descripción: `LocationNotice` pasa a `shared/ui/location-notice` como componente genérico: el copy entra por props (`ApproximateLocationBanner`, `LocatingBanner`) y `shared/ui` no contiene palabras de dominio. El copy de BiciMAD queda en un wrapper en `widgets/station-list/ui/LocationNotice.tsx`. `useMapLocation` y `useUserFocus` pasan de `pages/map/model` a `shared/lib/geo/`; `useMapLocation` usa `GeoPosition` en vez de `Coordinates` de entities (shared no importa entities). Sin cambios de comportamiento en BiciMAD.
   - Aceptación:
     - Los tests de BiciMAD pasan sin cambios de comportamiento (solo cambian sus imports, si los tienen).
@@ -55,7 +55,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `shared/ui/location-notice/*` (+ test), `widgets/station-list/ui/LocationNotice.tsx`, `shared/lib/geo/useMapLocation.ts`, `shared/lib/geo/useUserFocus.ts`, `shared/ui/index.ts`, `shared/lib/index.ts`, imports de `pages/map/ui/*` y `widgets/station-list/ui/StationList.tsx`.
   - Dependencias: ninguna.
 
-- [ ] **T0b: Extraer la pauta de reintentos a `shared`** (S, ~1 h)
+- [x] **T0b: Extraer la pauta de reintentos a `shared`** (S, ~1 h)
   - Descripción: `consecutiveFailures` y `retryDelayMs` de `entities/station/api/stationQueries.ts` a `shared/lib` (o `shared/api`), sin cambios de comportamiento. `entities/bus-stop` lo usará desde T1.
   - Aceptación:
     - Los tests de `stationQueries` pasan sin cambios.
@@ -64,7 +64,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `entities/station/api/stationQueries.ts`, `shared/lib/...` (nuevo fichero) (+ test).
   - Dependencias: ninguna.
 
-- [ ] **T0c: Piezas genéricas de la cabecera, la tabla y la pastilla** (S, ~2 h)
+- [x] **T0c: Piezas genéricas de la cabecera, la tabla y la pastilla** (S, ~2 h)
   - Descripción: `shared/ui/table` (`Table` genérica: columnas y filas por props, usa `Tag`, sin palabras de dominio); `shared/ui/app-header` (`AppHeader` genérica: título, subtítulo, logo, estado y botón de refresco por props, sin subtítulo por defecto); `MapPointParams` con `shape: 'pill'` (icono y valor a la vez). BiciMAD pasa a un wrapper de cabecera con sus datos (`widgets/app-header`) sin cambiar su comportamiento.
   - Aceptación:
     - `Table` y `AppHeader` no contienen palabras de dominio (`domainWords.test.ts`).
@@ -76,11 +76,11 @@ T1-T9 ─► T10 cierre
 
 ### Checkpoint: Fase 0
 
-- [ ] `pnpm check:task` en verde; PR `refactor(web)` mergeado antes de empezar la fase 1.
+- [ ] `pnpm check:task` en verde; PR `refactor(web)` mergeado antes de empezar la fase 1. *Sin marcar: T0c se mergeó en #131 después de las fases 1 y 2 (antes del PR 3). Ver changelog.*
 
 ### Fase 1: Base
 
-- [ ] **T1: Cliente 0.9.0, fixtures de MSW y `entities/bus-stop`** (M, ~1 h 30 min)
+- [x] **T1: Cliente 0.9.0, fixtures de MSW y `entities/bus-stop`** (M, ~1 h 30 min)
   - Descripción: subir `@jorgetroya80/mad-transit-client` a `0.9.0` (`listBusStops`, `getBusStop`, `getBusStopArrivals`). Handlers de MSW con el mismo patrón que `createHandlers({ updatedAt })` y fixtures de `/v1/bus/stops`, `/v1/bus/stops/{number}` (200 y 404) y `/arrivals` (normal, `noEstimate`, vacía, `503` con `Retry-After` (cupo), `429` con `Retry-After`, `502`). `entities/bus-stop`: query keys; `useNearbyStops` (`staleTime` 1 h, sin `refetchInterval`), `useAllStops` (solo con Bus), `useStop` y `useArrivals` (30 s, sin pestaña oculta, con `retryDelayMs` y `Retry-After`); tipos reexportados del cliente y `formatArrival`.
   - Aceptación:
     - `formatArrival`: "Llegando" con 0, "N min" y "Sin estimación" con `noEstimate`.
@@ -90,7 +90,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `web/package.json`, `shared/api/mocks/{handlers,fixtures}.ts`, `entities/bus-stop/{api,model,index.ts}`.
   - Dependencias: ninguna (cliente 0.9.0 ya publicado).
 
-- [ ] **T2: Selector de servicio y URL** (M, ~1 h 30 min)
+- [x] **T2: Selector de servicio y URL** (M, ~1 h 30 min)
   - Descripción: `features/select-service` (`useService` con `navigate` + `replace` y `ServiceToggle`, un grupo de radios nativo). `mapSearch` añade `service` y `stop`; `router.tsx` pasa a `stripSearchParams` con `need` y `service: 'bicimad'`. Cambiar de servicio quita `?station` o `?stop` y conserva `?need`. `MapPage` elige los widgets según el servicio (con Bus, de momento, un panel vacío "Paradas"). El buscador recibe la fuente activa y `SearchByNumber` no pinta `SourcePicker` con una sola fuente.
   - Aceptación:
     - `/?service=bus&stop=72` se valida; un `service` desconocido vuelve a `bicimad`; `?stop` sin `service=bus` se ignora.
@@ -100,7 +100,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `features/select-service/*`, `pages/map/model/mapSearch.ts` (+ test), `app/router.tsx`, `pages/map/ui/MapPage.tsx`, `widgets/transit-search/ui/TransitSearch.tsx`.
   - Dependencias: T1.
 
-- [ ] **T3: `base-map`: puntos de parada con icono** (M, ~1 h 30 min)
+- [x] **T3: `base-map`: puntos de parada con icono** (M, ~1 h 30 min)
   - Descripción: los puntos de parada son `MapPointParams` de `shared/ui/map-point` (`shape: 'square'`, `icon: 'bus'`); la seleccionada se dibuja más grande. Van en la capa `point-images` que ya existe; `map-point` dibuja las imágenes bajo demanda. No se escriben SVG ni se llama a `map.addImage` a mano. El vehículo queda para T8 (pregunta abierta de la spec).
   - Aceptación:
     - Con puntos de parada, `setData` llena la fuente de `point-images` con su `imageId`.
@@ -112,12 +112,12 @@ T1-T9 ─► T10 cierre
 
 ### Checkpoint: Fase 1
 
-- [ ] `pnpm check:task` en verde; cobertura por capa ≥ 80 %.
-- [ ] `pnpm --filter web dev:mock`: BiciMAD igual que antes; el selector cambia la URL.
+- [x] `pnpm check:task` en verde; cobertura por capa ≥ 80 %.
+- [x] `pnpm --filter web dev:mock`: BiciMAD igual que antes; el selector cambia la URL.
 
 ### Fase 2: Paradas
 
-- [ ] **T4: Mapa de paradas, lista, sin ubicación y `?stop`** (M, ~2 h)
+- [x] **T4: Mapa de paradas, lista, sin ubicación y `?stop`** (M, ~2 h)
   - Descripción: `features/select-stop` (`useSelectedStop`, `navigate` + `push`). `widgets/bus-stops-map`: paradas cercanas como puntos de parada, más la seleccionada si está fuera de los 500 m (con `useStop`); foco en la seleccionada (`useUserFocus`). `widgets/bus-stop-list`: "Paradas cercanas", por distancia, con `ListItem` (número, nombre, líneas como `Tag`, distancia) y los estados cargando, vacío ("Ninguna parada a 500 m"), error y `stale`. Sin ubicación: `useMapLocation` (centro en Sol) y `ApproximateLocationNotice`; en escritorio, el botón «Usar mi ubicación» (decisión 8). Sin respuesta de ubicación no hay distancias.
   - Aceptación:
     - SC1: con Bus, el mapa recibe un punto de parada por cada parada cercana del fixture.
@@ -128,7 +128,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `features/select-stop/*`, `widgets/bus-stops-map/*`, `widgets/bus-stop-list/*`, `pages/map/ui/MapPage.tsx`.
   - Dependencias: T2, T3.
 
-- [ ] **T5: Detalle de la parada** (M, ~1 h 30 min)
+- [x] **T5: Detalle de la parada** (M, ~1 h 30 min)
   - Descripción: `widgets/bus-stop-detail`: número, nombre, dirección y distancia (de la lista de cercanas; sin distancia fuera de los 500 m). Líneas: tabla con cabeceras «Línea», «Hacia», «Horario», «Cada» en escritorio y lista de una fila por línea en móvil (decisión 9), con `Tag` para la línea y la etiqueta "Nocturno" en texto en las `N…`. `404` → "Parada no encontrada" + "Volver a la lista", sin reintento. `StaleNotice` con `stale`. El botón atrás cierra el detalle. Título del panel "Paradas" con Bus elegido.
   - Aceptación:
     - SC4: `/?service=bus&stop=72` abre el detalle; atrás vuelve a la lista; `?stop=99999999` muestra "Parada no encontrada".
@@ -138,7 +138,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `widgets/bus-stop-detail/*`, `pages/map/ui/MapPanel.tsx`.
   - Dependencias: T4.
 
-- [ ] **T6: Llegadas en el detalle** (M, ~1 h 30 min)
+- [x] **T6: Llegadas en el detalle** (M, ~1 h 30 min)
   - Descripción: lista de llegadas con `ArrivalRow` (línea, destino, `formatArrival`), sondeo cada 30 s. Estados de la tabla de errores de la spec: `stale` con «Actualizado hace X»; `[]` → "No hay autobuses previstos"; `404` no pide llegadas; `502`, `503`, `504`, `400`, `500` o sin red → "Llegadas no disponibles" + "Reintentar"; un fallo de sondeo mantiene las llegadas como mucho 2 min desde su `updatedAt` (`useNow`), luego "Llegadas no disponibles" y el autobús desaparece del mapa; `503` con `Retry-After` (cupo EMT) → texto de decisión 10 de la spec, sin botón; `429` con `Retry-After` → como un 5xx, con «Reintentar» tras el `Retry-After`. Un error en las llegadas no oculta el resto del detalle.
   - Aceptación:
     - SC3: con temporizadores falsos, una segunda petición a los 30 s; ninguna sin parada abierta; no hay polling con la pestaña oculta.
@@ -150,12 +150,12 @@ T1-T9 ─► T10 cierre
 
 ### Checkpoint: Fase 2
 
-- [ ] `pnpm check:task` en verde.
-- [ ] `dev:mock`: Bus → iconos → tocar uno → detalle con líneas y llegadas que se renuevan; sin ubicación, Sol con distancias. Revisión humana antes de la fase 3.
+- [x] `pnpm check:task` en verde.
+- [x] `dev:mock`: Bus → iconos → tocar uno → detalle con líneas y llegadas que se renuevan; sin ubicación, Sol con distancias. Revisión humana antes de la fase 3.
 
 ### Fase 3: Mapa enriquecido, buscador y cierre
 
-- [ ] **T7: Popup en el mapa** (M, ~1 h 30 min)
+- [x] **T7: Popup en el mapa** (M, ~1 h 30 min)
   - Descripción: `base-map` añade `popup?: { at, content, onClose }` (`maplibregl.Popup` + portal de React). `bus-stops-map` muestra en el popup de la parada seleccionada su número y nombre, las líneas y las 3 primeras llegadas ("3 → San Amaro · 2 min"), con la misma query que el detalle. Se cierra con su botón, con `Escape`, al tocar otro punto y al cerrar el detalle. No es accesible por teclado desde el mapa (igual que los puntos; el camino accesible es la lista y el buscador). Por debajo de `md`, `focusPadding` deja el icono y el popup encima del bottom sheet.
   - Aceptación:
     - SC2: tocar un icono abre el popup y el detalle; el popup muestra 3 llegadas como mucho.
@@ -165,7 +165,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `shared/ui/base-map/{BaseMap.tsx,useMapPopup.ts}`, `widgets/bus-stops-map/ui/{BusStopsMap.tsx,StopPopup.tsx}` (+ tests).
   - Dependencias: T6.
 
-- [ ] **T8: "Ver en el mapa" (posición del autobús)** (M, ~1 h 30 min)
+- [x] **T8: "Ver en el mapa" (posición del autobús)** (M, ~1 h 30 min)
   - Descripción: `base-map` añade `fitPoints`. Botón "Ver en el mapa el autobús de la línea X" en cada llegada con posición (`busLat` no nulo). El autobús se pinta como pastilla: `MapPoint` con `shape: 'pill'`, icono `bus` y la línea dentro (ampliar `MapPointParams` en `shared/ui/map-point`, aprobado el 2026-11-13). Se mueve con cada sondeo y se quita al cerrar el detalle, al elegir otra llegada o al caducar las llegadas.
   - Dependencias extra: T0c (la cabecera y la tabla genéricas no bloquean T8, pero el orden de PRs sí).
   - Aceptación:
@@ -176,7 +176,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `shared/ui/base-map/{BaseMap.tsx,useMapLibre.ts}`, `widgets/bus-stops-map/ui/BusStopsMap.tsx`, `widgets/bus-stop-detail/ui/Arrivals.tsx`, `pages/map/ui/MapPage.tsx` (estado del autobús elegido).
   - Dependencias: T6, T7.
 
-- [ ] **T9: Buscar paradas por número** (S, ~45 min)
+- [x] **T9: Buscar paradas por número** (S, ~45 min)
   - Descripción: `widgets/transit-search/model/useBusSource.ts`: `useAllStops` (solo con Bus elegido) → `SearchSource`. Elegir un resultado escribe `?stop`.
   - Aceptación:
     - SC6: con Bus, escribir `276` lista la 2768 y `Enter` con `2768` abre su detalle.
@@ -185,7 +185,7 @@ T1-T9 ─► T10 cierre
   - Archivos: `widgets/transit-search/model/useBusSource.ts`, `widgets/transit-search/ui/TransitSearch.tsx` (+ test).
   - Dependencias: T2, T4.
 
-- [ ] **T10: Cierre** (S, ~45 min)
+- [x] **T10: Cierre** (S, ~45 min)
   - Descripción: spec y capability map a **implemented**, changelog del plan y `web/AGENTS.md` si cambia la lista de search params (`?service`, `?stop`). Después del merge y del despliegue, probar en el móvil contra Render (la geolocalización necesita HTTPS).
   - Aceptación:
     - SC7: BiciMAD igual que antes en Render.
@@ -196,8 +196,8 @@ T1-T9 ─► T10 cierre
 
 ### Checkpoint final
 
-- [ ] SC1-SC8 comprobados; CI en verde.
-- [ ] Pedir permiso antes de push, abrir el PR y hacer merge.
+- [ ] SC1-SC8 comprobados; CI en verde. Pendiente de Jorge tras el merge: SC7 en Render (BiciMAD y Bus en móvil, con geolocalización por HTTPS); CI del PR 3 pendiente.
+- [ ] Pedir permiso antes de push, abrir el PR y hacer merge. Pendiente de Jorge: PR 3 (`feat(web): add bus stop popup, vehicle position and search`).
 
 ## Riesgos y mitigaciones
 
@@ -233,3 +233,11 @@ Unas 14 h en total. Fase 1 ~4 h 30 min, fase 2 ~5 h y fase 3 ~4 h 30 min. T8 pue
 - 2026-11-13: T4 hecha (commit `f502e38`). Excepción E1 aprobada por el usuario para la aserción de T2 («with Bus chosen»). El floor guard acepta filas E bien formadas (commit `ee160c7`); revertir al empezar la fase 3. Mapa, lista, sin ubicación desde Sol con el aviso de bus y errores de la tabla.
 - 2026-11-13: T5 hecha (commit `eb1b39a`, más el fix `8e4bced`: «Volver a la lista» usa `replace`). `useStopDetail` pide `useStop` siempre (las líneas y la dirección solo vienen ahí), así que una parada dentro de 500 m tiene una petición de detalle que el mapa no hacía.
 - 2026-11-13: T6 hecha (commit `d9f79b1`). Llegadas encima de las líneas. Refresco de caducidad cada 1 s para que el límite de 2 min sea exacto. `blockedUntil` movido a la entidad `bus-stop`, usado por parada y llegadas.
+- 2026-11-13: T0a hecha (commit `1a6794e`, más `cca81d3` de docs; PR #127 con T0b). `LocationNotice` genérico en `shared/ui`, con el copy de BiciMAD en un wrapper de `widgets/station-list`. `useMapLocation` y `useUserFocus` pasan a `shared/lib/geo`. Sin cambios de comportamiento.
+- 2026-11-13: T0b hecha (commit `d1902c1`, PR #127). Pauta de reintentos (`consecutiveFailures`, `retryDelayMs`) en `shared/lib`. Sin cambios de comportamiento.
+- 2026-11-13: T0c hecha (commit `7b41f70`, PR #131). `Table`, `AppHeader` y la pastilla de `MapPoint` genéricos. Decisión no prevista: #131 se mergeó después de las fases 1 y 2 (#128 y #130), no antes de la fase 1 como pide el checkpoint de fase 0. Antes del PR 3, como pide el plan. Por eso el checkpoint de fase 0 queda sin marcar.
+- 2026-11-13: T7 hecha (commit `03e609a`). Decisiones no previstas: el popup lee las mismas queries que el detalle (sin peticiones extra); `base-map` gana un popup genérico con portal de React, que cierra con su botón y con `Escape`. Las reglas de caducidad de llegadas quedan en la entidad `bus-stop`, compartidas por popup y detalle.
+- 2026-11-13: T8 hecha (commit `9f89000`). Decisiones no previstas: el autobús mostrado es estado de la vista de `MapPage`, no va en la URL; sale con su parada, al pulsar otra llegada o al volver a pulsar la misma. `base-map` gana `fitPoints`, sin animación con `prefers-reduced-motion`. Usa la pastilla de T0c.
+- 2026-11-13: test de seguimiento de la posición (commit `dd4f9f5`). Cada sondeo mueve el autobús sin volver a pulsar el botón. Con temporizadores falsos.
+- 2026-11-13: T9 hecha (commit `c6458b1`). Decisiones no previstas: la lista de todas las paradas del buscador se guarda 24 h; las cercanas y las paradas sueltas, 1 h. BiciMAD nunca pide `/v1/bus/stops`. Elegir un resultado empuja `?stop` (`push`), así que atrás cierra el detalle. Floor guard: E2 y E3 añadidas (commit `d398f41`) para las dos aserciones que la búsqueda de bus vuelve falsas.
+- 2026-11-13: T10 hecha (commit de `docs(web): mark web-bus as implemented`). Spec y capability map a implemented; `web/AGENTS.md` con `?service` y `?stop`. Pendiente de Jorge tras el merge del PR 3: verificación manual en Render (SC7: BiciMAD y Bus en el móvil, con geolocalización); CI del PR 3; restaurar el floor guard quitando E2 y E3 (como se hizo con E1 en `6ee4dc7`).

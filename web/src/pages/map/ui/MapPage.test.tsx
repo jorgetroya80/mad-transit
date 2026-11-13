@@ -230,13 +230,13 @@ describe('MapPage', () => {
   describe('with Bus chosen', () => {
     beforeEach(() => stubGeolocation('granted'));
 
-    it('shows the Paradas panel and the service choice, with the bus stops map, without the search', async () => {
+    it('shows the Paradas panel, the service choice and the stop search, with the bus stops map', async () => {
       await renderPage('/?service=bus');
 
       expect(screen.getByRole('region', { name: 'Paradas' })).toBeInTheDocument();
       expect(screen.getByRole('radio', { name: 'Bus' })).toBeChecked();
       expect(screen.getByTestId('base-map')).toBeInTheDocument();
-      expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+      expect(screen.getByRole('searchbox', { name: 'Buscar parada' })).toBeInTheDocument();
     });
 
     it('brings the stations back when BiciMAD is chosen again, keeping the need', async () => {

@@ -1,4 +1,4 @@
-import type { BusLine } from '@/entities/bus-stop';
+import type { ArrivalRef, BusLine } from '@/entities/bus-stop';
 import { formatDistance } from '@/entities/station';
 import { useSelectedStop } from '@/features/select-stop';
 import { type GeoPosition, usePendingAction } from '@/shared/lib';
@@ -14,6 +14,8 @@ type BusStopDetailProps = {
   // The nearby list's center: the distance is read from it. Undefined hides the distance.
   center: GeoPosition | undefined;
   layout: Layout;
+  shownArrival?: ArrivalRef;
+  onToggleOnMap?: (arrival: ArrivalRef) => void;
 };
 
 const MESSAGE_CLASSES = 'flex items-center gap-2 text-body text-fg-muted';
@@ -160,7 +162,13 @@ function Pending({ detail }: { detail: StopDetail }) {
   );
 }
 
-export function BusStopDetail({ number, center, layout }: BusStopDetailProps) {
+export function BusStopDetail({
+  number,
+  center,
+  layout,
+  shownArrival,
+  onToggleOnMap,
+}: BusStopDetailProps) {
   const detail = useStopDetail(number, center);
   const { clear } = useSelectedStop();
 
@@ -173,7 +181,7 @@ export function BusStopDetail({ number, center, layout }: BusStopDetailProps) {
       ) : null}
       {detail.stop ? (
         <>
-          <Arrivals number={number} />
+          <Arrivals number={number} shownArrival={shownArrival} onToggleOnMap={onToggleOnMap} />
           <Lines lines={detail.stop.lines} layout={layout} />
         </>
       ) : (

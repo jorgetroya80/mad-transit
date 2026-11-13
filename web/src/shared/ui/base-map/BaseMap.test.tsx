@@ -11,7 +11,7 @@ import {
 } from '@/shared/config';
 import { expectNoAxeViolations } from '../../../../test/axe';
 import { firstIconPath, iconPath } from '../../../../test/iconPath';
-import { BaseMap } from './BaseMap';
+import { BaseMap, type MapPopup } from './BaseMap';
 import {
   POINT_LAYER_ID,
   POINTS_SOURCE_ID,
@@ -25,9 +25,36 @@ import {
 
 const maplibre = vi.hoisted(() => {
   const instances: MockMap[] = [];
+  const popups: MockPopup[] = [];
 
   class MockAttributionControl {
     constructor(readonly options: unknown) {}
+  }
+
+  class MockPopup {
+    lngLat: unknown;
+    element: HTMLElement | undefined;
+    readonly remove = vi.fn<() => void>(() => this.element?.remove());
+
+    constructor(readonly options: Record<string, unknown>) {
+      popups.push(this);
+    }
+
+    setLngLat(lngLat: unknown) {
+      this.lngLat = lngLat;
+      return this;
+    }
+
+    setDOMContent(element: HTMLElement) {
+      this.element = element;
+      return this;
+    }
+
+    // MapLibre puts the content in the map's container; the mock puts it in the document.
+    addTo() {
+      if (this.element) document.body.append(this.element);
+      return this;
+    }
   }
 
   class MockSource {
@@ -44,6 +71,7 @@ const maplibre = vi.hoisted(() => {
     readonly off = vi.fn<(type: string, handler: Handler) => void>();
     readonly addLayer = vi.fn<(layer: { id: string; source?: unknown }) => void>();
     readonly easeTo = vi.fn<(options: unknown) => void>();
+    readonly fitBounds = vi.fn<(bounds: unknown, options: unknown) => void>();
     readonly zoomIn = vi.fn<() => void>();
     readonly zoomOut = vi.fn<() => void>();
     readonly setMissingStyleImageResolver =
@@ -90,12 +118,21 @@ const maplibre = vi.hoisted(() => {
   const workerUrls: string[] = [];
   const setWorkerUrl = (url: string) => workerUrls.push(url);
 
-  return { instances, MockMap, MockAttributionControl, workerUrls, setWorkerUrl };
+  return {
+    instances,
+    popups,
+    MockMap,
+    MockAttributionControl,
+    MockPopup,
+    workerUrls,
+    setWorkerUrl,
+  };
 });
 
 vi.mock('maplibre-gl', () => ({
   Map: maplibre.MockMap,
   AttributionControl: maplibre.MockAttributionControl,
+  Popup: maplibre.MockPopup,
   setWorkerUrl: maplibre.setWorkerUrl,
 }));
 
@@ -470,6 +507,53 @@ describe('BaseMap points', () => {
       duration: 0,
     });
   });
+
+  it('fits the map to the fit points once loaded and when they move', () => {
+    const fitPoints = [
+      { lng: -3.7, lat: 40.4 },
+      { lng: -3.71, lat: 40.42 },
+    ];
+    const { rerender } = render(<BaseMap fitPoints={fitPoints} />);
+    const map = renderedMap();
+    expect(map.fitBounds).not.toHaveBeenCalled();
+
+    act(() => map.fire('load'));
+    expect(map.fitBounds).toHaveBeenLastCalledWith(
+      [
+        [-3.71, 40.4],
+        [-3.7, 40.42],
+      ],
+      { padding: { bottom: 0 } },
+    );
+
+    rerender(<BaseMap fitPoints={fitPoints} />);
+    expect(map.fitBounds).toHaveBeenCalledOnce();
+
+    rerender(<BaseMap fitPoints={[{ lng: -3.7, lat: 40.41 }]} />);
+    expect(map.fitBounds).toHaveBeenCalledTimes(2);
+  });
+
+  it('fits the points above the bottom padding, without animation for reduced motion', () => {
+    stubMatchMedia(true, true);
+    render(<BaseMap fitPoints={[{ lng: -3.7, lat: 40.4 }]} focusPadding={{ bottom: 400 }} />);
+    const map = loadedMap();
+
+    expect(map.fitBounds).toHaveBeenCalledExactlyOnceWith(
+      [
+        [-3.7, 40.4],
+        [-3.7, 40.4],
+      ],
+      { padding: { bottom: 400 }, duration: 0 },
+    );
+  });
+
+  it('fits the points instead of easing to the focus while they are set', () => {
+    render(<BaseMap focus={{ lng: -3.7, lat: 40.4 }} fitPoints={[{ lng: -3.71, lat: 40.41 }]} />);
+    const map = loadedMap();
+
+    expect(map.easeTo).not.toHaveBeenCalled();
+    expect(map.fitBounds).toHaveBeenCalledOnce();
+  });
 });
 
 describe('BaseMap controls', () => {
@@ -646,5 +730,83 @@ describe('BaseMap controls', () => {
     loadedMap();
 
     await expect(expectNoAxeViolations(container)).resolves.toBeUndefined();
+  });
+});
+
+function popupFor(overrides: Partial<MapPopup> = {}): MapPopup {
+  return {
+    at: { lng: -3.7038, lat: 40.4168 },
+    label: 'Parada 72',
+    content: <p>Puerta del Sol</p>,
+    onClose: vi.fn<() => void>(),
+    ...overrides,
+  };
+}
+
+describe('BaseMap popup', () => {
+  beforeEach(() => {
+    maplibre.instances.length = 0;
+    maplibre.popups.length = 0;
+    stubMatchMedia(true);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('opens a MapLibre popup at its point, without its own close controls', () => {
+    const popup = popupFor();
+    render(<BaseMap popup={popup} />);
+    loadedMap();
+
+    expect(maplibre.popups).toHaveLength(1);
+    expect(maplibre.popups[0]?.options).toMatchObject({ closeButton: false, closeOnClick: false });
+    expect(maplibre.popups[0]?.lngLat).toEqual(popup.at);
+  });
+
+  it('shows its content in a dialog named by its label', () => {
+    render(<BaseMap popup={popupFor({ content: <p>Líneas 3 · N1</p> })} />);
+    loadedMap();
+
+    expect(
+      within(screen.getByRole('dialog', { name: 'Parada 72' })).getByText('Líneas 3 · N1'),
+    ).toBeInTheDocument();
+  });
+
+  it('moves to a new point, and goes away without calling onClose when the point is gone', () => {
+    const onClose = vi.fn<() => void>();
+    const { rerender } = render(<BaseMap popup={popupFor({ onClose })} />);
+    loadedMap();
+    const [first] = maplibre.popups;
+
+    rerender(<BaseMap popup={popupFor({ at: { lng: -3.7059, lat: 40.42 }, onClose })} />);
+    expect(first?.remove).toHaveBeenCalledOnce();
+    expect(maplibre.popups.at(-1)?.lngLat).toEqual({ lng: -3.7059, lat: 40.42 });
+
+    rerender(<BaseMap />);
+    expect(maplibre.popups.at(-1)?.remove).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('closes with its close button, which has a name', async () => {
+    const onClose = vi.fn<() => void>();
+    render(<BaseMap popup={popupFor({ onClose })} />);
+    loadedMap();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
+
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('closes with Escape from inside it', async () => {
+    const onClose = vi.fn<() => void>();
+    render(<BaseMap popup={popupFor({ onClose })} />);
+    loadedMap();
+
+    act(() => screen.getByRole('button', { name: 'Cerrar' }).focus());
+    await userEvent.keyboard('{Escape}');
+
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

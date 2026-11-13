@@ -1,6 +1,8 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ComponentProps } from 'react';
 import { http, HttpResponse } from 'msw';
+import type { ArrivalRef } from '@/entities/bus-stop';
 import { apiTimestamp } from '@/shared/api/mocks/handlers';
 import { busArrivalsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
@@ -15,8 +17,14 @@ const QUOTA_TEXT =
   'Hoy se ha alcanzado el límite de consultas a la EMT. Las llegadas volverán solas; los horarios de abajo siguen siendo válidos.';
 const RETRY_AFTER_SECONDS = '60';
 
-function renderArrivals() {
-  return renderWithRouter(<Arrivals number="72" />, { initialEntries: ['/?service=bus&stop=72'] });
+function renderArrivals(props: Partial<ComponentProps<typeof Arrivals>> = {}) {
+  return renderWithRouter(<Arrivals number="72" {...props} />, {
+    initialEntries: ['/?service=bus&stop=72'],
+  });
+}
+
+function showOnMapButtons() {
+  return screen.getAllByRole('button', { name: /^Ver en el mapa el autobús/ });
 }
 
 function respondArrivals(resolver: () => Response) {
@@ -53,6 +61,51 @@ describe('Arrivals', () => {
       'N1CibelesLlegando',
       '3Legazpi2 min',
       '3LegazpiSin estimación',
+    ]);
+  });
+
+  it('offers to show on the map only the arrivals that have a bus position', async () => {
+    await renderArrivals({ onToggleOnMap: vi.fn<() => void>() });
+    await arrivalsList();
+
+    expect(showOnMapButtons().map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Ver en el mapa el autobús de la línea N1',
+      'Ver en el mapa el autobús de la línea 3',
+    ]);
+  });
+
+  it('shows no button without a way to show the bus on the map', async () => {
+    await renderArrivals();
+    await arrivalsList();
+
+    expect(screen.queryByRole('button', { name: /^Ver en el mapa/ })).not.toBeInTheDocument();
+  });
+
+  it('hands over the arrival whose button is pressed', async () => {
+    const user = userEvent.setup();
+    const onToggleOnMap = vi.fn<(arrival: ArrivalRef) => void>();
+    await renderArrivals({ onToggleOnMap });
+    await arrivalsList();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Ver en el mapa el autobús de la línea N1' }),
+    );
+
+    expect(onToggleOnMap).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ line: 'N1', destination: 'Cibeles' }),
+    );
+  });
+
+  it('presses only the button of the bus shown on the map', async () => {
+    await renderArrivals({
+      shownArrival: { line: 'N1', destination: 'Cibeles' },
+      onToggleOnMap: vi.fn<(arrival: ArrivalRef) => void>(),
+    });
+    await arrivalsList();
+
+    expect(showOnMapButtons().map((button) => button.getAttribute('aria-pressed'))).toEqual([
+      'true',
+      'false',
     ]);
   });
 

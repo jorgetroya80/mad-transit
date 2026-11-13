@@ -1,10 +1,10 @@
-import type { DataStatus } from '@/entities/station';
-import { formatRelative, isJustNow } from '@/shared/lib';
+import { formatRelative, isJustNow } from '../time/formatRelative';
 
 type Tone = 'success' | 'warning' | 'danger' | 'neutral';
-type LoadedStatus = Exclude<DataStatus, 'loading'>;
+type LoadStatus = 'loading' | 'ok' | 'stale' | 'error' | 'offline';
+type LoadedStatus = Exclude<LoadStatus, 'loading'>;
 
-export type Freshness = { text: string; tone: Tone; action?: string };
+type Freshness = { text: string; tone: Tone; action?: string };
 
 // A data status, not an availability level, so it keeps its own table of tones.
 const LOADED = {
@@ -14,7 +14,7 @@ const LOADED = {
   offline: { tone: 'neutral', action: 'Reintentar' },
 } as const satisfies Record<LoadedStatus, { tone: Tone; action: string }>;
 
-export function freshnessOf(status: DataStatus, updatedAt: Date | undefined, now: Date): Freshness {
+export function freshnessOf(status: LoadStatus, updatedAt: Date | undefined, now: Date): Freshness {
   if (status === 'loading') return { text: 'Cargando…', tone: 'neutral' };
   return { ...LOADED[status], text: textOf(status, updatedAt, now) };
 }

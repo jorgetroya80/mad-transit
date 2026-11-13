@@ -4,6 +4,7 @@ export { usePendingAction } from './async/usePendingAction';
 export { useCloseOnEscape } from './dom/useCloseOnEscape';
 export type { GeolocationState, GeolocationStatus, GeoPosition } from './geo/useGeolocation';
 export { useGeolocation } from './geo/useGeolocation';
+export { freshnessOf } from './freshness/freshnessOf';
 export { type MapLocation, useMapLocation } from './geo/useMapLocation';
 export { type UserFocus, useUserFocus } from './geo/useUserFocus';
 export { useMediaQuery } from './media/useMediaQuery';

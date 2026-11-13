@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
-import { type BusStop, useNearbyStops, useStop } from '@/entities/bus-stop';
+import type { ArrivalRef } from '@/entities/bus-stop';
 import { useSelectedStop } from '@/features/select-stop';
 import type { GeoPosition } from '@/shared/lib';
 import { BaseMap, type FocusPadding, type MapControlsOptions } from '@/shared/ui';
-import { toStopPoints } from '../lib/toStopPoints';
+import { BUS_POINT_ID } from '../lib/toBusPoint';
+import { useMapPoints } from '../model/useMapPoints';
+import { StopPopup } from './StopPopup';
 
 type BusStopsMapProps = {
   // Where the nearby stops are searched for; undefined while the location is pending.
@@ -18,12 +19,11 @@ type BusStopsMapProps = {
   // Called on every tapped point, also the stop already selected, which does not change the URL.
   onSelect?: (number: string) => void;
   controls?: MapControlsOptions;
+  // The bus to draw beside the selected stop: its position comes from the stop's arrivals.
+  shownArrival?: ArrivalRef;
   className?: string;
 };
 
-const NO_STOPS: readonly BusStop[] = [];
-
-// The nearby stops, plus the selected one when it lies beyond the radius (a link or the search).
 export function BusStopsMap({
   center,
   mapCenter,
@@ -33,18 +33,18 @@ export function BusStopsMap({
   focusSelected = true,
   onSelect,
   controls,
+  shownArrival,
   className,
 }: BusStopsMapProps) {
-  const { number, select } = useSelectedStop();
-  const nearby = useNearbyStops(center);
-  const stops = nearby.data?.stops ?? NO_STOPS;
-  const isNearby = stops.some((stop) => stop.number === number);
-  const { data: opened } = useStop(nearby.data && number && !isNearby ? number : undefined);
-  const points = useMemo(
-    () => toStopPoints(opened ? [...stops, opened.stop] : stops),
-    [stops, opened],
-  );
+  const { number, select, clear } = useSelectedStop();
+  const { points, fitPoints } = useMapPoints(center, number, shownArrival);
   const selected = points.find((point) => point.id === number);
+  const popup = selected && {
+    at: selected,
+    label: `Parada ${selected.id}`,
+    content: <StopPopup number={selected.id} />,
+    onClose: clear,
+  };
 
   return (
     <BaseMap
@@ -53,13 +53,16 @@ export function BusStopsMap({
       points={points}
       selectedId={number}
       onSelectPoint={(id) => {
+        if (id === BUS_POINT_ID) return;
         onSelect?.(id);
         select(id);
       }}
       focus={selected && focusSelected ? selected : mapCenter}
+      fitPoints={fitPoints}
       focusPadding={focusPadding}
       userLocation={userLocation}
       controls={controls}
+      popup={popup}
     />
   );
 }

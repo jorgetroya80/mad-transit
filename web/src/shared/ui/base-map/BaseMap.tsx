@@ -1,11 +1,20 @@
 import { type Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { useRef } from 'react';
+import { type ReactNode, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { useCloseOnEscape } from '@/shared/lib';
 import { ControlGroup } from '../control-group';
 import { IconButton } from '../icon-button';
 import type { FocusPadding, LngLat, MapPoint } from './points';
-import { useEaseTo, useMapLibre, usePointsData, useUserLocationData } from './useMapLibre';
+import { useMapPopup } from './useMapPopup';
+import {
+  useEaseTo,
+  useFitPoints,
+  useMapLibre,
+  usePointsData,
+  useUserLocationData,
+} from './useMapLibre';
 
 // MapLibre derives the worker URL from its own import.meta.url, which neither Vite's dev
 // pre-bundling nor the production build preserve; Vite bundles the worker and gives its URL.
@@ -17,6 +26,14 @@ export type MapControlsOptions = {
   isRecentering?: boolean;
 };
 
+// Open at `at` until it is removed; `onClose` is for the close button and Escape only.
+export type MapPopup = {
+  at: LngLat;
+  label: string;
+  content: ReactNode;
+  onClose: () => void;
+};
+
 export type BaseMapProps = {
   className?: string;
   label?: string;
@@ -24,10 +41,13 @@ export type BaseMapProps = {
   selectedId?: string;
   onSelectPoint?: (id: string) => void;
   focus?: LngLat;
+  // Frames these points instead of the focus while they are set.
+  fitPoints?: readonly LngLat[];
   focusPadding?: FocusPadding;
   userLocation?: LngLat;
   // Shows the zoom controls, and recentering if it has `onRecenter`; without it the map has none.
   controls?: MapControlsOptions;
+  popup?: MapPopup;
 };
 
 // Module-level so a map without points keeps the same array and does not reset its data.
@@ -61,6 +81,17 @@ function MapControls({
   );
 }
 
+// The popup's own chrome: a named dialog that closes with its button or with Escape from inside it.
+function PopupCard({ label, content, onClose }: Omit<MapPopup, 'at'>) {
+  const escapeRef = useCloseOnEscape(onClose);
+  return (
+    <dialog ref={escapeRef} open aria-label={label} className="relative flex items-start gap-2">
+      <div className="min-w-0 flex-1">{content}</div>
+      <IconButton label="Cerrar" icon="close" size="sm" onClick={onClose} />
+    </dialog>
+  );
+}
+
 // Points are not keyboard-accessible by design: lists and search reach every point.
 export function BaseMap({
   className,
@@ -69,16 +100,20 @@ export function BaseMap({
   selectedId,
   onSelectPoint,
   focus,
+  fitPoints,
   focusPadding,
   userLocation,
   controls,
+  popup,
 }: BaseMapProps) {
   const containerRef = useRef<HTMLElement>(null);
   const loadedMap = useMapLibre(containerRef, onSelectPoint);
   const map = loadedMap?.map;
   usePointsData(loadedMap, points, selectedId);
   useUserLocationData(map, userLocation);
-  useEaseTo(map, focus, focusPadding);
+  useEaseTo(map, fitPoints ? undefined : focus, focusPadding);
+  useFitPoints(map, fitPoints, focusPadding);
+  const popupElement = useMapPopup(map, popup?.at);
 
   // MapLibre adds its canvas next to the controls and leaves them alone. `isolate` keeps the
   // controls' z-index inside the map, so anything laid over the map, like a card, stays on top.
@@ -89,6 +124,12 @@ export function BaseMap({
       className={['isolate', className].filter(Boolean).join(' ')}
     >
       {map && controls && <MapControls map={map} {...controls} />}
+      {popup
+        ? createPortal(
+            <PopupCard label={popup.label} content={popup.content} onClose={popup.onClose} />,
+            popupElement,
+          )
+        : null}
     </section>
   );
 }

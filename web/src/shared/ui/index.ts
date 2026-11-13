@@ -1,6 +1,12 @@
 export { AppHeader } from './app-header';
 export { Banner } from './banner';
-export { BaseMap, type FocusPadding, type MapControlsOptions, type MapPoint } from './base-map';
+export {
+  BaseMap,
+  type FocusPadding,
+  type MapControlsOptions,
+  type MapPoint,
+  type MapPopup,
+} from './base-map';
 export { BottomSheet, type SheetSnap, useBottomSheetOverlap } from './bottom-sheet';
 export { Button } from './button';
 export { Card } from './card';

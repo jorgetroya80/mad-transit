@@ -16,6 +16,7 @@ import {
 import { env, POLL_INTERVAL_MS, RETRY_DELAYS_MS } from '@/shared/config';
 import { BusRequestError } from './BusRequestError';
 import { useAllStops, useArrivals, useNearbyStops, useStop } from './busStopQueries';
+import { busStopKeys } from './busStopKeys';
 
 const STOPS_URL = `${env.apiBaseUrl}/v1/bus/stops`;
 const STOP_PATH = `${STOPS_URL}/72`;
@@ -24,6 +25,7 @@ const SOL = { lat: 40.41684, lng: -3.70376 };
 // Fake time also advances with the real clock, so a wait is checked with a margin around it.
 const MARGIN_MS = 1000;
 const [FIRST_RETRY_MS, SECOND_RETRY_MS] = RETRY_DELAYS_MS;
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 // Same retry and background defaults as the app's QueryClient: the queries pace their own retries.
 function createWrapper() {
@@ -117,6 +119,27 @@ describe('useAllStops', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(urls.map((url) => url.search)).toEqual(['']);
     expect(result.current.data).toEqual(busStopsFixture);
+  });
+});
+
+describe('cache lifetime', () => {
+  it('keeps every stop fresh for 24 h, and the nearby and single stops for 1 h', async () => {
+    const queryClient = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const all = renderHook(() => useAllStops(), { wrapper });
+    const nearby = renderHook(() => useNearbyStops(SOL), { wrapper });
+    const stop = renderHook(() => useStop('72'), { wrapper });
+    await waitFor(() => expect(all.result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(nearby.result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(stop.result.current.isSuccess).toBe(true));
+
+    const staleTimeOf = (queryKey: readonly unknown[]) =>
+      queryClient.getQueryCache().find({ queryKey, exact: true })?.observers[0]?.options.staleTime;
+    expect(staleTimeOf(busStopKeys.all())).toBe(24 * ONE_HOUR_MS);
+    expect(staleTimeOf(busStopKeys.nearby(SOL))).toBe(ONE_HOUR_MS);
+    expect(staleTimeOf(busStopKeys.detail('72'))).toBe(ONE_HOUR_MS);
   });
 });
 
