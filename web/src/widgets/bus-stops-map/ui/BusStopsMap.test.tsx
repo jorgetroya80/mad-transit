@@ -6,7 +6,7 @@ import { server } from '@/shared/api/mocks/node';
 import { env } from '@/shared/config';
 import type { GeoPosition } from '@/shared/lib';
 import type * as SharedUi from '@/shared/ui';
-import type { MapPoint } from '@/shared/ui';
+import type { MapPoint, MapPopup } from '@/shared/ui';
 import { renderWithRouter } from '../../../../test/renderWithRouter';
 import { BusStopsMap } from './BusStopsMap';
 
@@ -16,6 +16,7 @@ type CapturedMapProps = {
   onSelectPoint?: (id: string) => void;
   focus?: { lng: number; lat: number };
   userLocation?: { lng: number; lat: number };
+  popup?: MapPopup;
 };
 
 const mapRenders = vi.hoisted(() => [] as CapturedMapProps[]);
@@ -121,6 +122,32 @@ describe('BusStopsMap', () => {
     await waitForPoints(3);
 
     expect(lastMapProps()).toMatchObject({ selectedId: '73' });
+  });
+
+  it('opens the popup on the selected stop, labelled with its number', async () => {
+    await renderMap('/?service=bus&stop=73');
+    await waitForPoints(3);
+
+    expect(lastMapProps().popup).toMatchObject({
+      at: { lng: -3.704, lat: 40.4172 },
+      label: 'Parada 73',
+    });
+  });
+
+  it('opens no popup without a selected stop', async () => {
+    await renderMap();
+    await waitForPoints(3);
+
+    expect(lastMapProps().popup).toBeUndefined();
+  });
+
+  it('closes the popup by removing ?stop', async () => {
+    const { router } = await renderMap('/?service=bus&stop=73');
+    await waitForPoints(3);
+
+    await act(async () => lastMapProps().popup?.onClose());
+
+    expect(router.state.location.href).toBe('/?service=bus');
   });
 
   it('centers on the user while no stop is selected', async () => {

@@ -1,7 +1,6 @@
-import { ArrivalRow } from '@/entities/bus-stop';
+import { ArrivalRow, type FreshArrivals, useFreshArrivals } from '@/entities/bus-stop';
 import { usePendingAction } from '@/shared/lib';
 import { Banner, Spinner, UpdatedAt } from '@/shared/ui';
-import { type FreshArrivals, useFreshArrivals } from '../model/useFreshArrivals';
 
 const QUOTA_TEXT =
   'Hoy se ha alcanzado el límite de consultas a la EMT. Las llegadas volverán solas; los horarios de abajo siguen siendo válidos.';

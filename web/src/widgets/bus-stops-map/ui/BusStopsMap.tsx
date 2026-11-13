@@ -4,6 +4,7 @@ import { useSelectedStop } from '@/features/select-stop';
 import type { GeoPosition } from '@/shared/lib';
 import { BaseMap, type FocusPadding, type MapControlsOptions } from '@/shared/ui';
 import { toStopPoints } from '../lib/toStopPoints';
+import { StopPopup } from './StopPopup';
 
 type BusStopsMapProps = {
   // Where the nearby stops are searched for; undefined while the location is pending.
@@ -35,7 +36,7 @@ export function BusStopsMap({
   controls,
   className,
 }: BusStopsMapProps) {
-  const { number, select } = useSelectedStop();
+  const { number, select, clear } = useSelectedStop();
   const nearby = useNearbyStops(center);
   const stops = nearby.data?.stops ?? NO_STOPS;
   const isNearby = stops.some((stop) => stop.number === number);
@@ -45,6 +46,12 @@ export function BusStopsMap({
     [stops, opened],
   );
   const selected = points.find((point) => point.id === number);
+  const popup = selected && {
+    at: selected,
+    label: `Parada ${selected.id}`,
+    content: <StopPopup number={selected.id} />,
+    onClose: clear,
+  };
 
   return (
     <BaseMap
@@ -60,6 +67,7 @@ export function BusStopsMap({
       focusPadding={focusPadding}
       userLocation={userLocation}
       controls={controls}
+      popup={popup}
     />
   );
 }

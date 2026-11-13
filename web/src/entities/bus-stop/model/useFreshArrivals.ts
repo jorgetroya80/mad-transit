@@ -1,5 +1,7 @@
-import { type Arrival, BusRequestError, blockedUntil, useArrivals } from '@/entities/bus-stop';
 import { useNow } from '@/shared/lib';
+import { BusRequestError, blockedUntil } from '../api/BusRequestError';
+import { useArrivals } from '../api/busStopQueries';
+import type { Arrival } from './types';
 
 export type FreshArrivals = {
   // Undefined while loading, or once a failed refresh leaves the last ones too old to show.
