@@ -59,6 +59,26 @@ describe('toFeatureCollection', () => {
     ]);
   });
 
+  it('names the square icon image of an icon point, bigger when it is the selected one', () => {
+    const stop: MapPoint = {
+      id: '72',
+      lng: -3.7,
+      lat: 40.4,
+      tone: 'info',
+      shape: 'square',
+      icon: 'bus',
+    };
+    const [unselected] = toFeatureCollection([stop]).features;
+    const [selected] = toFeatureCollection([stop], '72').features;
+
+    expect(unselected?.properties.imageId).toBe(
+      mapPointImageId({ tone: 'info', shape: 'square', icon: 'bus', selected: false }),
+    );
+    expect(selected?.properties.imageId).toBe(
+      mapPointImageId({ tone: 'info', shape: 'square', icon: 'bus', selected: true }),
+    );
+  });
+
   it('is empty without points', () => {
     expect(toFeatureCollection([]).features).toEqual([]);
   });

@@ -342,6 +342,17 @@ describe('BaseMap points', () => {
     expect(maplibre.instances).toHaveLength(1);
   });
 
+  it('fills the points source with the image of each square icon point', () => {
+    const stops: MapPoint[] = [
+      { id: '72', lng: -3.7038, lat: 40.4168, tone: 'info', shape: 'square', icon: 'bus' },
+      { id: '73', lng: -3.7059, lat: 40.42, tone: 'info', shape: 'square', icon: 'bus' },
+    ];
+    render(<BaseMap points={stops} selectedId="73" />);
+    const map = loadedMap();
+
+    expect(lastData(map, POINTS_SOURCE_ID)).toEqual(toFeatureCollection(stops, '73'));
+  });
+
   it('draws the user location in its own source', () => {
     const { rerender } = render(<BaseMap />);
     const map = loadedMap();
