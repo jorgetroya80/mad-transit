@@ -14,6 +14,11 @@ function parseNumber(value: unknown): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined;
 }
 
+// Bus stop numbers are only digits, so anything else in the URL is dropped.
+function parseStop(value: unknown): string | undefined {
+  return typeof value === 'string' && /^\d+$/.test(value) ? value : undefined;
+}
+
 function parseNeed(value: unknown): Need {
   return value === 'docks' ? 'docks' : 'bikes';
 }
@@ -29,6 +34,6 @@ export function validateMapSearch(raw: Record<string, unknown>): MapSearch {
     station: parseNumber(raw.station),
     need: parseNeed(raw.need),
     service,
-    stop: service === 'bus' ? parseNumber(raw.stop) : undefined,
+    stop: service === 'bus' ? parseStop(raw.stop) : undefined,
   };
 }
