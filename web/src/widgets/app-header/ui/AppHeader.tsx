@@ -1,8 +1,7 @@
 import { useAllStations, useDataStatus } from '@/entities/station';
 import { NOW_TICK_MS } from '@/shared/config';
-import { useNow } from '@/shared/lib';
+import { freshnessOf, useNow } from '@/shared/lib';
 import { AppHeader as Header } from '@/shared/ui';
-import { freshnessOf } from '../model/freshnessOf';
 
 // The freshness of the whole list, which the map and the nearby list both come from.
 export function AppHeader() {
