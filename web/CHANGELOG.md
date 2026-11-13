@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.12.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.11.1...web-v0.12.0) (2026-11-13)
+
+
+### Features
+
+* **web:** add bus stop data and map points ([#128](https://github.com/jorgetroya80/mad-transit/issues/128)) ([e684d7c](https://github.com/jorgetroya80/mad-transit/commit/e684d7c8d22e032d5ad914b92377954e6c09768f))
+* **web:** add bus stop popup, vehicle position and search ([#132](https://github.com/jorgetroya80/mad-transit/issues/132)) ([544ea01](https://github.com/jorgetroya80/mad-transit/commit/544ea01d253d0de60b0d8559844cad43fc03ffa4))
+* **web:** show bus stops list, detail and arrivals ([#130](https://github.com/jorgetroya80/mad-transit/issues/130)) ([29e1e87](https://github.com/jorgetroya80/mad-transit/commit/29e1e87e19556977f31c3a1a91942a390dd4e505))
+
+
+### Bug Fixes
+
+* **web:** keep only digits as the bus stop in the URL ([#134](https://github.com/jorgetroya80/mad-transit/issues/134)) ([3fc897c](https://github.com/jorgetroya80/mad-transit/commit/3fc897cd49c25fb6c7dcad70e030ac31e59c5efd))
+* **web:** review fixes for the bus stops ([#133](https://github.com/jorgetroya80/mad-transit/issues/133)) ([e4d21f0](https://github.com/jorgetroya80/mad-transit/commit/e4d21f02e0dc71316703ea9be30ccbc62e039190))
+
 ## [0.11.1](https://github.com/jorgetroya80/mad-transit/compare/web-v0.11.0...web-v0.11.1) (2026-11-12)
 
 
