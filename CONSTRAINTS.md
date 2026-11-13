@@ -64,3 +64,4 @@ Medidos el 2026-10-29 en `main` (`ca07422`). Cada comprobación se compara con e
 | ID | Regla | Ruta | Motivo | Responsable | Caduca |
 | --- | --- | --- | --- | --- | --- |
 | W1 | Sin tests saltados ni supresiones (`it.skip` y su `oxlint-disable-next-line vitest/no-disabled-tests`) | `web/src/widgets/station-card/ui/StationSheet.test.tsx` («greys out both availabilities when the data is not confirmed») | MSW 3 deja salir a veces la petición de detalle a la red real con carga (mswjs/interceptors#897, abierta); el test falla 1 de cada 2–3 vueltas en CI. Se revisa cuando MSW publique el arreglo | Jorge Troya | 2026-12-31 |
+| E1 | Aserción de T2 en «with Bus chosen»: `expect(screen.queryByTestId('base-map')).not.toBeInTheDocument();` | `web/src/pages/map/ui/MapPage.test.tsx` | T4 añade el mapa de paradas con Bus, así que la aserción deja de ser cierta y pasa a `getByTestId('base-map')`. Excepción aprobada por el usuario el 2026-11-12 | Jorge Troya | 2026-12-31 |
