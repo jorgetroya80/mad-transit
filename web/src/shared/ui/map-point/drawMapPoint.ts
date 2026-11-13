@@ -6,6 +6,9 @@ const CIRCLE_DIAMETER_PX = 40;
 const SELECTED_CIRCLE_SCALE = 1.2;
 const SQUARE = { side: 32, radius: 8 };
 const SELECTED_SQUARE = { side: 40, radius: 10 };
+const PILL = { width: 72, height: 32 };
+const PILL_ICON_OFFSET_PX = 18;
+const PILL_VALUE_OFFSET_PX = 8;
 const BORDER_WIDTH_PX = 2;
 const SELECTED_RING_WIDTH_PX = 4;
 const ICON_SIZE_PX = 16;
@@ -39,12 +42,16 @@ export type MapPointPainter = Pick<
 // The style is read once by the caller, so the drawing never touches the CSS.
 export type MapPointDrawing = { pixelRatio: number; style: MapPointStyle };
 
-type Shape = { isCircle: boolean; side: number; radius: number };
+type Shape = { isCircle: boolean; width: number; height: number; radius: number };
 
 function shapeOf({ shape, selected }: MapPointParams): Shape {
-  if (shape === 'square') return { isCircle: false, ...(selected ? SELECTED_SQUARE : SQUARE) };
+  if (shape === 'pill') return { isCircle: false, ...PILL, radius: PILL.height / 2 };
+  if (shape === 'square') {
+    const { side, radius } = selected ? SELECTED_SQUARE : SQUARE;
+    return { isCircle: false, width: side, height: side, radius };
+  }
   const side = selected ? CIRCLE_DIAMETER_PX * SELECTED_CIRCLE_SCALE : CIRCLE_DIAMETER_PX;
-  return { isCircle: true, side, radius: side / 2 };
+  return { isCircle: true, width: side, height: side, radius: side / 2 };
 }
 
 function borderWidthOf({ selected }: MapPointParams): number {
@@ -62,21 +69,30 @@ function fillColorOf({ tone, fill }: MapPointParams, colors: MapPointColors): st
 }
 
 // The border sits outside the shape, as in the map's point images, so the image grows with it.
+// The image stays square: a pill is drawn across its middle.
 export function mapPointSize(params: MapPointParams): number {
-  return shapeOf(params).side + 2 * borderWidthOf(params);
+  const { width, height } = shapeOf(params);
+  return Math.max(width, height) + 2 * borderWidthOf(params);
 }
 
 function traceShape(painter: MapPointPainter, params: MapPointParams) {
-  const { isCircle, side, radius } = shapeOf(params);
+  const { isCircle, width, height, radius } = shapeOf(params);
   const inset = borderWidthOf(params) / 2;
-  const pathSide = side + 2 * inset;
+  const center = mapPointSize(params) / 2;
+  const halfWidth = width / 2 + inset;
+  const halfHeight = height / 2 + inset;
   painter.beginPath();
   if (isCircle) {
-    const center = inset + pathSide / 2;
-    painter.arc(center, center, pathSide / 2, 0, FULL_TURN);
+    painter.arc(center, center, halfWidth, 0, FULL_TURN);
     return;
   }
-  painter.roundRect(inset, inset, pathSide, pathSide, radius + inset);
+  painter.roundRect(
+    center - halfWidth,
+    center - halfHeight,
+    2 * halfWidth,
+    2 * halfHeight,
+    radius + inset,
+  );
 }
 
 function paintShape(painter: MapPointPainter, params: MapPointParams, colors: MapPointColors) {
@@ -93,22 +109,22 @@ export function mapPointValueFont({ fontFamily }: MapPointStyle): string {
   return `${VALUE_WEIGHT} ${VALUE_SIZE_PX}px ${fontFamily}`;
 }
 
-type Label = { value: string; center: number; style: MapPointStyle };
+type Point = { x: number; y: number };
+type Label = Point & { value: string; style: MapPointStyle };
 
-function paintValue(painter: MapPointPainter, { value, center, style }: Label) {
+function paintValue(painter: MapPointPainter, { value, x, y, style }: Label) {
   painter.font = mapPointValueFont(style);
   painter.textAlign = 'center';
   painter.textBaseline = 'middle';
-  painter.fillText(value, center, center);
+  painter.fillText(value, x, y);
 }
 
 // Same path data as Icon, scaled from its 24 viewBox, so the stroke width stays in its units.
-function paintIcon(painter: MapPointPainter, icon: IconName, center: number) {
+function paintIcon(painter: MapPointPainter, icon: IconName, { x, y }: Point) {
   const { paths, strokeWidth, isFilled } = ICON_DRAWINGS[icon];
-  const corner = center - ICON_SIZE_PX / 2;
   const scale = ICON_SIZE_PX / ICON_VIEWBOX_SIZE;
   painter.save();
-  painter.translate(corner, corner);
+  painter.translate(x - ICON_SIZE_PX / 2, y - ICON_SIZE_PX / 2);
   painter.scale(scale, scale);
   painter.lineWidth = strokeWidth;
   painter.lineCap = 'round';
@@ -126,12 +142,22 @@ function paintContent(painter: MapPointPainter, params: MapPointParams, style: M
   const color = style.colors.tones[params.tone].text;
   painter.fillStyle = color;
   painter.strokeStyle = color;
+  if (params.shape === 'pill') {
+    paintIcon(painter, params.icon, { x: center - PILL_ICON_OFFSET_PX, y: center });
+    paintValue(painter, {
+      value: params.value,
+      x: center + PILL_VALUE_OFFSET_PX,
+      y: center,
+      style,
+    });
+    return;
+  }
   if (params.icon !== undefined) {
-    paintIcon(painter, params.icon, center);
+    paintIcon(painter, params.icon, { x: center, y: center });
     return;
   }
   if (params.value === undefined) return;
-  paintValue(painter, { value: params.value, center, style });
+  paintValue(painter, { value: params.value, x: center, y: center, style });
 }
 
 // The caller sizes the canvas to Math.ceil(mapPointSize(params) * pixelRatio) on each side.

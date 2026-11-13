@@ -148,6 +148,25 @@ describe('drawMapPoint', () => {
     ]);
   });
 
+  it('draws a 72 by 32 pill with the bus icon and its line in one image, in the tag fill', () => {
+    const { paths, strokeWidth } = ICON_DRAWINGS.bus;
+    const calls = draw({ tone: 'info', shape: 'pill', fill: 'tag', icon: 'bus', value: '27' });
+
+    expect(calls).toEqual([
+      ['scale', 1, 1],
+      ['beginPath'],
+      ['roundRect', 1, 21, 74, 34, 17],
+      ['fill', '#tag', undefined],
+      ['stroke', '#halo', 2, undefined, 'butt', 'miter'],
+      ['save'],
+      ['translate', 12, 30],
+      ['scale', 2 / 3, 2 / 3],
+      ...paths.map((d) => ['stroke', '#info-text', strokeWidth, d, 'round', 'round']),
+      ['restore'],
+      ['fillText', '27', 46, 38, '#info-text', FONT, 'center', 'middle'],
+    ]);
+  });
+
   it('draws the selected square 40 px wide with radius 10 in the selection ring', () => {
     const calls = draw({ tone: 'info', shape: 'square', fill: 'tag', icon: 'bus', selected: true });
 
@@ -196,6 +215,7 @@ describe('mapPointSize', () => {
     ['selected circle', { tone: 'success', value: '3', selected: true }, 56],
     ['square', { tone: 'neutral', shape: 'square', icon: 'bus' }, 36],
     ['selected square', { tone: 'info', shape: 'square', icon: 'bus', selected: true }, 48],
+    ['pill', { tone: 'info', shape: 'pill', icon: 'bus', value: '27' }, 76],
     ['danger circle', { tone: 'danger', value: '0' }, 44],
     ['muted circle', { tone: 'muted', value: '–' }, 44],
   ])('is the shape plus its border on both sides for the %s', (_case, params, size) => {

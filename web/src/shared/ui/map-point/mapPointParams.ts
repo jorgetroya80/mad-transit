@@ -14,7 +14,7 @@ export const MAP_POINT_TAG_TONES = [
 
 type MapPointTagTone = (typeof MAP_POINT_TAG_TONES)[number];
 
-export type MapPointShape = 'circle' | 'square';
+export type MapPointShape = 'circle' | 'square' | 'pill';
 
 export type MapPointFill = 'tone' | 'tag';
 
@@ -25,14 +25,17 @@ type MapPointContent =
 
 type MapPointLook = { tone: MapPointTone; fill?: 'tone' } | { tone: MapPointTagTone; fill: 'tag' };
 
-export type MapPointParams = MapPointLook & {
-  shape?: MapPointShape;
-  selected?: boolean;
-} & MapPointContent;
+// A pill is the only shape that carries its icon and its value together.
+type MapPointBody =
+  | ({ shape?: Exclude<MapPointShape, 'pill'> } & MapPointContent)
+  | { shape: 'pill'; icon: IconName; value: string };
+
+export type MapPointParams = MapPointLook & { selected?: boolean } & MapPointBody;
 
 const ID_PREFIX = 'map-point';
 
 function contentKey({ value, icon }: MapPointParams): string {
+  if (icon !== undefined && value !== undefined) return `icon=${icon}:value=${value}`;
   if (icon !== undefined) return `icon=${icon}`;
   if (value !== undefined) return `value=${value}`;
   return 'empty';
