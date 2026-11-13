@@ -2,7 +2,7 @@ import { act, waitFor } from '@testing-library/react';
 import type { BusStopDetailResponse, BusStopsResponse } from '@jorgetroya80/mad-transit-client';
 import { http, HttpResponse } from 'msw';
 import type { ArrivalRef } from '@/entities/bus-stop';
-import { busStopsFixture } from '@/shared/api/mocks/fixtures';
+import { arrivingArrival, busArrivalsFixture, busStopsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env } from '@/shared/config';
 import type { GeoPosition } from '@/shared/lib';
@@ -210,6 +210,10 @@ describe('BusStopsMap', () => {
     const N1_ARRIVAL: ArrivalRef = { line: 'N1', destination: 'Cibeles' };
     const ARRIVALS_URL = `${BUS_STOPS_URL}/72/arrivals`;
 
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('draws the bus as a pill with its line, beside the stop', async () => {
       await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
       await waitForPoints(4);
@@ -254,6 +258,29 @@ describe('BusStopsMap', () => {
 
       expect(lastMapProps().points).toHaveLength(3);
       expect(lastMapProps().fitPoints).toBeUndefined();
+    });
+
+    it('moves the bus with the next arrivals poll, without pressing the button again', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      let bus = { busLat: 40.4166, busLon: -3.7037 };
+      server.use(
+        http.get(ARRIVALS_URL, () =>
+          HttpResponse.json({
+            ...busArrivalsFixture,
+            arrivals: [{ ...arrivingArrival, ...bus }],
+          }),
+        ),
+      );
+      await renderMap('/?service=bus&stop=72', undefined, N1_ARRIVAL);
+      await waitForPoints(4);
+      expect(lastMapProps().points?.at(-1)).toMatchObject({ lng: -3.7037, lat: 40.4166 });
+
+      bus = { busLat: 40.4201, busLon: -3.7011 };
+      await act(() => vi.advanceTimersByTimeAsync(30_000));
+
+      await waitFor(() =>
+        expect(lastMapProps().points?.at(-1)).toMatchObject({ lng: -3.7011, lat: 40.4201 }),
+      );
     });
 
     it('does not select a stop when the bus is tapped', async () => {
