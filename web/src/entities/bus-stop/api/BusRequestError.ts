@@ -20,3 +20,9 @@ export class BusRequestError extends Error {
     this.retryAfterMs = retryAfterMs(response?.headers.get('Retry-After'));
   }
 }
+
+// Retry-After counts from the failure: until then, a retry by hand waits.
+export function blockedUntil(error: unknown, failedAt: number): number {
+  if (!(error instanceof BusRequestError) || error.retryAfterMs === undefined) return 0;
+  return failedAt + error.retryAfterMs;
+}

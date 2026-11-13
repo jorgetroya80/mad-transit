@@ -5,6 +5,8 @@
 // Usage: node scripts/floor-guard.mjs [--base <ref>]   (default base: origin/main)
 // Exit codes: 0 clean, 1 at least one violation, 2 the guard could not run.
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const base = (() => {
   const i = process.argv.indexOf('--base');
@@ -70,8 +72,8 @@ for (const line of diff.split('\n')) {
   else if (line.startsWith('-')) removed.push({ file, text: line.slice(1) });
 }
 
-const findings = [];
-const flag = (rule, f, text) => findings.push({ rule, file: f, text: text.trim().slice(0, 120) });
+const raw = [];
+const flag = (rule, f, text) => raw.push({ rule, file: f, text: text.trim().slice(0, 120) });
 // This script names every pattern it looks for, so it would flag itself.
 const SELF = 'scripts/floor-guard.mjs';
 const isCode = (f) => f !== SELF && /\.(ts|tsx|js|mjs|cjs|kt|kts|java)$/.test(f);
@@ -223,6 +225,29 @@ for (const n of notes) {
   console.log(`floor-guard: note [${n.rule}] ${n.file}: ${n.text}`);
   console.log('  Check that the gap is now covered, not just hidden.');
 }
+// Approved exceptions: an E row in CONSTRAINTS.md with all six cells filled. The row itself may be
+// added, and an assertion its rule quotes may be rewritten in the file its path names.
+const approved = (() => {
+  let text = '';
+  try {
+    text = readFileSync(join(top, 'CONSTRAINTS.md'), 'utf8');
+  } catch {
+    return [];
+  }
+  return text
+    .split('\n')
+    .filter((line) => /^\| *E\d+ *\|/.test(line.trim()))
+    .map((line) => ({ row: line.trim(), cells: line.split('|').slice(1, -1).map((c) => c.trim()) }))
+    .filter(({ cells }) => cells.length === 6 && cells.every(Boolean));
+})();
+const accepted = (f) =>
+  approved.some(({ row, cells: [, rule, path] }) => {
+    if (f.rule === 'new-exception') return row.startsWith(f.text);
+    if (f.rule === 'assertion-removed') return path.includes(f.file) && rule.includes(f.text);
+    return false;
+  });
+const findings = raw.filter((f) => !accepted(f));
+
 if (findings.length === 0) {
   console.log('floor-guard: clean');
   process.exit(0);
