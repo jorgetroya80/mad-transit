@@ -10,7 +10,7 @@ import { useSelectedStation } from '@/features/select-station';
 import { BaseMap, type FocusPadding, type MapControlsOptions } from '@/shared/ui';
 import { toMapPoints } from '../lib/toMapPoints';
 import { type MapLayout, MapNotice } from './MapNotice';
-import { useDataStatus } from '@/shared/lib';
+import { useDataStatus, useKeptFocus } from '@/shared/lib';
 
 type StationsMapProps = {
   // Where the list is, so the offline layer can point to it.
@@ -57,6 +57,10 @@ export function StationsMap({
   // real changes.
   const points = useMemo(() => toMapPoints(stations, need, status), [stations, need, status]);
   const selected = findStation(stations, number);
+  const focus = useKeptFocus(
+    selected && focusSelected ? { lng: selected.lon, lat: selected.lat } : undefined,
+    center,
+  );
 
   return (
     <div className={['relative isolate', className].filter(Boolean).join(' ')}>
@@ -69,7 +73,7 @@ export function StationsMap({
           onSelect?.(id);
           select(id);
         }}
-        focus={selected && focusSelected ? { lng: selected.lon, lat: selected.lat } : center}
+        focus={focus}
         focusPadding={focusPadding}
         userLocation={userLocation}
         controls={controls}
