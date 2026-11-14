@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/jorgetroya80/mad-transit/compare/web-v0.12.0...web-v0.12.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **web:** keep the map in place when the stop or station closes ([#136](https://github.com/jorgetroya80/mad-transit/issues/136)) ([c1be845](https://github.com/jorgetroya80/mad-transit/commit/c1be845f81d2a947e5444ce0198740b94f959551))
+
 ## [0.12.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.11.1...web-v0.12.0) (2026-11-13)
 
 
