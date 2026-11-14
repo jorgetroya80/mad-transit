@@ -1,6 +1,6 @@
 import type { ArrivalRef } from '@/entities/bus-stop';
 import { useSelectedStop } from '@/features/select-stop';
-import type { GeoPosition } from '@/shared/lib';
+import { type GeoPosition, useKeptFocus } from '@/shared/lib';
 import { BaseMap, type FocusPadding, type MapControlsOptions } from '@/shared/ui';
 import { BUS_POINT_ID } from '../lib/toBusPoint';
 import { useMapPoints } from '../model/useMapPoints';
@@ -39,6 +39,7 @@ export function BusStopsMap({
   const { number, select, clear } = useSelectedStop();
   const { points, fitPoints } = useMapPoints(center, number, shownArrival);
   const selected = points.find((point) => point.id === number);
+  const focus = useKeptFocus(selected && focusSelected ? selected : undefined, mapCenter);
   const popup = selected && {
     at: selected,
     label: `Parada ${selected.id}`,
@@ -57,7 +58,7 @@ export function BusStopsMap({
         onSelect?.(id);
         select(id);
       }}
-      focus={selected && focusSelected ? selected : mapCenter}
+      focus={focus}
       fitPoints={fitPoints}
       focusPadding={focusPadding}
       userLocation={userLocation}

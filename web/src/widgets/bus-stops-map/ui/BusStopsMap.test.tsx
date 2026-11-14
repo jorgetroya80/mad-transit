@@ -1,6 +1,8 @@
-import { act, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { BusStopDetailResponse, BusStopsResponse } from '@jorgetroya80/mad-transit-client';
 import { http, HttpResponse } from 'msw';
+import { useState } from 'react';
 import type { ArrivalRef } from '@/entities/bus-stop';
 import { arrivingArrival, busArrivalsFixture, busStopsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
@@ -102,6 +104,22 @@ function renderMap(
   );
 }
 
+// Stands in for the page's "Mi ubicación": asking clears `mapCenter` and the answer sets it.
+function MovableMap() {
+  const [mapCenter, setMapCenter] = useState<GeoPosition | undefined>(SOL);
+  return (
+    <>
+      <BusStopsMap center={SOL} mapCenter={mapCenter} userLocation={USER} />
+      <button type="button" onClick={() => setMapCenter(undefined)}>
+        Pedir ubicación
+      </button>
+      <button type="button" onClick={() => setMapCenter(USER)}>
+        Responder ubicación
+      </button>
+    </>
+  );
+}
+
 async function waitForPoints(count: number) {
   await waitFor(() => expect(lastMapProps().points).toHaveLength(count));
 }
@@ -160,6 +178,28 @@ describe('BusStopsMap', () => {
     await act(async () => lastMapProps().popup?.onClose());
 
     expect(router.state.location.href).toBe('/?service=bus');
+  });
+
+  it('keeps the map on the stop when it closes', async () => {
+    await renderMap('/?service=bus&stop=73');
+    await waitForPoints(3);
+
+    await act(async () => lastMapProps().popup?.onClose());
+
+    expect(lastMapProps().popup).toBeUndefined();
+    expect(lastMapProps().focus).toMatchObject({ lng: -3.704, lat: 40.4172 });
+  });
+
+  it('follows the user again when the location is asked for after closing', async () => {
+    const user = userEvent.setup();
+    await renderWithRouter(<MovableMap />, { initialEntries: ['/?service=bus&stop=73'] });
+    await waitForPoints(3);
+    await act(async () => lastMapProps().popup?.onClose());
+
+    await user.click(screen.getByRole('button', { name: 'Pedir ubicación' }));
+    await user.click(screen.getByRole('button', { name: 'Responder ubicación' }));
+
+    expect(lastMapProps().focus).toEqual(USER);
   });
 
   it('centers on the user while no stop is selected', async () => {

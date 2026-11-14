@@ -1,7 +1,9 @@
 import { onlineManager } from '@tanstack/react-query';
 import { act, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { Coordinates } from '@/entities/station';
 import { http, HttpResponse } from 'msw';
+import { useState } from 'react';
 import { staleStationsFixture, stationsFixture } from '@/shared/api/mocks/fixtures';
 import { server } from '@/shared/api/mocks/node';
 import { env } from '@/shared/config';
@@ -66,6 +68,22 @@ function renderMap(initialEntry = '/', { center }: { center?: Coordinates } = { 
   return renderWithRouter(<StationsMap layout="desktop" center={center} userLocation={USER} />, {
     initialEntries: [initialEntry],
   });
+}
+
+// Stands in for the page's "Mi ubicación": asking clears `center` and the answer sets it.
+function MovableMap() {
+  const [center, setCenter] = useState<Coordinates | undefined>(SOL);
+  return (
+    <>
+      <StationsMap layout="desktop" center={center} userLocation={USER} />
+      <button type="button" onClick={() => setCenter(undefined)}>
+        Pedir ubicación
+      </button>
+      <button type="button" onClick={() => setCenter(USER)}>
+        Responder ubicación
+      </button>
+    </>
+  );
 }
 
 function failStations() {
@@ -144,6 +162,29 @@ describe('StationsMap', () => {
     await waitForPoints();
 
     expect(lastMapProps()).toMatchObject({ selectedId: undefined, focus: SOL });
+  });
+
+  it('keeps the map on the station when it closes', async () => {
+    const { router } = await renderMap('/?station=1a');
+    await waitForPoints();
+
+    await act(() => router.navigate({ to: '/', search: { need: 'bikes' } }));
+
+    expect(lastMapProps()).toMatchObject({ selectedId: undefined, focus: PUERTA_DEL_SOL_A });
+  });
+
+  it('follows the given center again when it changes after closing', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { router } = await renderWithRouter(<MovableMap />, {
+      initialEntries: ['/?station=1a'],
+    });
+    await waitForPoints();
+    await act(() => router.navigate({ to: '/', search: { need: 'bikes' } }));
+
+    await user.click(screen.getByRole('button', { name: 'Pedir ubicación' }));
+    await user.click(screen.getByRole('button', { name: 'Responder ubicación' }));
+
+    expect(lastMapProps().focus).toEqual(USER);
   });
 
   it('centers on the given center, keeping the selection, when the selected station is not the focus', async () => {
