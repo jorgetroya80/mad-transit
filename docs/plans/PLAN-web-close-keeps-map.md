@@ -1,7 +1,7 @@
 # Plan: web — el mapa no se mueve al cerrar la parada o la estación
 
 - Created: 2026-11-14
-- Status: **in progress** (2026-11-14)
+- Status: **implemented** (2026-11-14)
 - Spec: [SPEC-web-bus.md](../specs/SPEC-web-bus.md), [SPEC-web-bicimad.md](../specs/SPEC-web-bicimad.md)
 
 ## Problema
@@ -42,11 +42,12 @@ Rama `fix/web-close-keeps-map`, un commit por tarea, un PR `fix(web)` que solo t
 - [x] **T2: BiciMAD.** Test primero en `StationsMap.test.tsx`: quitar `?station` deja `focus` en la estación; un `center` nuevo después de cerrar lo mueve. Después, `useKeptFocus` en `StationsMap.tsx`.
   - Aceptación: igual que T1; "centers on the given center while ?station is not among the stations" sigue en verde.
   - Verificación: `pnpm check:task` en verde.
-- [ ] **Prueba a mano** en `vite`, escritorio y móvil: bus (X, `Escape`, "Volver") y BiciMAD (cerrar la estación, atrás). El mapa no se mueve y "Mi ubicación" sí lo mueve.
-- [ ] **Checkpoint:** revisión del diff. Preguntar antes de push y PR.
+- [x] **Prueba a mano** en `vite`, escritorio y móvil: bus (X, `Escape`, "Volver") y BiciMAD (cerrar la estación, atrás). El mapa no se mueve y "Mi ubicación" sí lo mueve.
+- [x] **Checkpoint:** revisión del diff. Preguntar antes de push y PR.
 
 ## Changelog
 
 - 2026-11-14: borrador. Decisiones del usuario: BiciMAD también, sin cambios en los SPEC (solo en el PR), tareas dentro del plan.
 - 2026-11-14: T1 hecha (8e7e0f3). `useKeptFocus` en `shared/lib/geo`, usado en `BusStopsMap`. Dos tests: cerrar mantiene el foco (fallaba con el foco en `SOL`) y un `mapCenter` nuevo después de cerrar vuelve al usuario. `pnpm check:task` en verde.
 - 2026-11-14: T2 hecha (0eb3227). `useKeptFocus` en `StationsMap`. Dos tests: cerrar mantiene el foco en la estación (fallaba con el foco en `SOL`) y un `center` nuevo después de cerrar lo mueve. `pnpm check:task` en verde.
+- 2026-11-14: prueba a mano hecha por el usuario en escritorio y móvil: el arreglo funciona. Plan implementado.
