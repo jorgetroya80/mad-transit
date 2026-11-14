@@ -6,6 +6,7 @@ export type { GeolocationState, GeolocationStatus, GeoPosition } from './geo/use
 export { useGeolocation } from './geo/useGeolocation';
 export { freshnessOf } from './freshness/freshnessOf';
 export { type MapLocation, useMapLocation } from './geo/useMapLocation';
+export { useKeptFocus } from './geo/useKeptFocus';
 export { type UserFocus, useUserFocus } from './geo/useUserFocus';
 export { useMediaQuery } from './media/useMediaQuery';
 export { useViewportHeight } from './media/useViewportHeight';
