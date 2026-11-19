@@ -26,7 +26,7 @@ Fuente: [docs/ideas/bicimad-now.md](../ideas/bicimad-now.md). Cada módulo tiene
 | `web-ui-migration` | Las pantallas de BiciMAD pasan a usar la librería; se retiran las piezas y los tokens que sustituye (`StationRow`, `AvailabilityBadge`, `StatusBanner`, `ErrorState`, `CollapsibleSection`…, `availability-*`, `notice-*`) y la página temporal `/dev/components` | web-ui-library | [SPEC-web-ui-migration.md](SPEC-web-ui-migration.md) | implemented |
 | `web-sheet-drag` | Arrastre del bottom sheet con imantado a la altura más cercana (opcional) | web-redesign-mobile | — | — |
 | `web-offline-shell` | Service worker propio (plugin de Vite, sin dependencias) que guarda la app para abrirla sin conexión con la caché de estaciones | web-data-state | — | — |
-| `web-crash-screen` | Pantalla «Algo ha fallado» con «Recargar» en el `errorComponent` de TanStack Router, para que un error de render (un bug, no un fallo de datos) no deje la página en blanco, con un `ErrorBoundary` para lo que queda fuera del router; activa el React Compiler | web-design-tokens | [SPEC-web-crash-screen.md](SPEC-web-crash-screen.md) | approved |
+| `web-crash-screen` | Pantalla «Algo ha fallado» con «Recargar» en el `errorComponent` de TanStack Router, para que un error de render (un bug, no un fallo de datos) no deje la página en blanco, con un `ErrorBoundary` para lo que queda fuera del router; activa el React Compiler | web-design-tokens | [SPEC-web-crash-screen.md](SPEC-web-crash-screen.md) | implemented |
 
 ## Orden de construcción
 

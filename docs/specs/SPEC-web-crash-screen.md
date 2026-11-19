@@ -1,7 +1,7 @@
 # Spec: web-crash-screen
 
 - Created: 2026-11-19
-- Status: **approved** (2026-11-19)
+- Status: **implemented** (2026-11-19)
 - Plan: [PLAN-web-crash-screen.md](../plans/PLAN-web-crash-screen.md)
 
 Módulo `web-crash-screen` del [Capability Map](CAPABILITY-MAP.md). Da una pantalla propia, en español y con los tokens del rediseño, a los errores de render: un bug en un componente, no un fallo de datos (esos los cubre [web-error-states](SPEC-web-error-states.md)). Aplica los tableros «Escritorio · fallo inesperado» (1440 px) y «Error · fallo inesperado» (390 px) del lienzo «Mad Transit · rediseño», que es privado. Los dos están al final de sus filas de errores.
