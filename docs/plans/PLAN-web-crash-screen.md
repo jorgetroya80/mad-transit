@@ -43,7 +43,7 @@ T3 y T4 dependen solo de T2 y no se tocan entre sí, pero van en serie porque co
   - Archivos: `web/vite.config.ts`, `web/package.json`, `pnpm-lock.yaml`, spec, plan, capability map.
   - Dependencias: ninguna.
 
-- [ ] **T2: `EmptyState` con `h1` y `CrashScreen`** (M, ~1 h)
+- [x] **T2: `EmptyState` con `h1` y `CrashScreen`** (M, ~1 h)
   - Descripción: `EmptyState` acepta `headingLevel` 1 (`h1`). `CrashScreen` en `app/crash-screen/` (supuestos 4 a 10): `<main>` a pantalla completa sobre `bg-surface` con `EmptyState` `danger`, `warning`, `announce="alert"`, `headingLevel={1}`, los textos aprobados y «Recargar» (`refresh`), que llama a `window.location.reload()`. Al montarse enfoca el `h1`.
   - Aceptación:
     - `EmptyState` con `headingLevel={1}` pinta un `h1`, y los niveles 2 y 3 siguen igual.
@@ -97,3 +97,4 @@ Ninguna.
 
 - 2026-11-19: plan creado y aprobado.
 - 2026-11-19: T1 hecha. Instalados `babel-plugin-react-compiler` 1.0.0, `@rolldown/plugin-babel` 0.2.4, `@babel/core` 7.29.13 y `@types/babel__core` 7.20.5. `pnpm --filter web build` pasa y `memo_cache_sentinel` aparece en `index-*.js` y `map-point-*.js`. La suite pasa sin cambiar tests (2466 en verde, 1 `skip` que ya existía). `pnpm check:task` en verde en 27 s. Con las opciones por defecto el compiler no muestra diagnósticos, así que no se sabe si salta algún componente.
+- 2026-11-19: T2 hecha. `EmptyState` acepta `headingLevel={1}` con un mapa de etiquetas en lugar del ternario. `CrashScreen` en `app/crash-screen/` enfoca su `h1` al montarse buscándolo dentro de su `<main>`; «Recargar» se prueba con `vi.stubGlobal('location', …)`. oxlint pide `vi.fn<() => void>()` y una aserción explícita en el test de axe (`resolves.toBeUndefined()`, como en `EmptyState`). `pnpm check:task` en verde; 100 % de las 11 líneas cambiadas cubiertas.
