@@ -8,6 +8,7 @@ import {
   stripSearchParams,
 } from '@tanstack/react-router';
 import { MapPage, validateMapSearch } from '@/pages/map';
+import { CrashScreen } from './crash-screen';
 
 // The component is injectable so tests can render a feature inside the real `/` route.
 function createRouteTree(mapComponent: RouteComponent) {
@@ -31,6 +32,8 @@ export function createAppRouter({ history, mapComponent = MapPage }: AppRouterOp
     history,
     parseSearch: (search) => Object.fromEntries(new URLSearchParams(search)),
     stringifySearch: stringifySearchWith(String, (value) => value),
+    // Default, not the root route's errorComponent: child routes fall back to the router's default.
+    defaultErrorComponent: CrashScreen,
   });
 }
 

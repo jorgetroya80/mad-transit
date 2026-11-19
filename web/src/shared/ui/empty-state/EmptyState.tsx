@@ -5,6 +5,7 @@ import { Icon, type IconName } from '../icons';
 type EmptyStateTone = 'danger' | 'neutral' | 'warning';
 type EmptyStateSize = 'md' | 'sm';
 type Announce = 'alert' | 'status' | 'none';
+type HeadingLevel = 1 | 2 | 3;
 
 type EmptyStateAction = {
   label: string;
@@ -26,7 +27,7 @@ type EmptyStateProps = {
   announce?: Announce;
   // Id of the heading and message together, so a field can be described by them.
   messageId?: string;
-  headingLevel?: 2 | 3;
+  headingLevel?: HeadingLevel;
   size?: EmptyStateSize;
 };
 
@@ -48,6 +49,11 @@ const SIZES = {
 } as const satisfies Record<
   EmptyStateSize,
   { root: string; circle: string; icon: 30 | 34; title: string }
+>;
+
+const HEADING_TAGS = { 1: 'h1', 2: 'h2', 3: 'h3' } as const satisfies Record<
+  HeadingLevel,
+  'h1' | 'h2' | 'h3'
 >;
 
 const STACK = 'flex flex-col items-center gap-3.5';
@@ -92,7 +98,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   const sizes = SIZES[size];
   const toneClasses = TONE_CLASSES[tone];
-  const Heading = headingLevel === 2 ? 'h2' : 'h3';
+  const Heading = HEADING_TAGS[headingLevel];
   const heading = (
     <Heading tabIndex={-1} className={`text-fg focus-visible:outline-none ${sizes.title}`}>
       {title}

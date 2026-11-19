@@ -65,10 +65,14 @@ describe('EmptyState', () => {
     expect(screen.getByText(props.message)).toHaveClass('text-fg-muted');
   });
 
-  it('is an h2 by default and an h3 when asked', () => {
+  it('is an h2 by default and an h1 or h3 when asked', () => {
     const { unmount } = render(<EmptyState {...API_DOWN} />);
     expect(heading()).toHaveProperty('tagName', 'H2');
     unmount();
+
+    const { unmount: unmountH1 } = render(<EmptyState {...API_DOWN} headingLevel={1} />);
+    expect(heading()).toHaveProperty('tagName', 'H1');
+    unmountH1();
 
     render(<EmptyState {...API_DOWN} headingLevel={3} />);
     expect(heading()).toHaveProperty('tagName', 'H3');
