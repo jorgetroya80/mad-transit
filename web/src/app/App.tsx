@@ -1,4 +1,5 @@
 import { RouterProvider } from '@tanstack/react-router';
+import { AppErrorBoundary } from './crash-screen';
 import { QueryProvider } from './providers/QueryProvider';
 import { createAppRouter } from './router';
 
@@ -6,8 +7,10 @@ const router = createAppRouter();
 
 export function App() {
   return (
-    <QueryProvider>
-      <RouterProvider router={router} />
-    </QueryProvider>
+    <AppErrorBoundary>
+      <QueryProvider>
+        <RouterProvider router={router} />
+      </QueryProvider>
+    </AppErrorBoundary>
   );
 }
