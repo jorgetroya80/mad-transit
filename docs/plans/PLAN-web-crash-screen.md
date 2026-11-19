@@ -53,7 +53,7 @@ T3 y T4 dependen solo de T2 y no se tocan entre sí, pero van en serie porque co
   - Archivos: `shared/ui/empty-state/EmptyState{,.test}.tsx`, `app/crash-screen/{CrashScreen,CrashScreen.test}.tsx`, `app/crash-screen/index.ts`.
   - Dependencias: T1.
 
-- [ ] **T3: `CrashScreen` como `defaultErrorComponent` del router** (S, ~30 min)
+- [x] **T3: `CrashScreen` como `defaultErrorComponent` del router** (S, ~30 min)
   - Descripción: test primero en `router.test.tsx`. Con `renderWithRouter` y un componente que lanza al renderizar, debe salir «Algo ha fallado» y no «Something went wrong!». Después se añade `defaultErrorComponent: CrashScreen` a `createRouter` (supuesto 1).
   - Aceptación:
     - Un error de render en `/` muestra `CrashScreen` (SC1).
@@ -98,3 +98,4 @@ Ninguna.
 - 2026-11-19: plan creado y aprobado.
 - 2026-11-19: T1 hecha. Instalados `babel-plugin-react-compiler` 1.0.0, `@rolldown/plugin-babel` 0.2.4, `@babel/core` 7.29.13 y `@types/babel__core` 7.20.5. `pnpm --filter web build` pasa y `memo_cache_sentinel` aparece en `index-*.js` y `map-point-*.js`. La suite pasa sin cambiar tests (2466 en verde, 1 `skip` que ya existía). `pnpm check:task` en verde en 27 s. Con las opciones por defecto el compiler no muestra diagnósticos, así que no se sabe si salta algún componente.
 - 2026-11-19: T2 hecha. `EmptyState` acepta `headingLevel={1}` con un mapa de etiquetas en lugar del ternario. `CrashScreen` en `app/crash-screen/` enfoca su `h1` al montarse buscándolo dentro de su `<main>`; «Recargar» se prueba con `vi.stubGlobal('location', …)`. oxlint pide `vi.fn<() => void>()` y una aserción explícita en el test de axe (`resolves.toBeUndefined()`, como en `EmptyState`). `pnpm check:task` en verde; 100 % de las 11 líneas cambiadas cubiertas.
+- 2026-11-19: T3 hecha. `defaultErrorComponent: CrashScreen` en `createRouter` (supuesto 1). Dos tests en `router.test.tsx` con un `Broken` que lanza, montado como `ui` de `renderWithRouter`: sale el `h1` «Algo ha fallado» y no «Something went wrong!» (en rojo antes del cambio, porque salía el `ErrorComponent` en inglés), y alguna llamada a `console.error` recibe la misma instancia del `Error` (SC5; ya pasaba antes, queda como guarda). `console.error` se espía en silencio. El caso de `validateSearch` que lanza no se hizo: `createAppRouter` fija `validateMapSearch` y no se puede inyectar sin cambiar su API. Los tests de URL pasan sin cambios. `pnpm check:task` en verde (2477 tests, 1 `skip` que ya existía); 100 % de las 11 líneas cambiadas cubiertas.

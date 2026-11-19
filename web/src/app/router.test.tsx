@@ -1,4 +1,4 @@
-import { act } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import { renderWithRouter } from '../../test/renderWithRouter';
 
 // These tests are about the URL, not the page: a stub keeps the map out of jsdom.
@@ -12,6 +12,17 @@ function currentSearch(router: AppRouter) {
 
 function currentUrl(router: AppRouter): URL {
   return new URL(router.state.location.href, 'http://localhost');
+}
+
+const renderError = new Error('boom');
+
+function Broken(): never {
+  throw renderError;
+}
+
+// The router and React log the error on purpose; a silent spy keeps the test output clean.
+function silenceConsoleError() {
+  return vi.spyOn(console, 'error').mockImplementation(() => {});
 }
 
 describe('app router', () => {
@@ -73,6 +84,23 @@ describe('app router', () => {
     const url = currentUrl(router);
     expect(url.pathname).toBe('/');
     expect(Object.fromEntries(url.searchParams)).toEqual({ station: '538', need: 'docks' });
+  });
+
+  it('shows the crash screen when a route fails to render', async () => {
+    silenceConsoleError();
+
+    await renderWithRouter(<Broken />);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Algo ha fallado' })).toBeInTheDocument();
+    expect(screen.queryByText('Something went wrong!')).not.toBeInTheDocument();
+  });
+
+  it('still logs a render error to the console', async () => {
+    const consoleError = silenceConsoleError();
+
+    await renderWithRouter(<Broken />);
+
+    expect(consoleError.mock.calls.some((args) => args.includes(renderError))).toBe(true);
   });
 });
 
