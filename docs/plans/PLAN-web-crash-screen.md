@@ -1,7 +1,7 @@
 # Plan: web-crash-screen
 
 - Created: 2026-11-19
-- Status: **approved** (2026-11-19)
+- Status: **implemented** (2026-11-19)
 - Spec: [SPEC-web-crash-screen.md](../specs/SPEC-web-crash-screen.md)
 
 ## Overview
@@ -102,3 +102,4 @@ Ninguna.
 - 2026-11-19: T4 hecha. `AppErrorBoundary` en `app/crash-screen/`, componente de clase con solo `getDerivedStateFromError` (supuesto 3), exportado desde `index.ts`; en `App.tsx` envuelve a `QueryProvider` y `RouterProvider`. Tres tests en `AppErrorBoundary.test.tsx` con un `Broken` que lanza: sale el `h1` «Algo ha fallado», sin error se pintan los hijos tal cual, y alguna llamada a `console.error` recibe la misma instancia del `Error` (SC5; la registra el `onCaughtError` por defecto de React 19, también en jsdom). En rojo primero porque `AppErrorBoundary` no existía. `console.error` se espía en silencio con un `silenceConsoleError` local, copiado de `router.test.tsx`. Ningún test cubre `App.tsx`: v8 no le marca sentencias, así que no cuenta en la cobertura de líneas cambiadas; el cableado se prueba en el checkpoint manual. `pnpm check:task` en verde en 23 s (2483 tests, 1 `skip` que ya existía); 100 % de las 11 líneas cambiadas cubiertas.
 - 2026-11-19: checkpoint final aprobado por el usuario: prueba manual a 1440 y 390 px con un `throw` temporal en `MapPage` y en `QueryProvider`, foco en el título, VoiceOver, «Recargar» y la marca «Memo ✨» de React DevTools. `pnpm check:task` en verde tras T4.
 - 2026-11-19: revisión del PR #138 (hallazgo opcional 2): `HEADING_TAGS` de `EmptyState` gana `satisfies Record<HeadingLevel, …>`, como el resto de mapas de la librería. `pnpm check:task` en verde.
+- 2026-11-19: mergeado en `main` con el PR #138. Spec, plan y capability map pasan a `implemented`.
