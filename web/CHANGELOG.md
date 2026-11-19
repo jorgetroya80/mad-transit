@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/jorgetroya80/mad-transit/compare/web-v0.12.1...web-v0.13.0) (2026-11-19)
+
+
+### Features
+
+* **web:** add the crash screen and enable the React Compiler ([#138](https://github.com/jorgetroya80/mad-transit/issues/138)) ([0ffce67](https://github.com/jorgetroya80/mad-transit/commit/0ffce67729477857a5f0f86fd6f48ab7b314a8c6))
+
 ## [0.12.1](https://github.com/jorgetroya80/mad-transit/compare/web-v0.12.0...web-v0.12.1) (2026-11-14)
 
 
